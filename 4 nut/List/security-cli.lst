@@ -1,0 +1,630 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        18/Apr/2016  12:59:45
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\cli\security-cli.c
+#    Command line =  
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\cli\security-cli.c"
+#        -D SWITCH_4_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"security-cli.c\"" -lC "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\List\" --diag_suppress Pa050 -o "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\Obj\" --debug --endian=little --cpu=Cortex-M3
+#        --no_path_in_file_macros --separate_cluster_for_initialized_variables
+#        -e --fpu=None --dlib_config "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        "D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\cli\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\"
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\List\security-cli.lst
+#    Object file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\Obj\security-cli.o
+#
+###############################################################################
+
+D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\cli\security-cli.c
+      1          // File: ha-security-cli.c
+      2          //
+      3          // Routines to initiate Key establishment, handle key establishment callbacks,
+      4          // and print info about the security keys on the device.
+      5          //
+      6          // Author(s): Rob Alexander <ralexander@ember.com>
+      7          //
+      8          // Copyright 2008 by Ember Corporation.  All rights reserved.               *80*
+      9          
+     10          #include "app/framework/util/common.h"
+     11          
+     12          #include "app/framework/util/service-discovery.h"
+     13          
+     14          #include "app/util/serial/command-interpreter2.h"
+     15          #include "app/framework/cli/security-cli.h"
+     16          #include "app/framework/util/af-main.h"
+     17          
+     18          #include "app/framework/security/af-security.h"
+     19          
+     20          
+     21          //------------------------------------------------------------------------------
+     22          // Globals
+     23          
+
+   \                                 In section .data, align 4
+     24          EmberKeyData cliPreconfiguredLinkKey = DUMMY_KEY;
+   \                     cliPreconfiguredLinkKey:
+   \   00000000   0xFF 0xFF          DC8 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
+   \              0xFF 0xFF    
+   \              0xFF 0xFF    
+   \              0xFF 0xFF    
+   \              0xFF 0xFF    
+   \              0xFF 0xFF    
+   \              0xFF         
+   \   0000000D   0xFF 0xFF          DC8 255, 255, 255
+   \              0xFF         
+     25          EmberKeyData cliNetworkKey           = DUMMY_KEY;
+   \                     cliNetworkKey:
+   \   00000010   0xFF 0xFF          DC8 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
+   \              0xFF 0xFF    
+   \              0xFF 0xFF    
+   \              0xFF 0xFF    
+   \              0xFF 0xFF    
+   \              0xFF 0xFF    
+   \              0xFF         
+   \   0000001D   0xFF 0xFF          DC8 255, 255, 255
+   \              0xFF         
+     26          
+     27          
+     28          /**
+     29           * @addtogroup cli
+     30           * @{
+     31           */
+     32          /**
+     33           * @brief Commands used to change the default link or network key
+     34           *        that will be used when forming or joining a network.
+     35           *
+     36           *        <b>changekey link &lt;key&gt;</b>
+     37           *        - key - 16 byte array. The Link Key provided as a 
+     38           *          16 byte array.
+     39           * 
+     40           *        <b>changekey network &lt;key&gt;</b>
+     41           *        - key - 16 byte array. The Network Key provided
+     42           *          as a 16 byte array.
+     43           *
+     44           */
+     45          #define EMBER_AF_DOXYGEN_CLI__SECURITY_CHANGEKEY_COMMANDS
+     46          /** @} END addtogroup */
+     47          
+     48          /**
+     49           * @addtogroup cli
+     50           * @{
+     51           */
+     52          /**
+     53           * @brief Command used for key establishment.
+     54           *
+     55           *        <b>cbke start &lt;new partner id&gt; &lt;destination endpoint&gt;</b>
+     56           *        - new partner id - int16u. The 2 byte node id of the partner
+     57           *          with whom to start cbke.
+     58           *
+     59           *        <b>cbke interpan &lt;pan id&gt; &lt;eui64&gt;</b>
+     60           *        - pan id - int16u. The 2 byte pan id of the partner with whom to start
+     61           *          cbke.
+     62           *        - eui64 - EmberEUI64. The 8 byte EUI64 of the partner with whom to
+     63           *          start cbke.
+     64           *
+     65           *        <b>cbke partner &lt;node id&gt; &lt;endpoint&gt;</b>
+     66           *        - node id - int16u. The two byte node id of the device
+     67           *          with whom to initiate key establishment.
+     68           *        - endpoint - int8u. The endpoint on which to begin
+     69           *          key establishment.
+     70           *
+     71           */
+     72          #define EMBER_AF_DOXYGEN_CLI__SECURITY_CBKE_COMMANDS
+     73          /** @} END addtogroup */
+     74          
+     75          #ifndef EMBER_AF_GENERATE_CLI
+     76          
+     77          EmberCommandEntry changeKeyCommands[] = {
+     78            {"link", changeKeyCommand, "b"},
+     79            {"network", changeKeyCommand, "b"},
+     80            { NULL }
+     81          };
+     82          
+     83          #endif // EMBER_AF_GENERATE_CLI
+     84          
+     85          /**
+     86           * @addtogroup security
+     87           * @{
+     88           */
+     89          /** @brief Commands used for security
+     90           *
+     91           * <b>security mfg-token get</b>
+     92           * <b>security mfg-token set &lt;Magic number&gt; &lt;EmberKeySettings value&gt;</b>
+     93           *   - Magic number - int32u.  The 4-byte magic number 
+     94           *     EMBER_MFG_SECURITY_CONFIG_MAGIC_NUMBER to prevent accidental execution.
+     95           *   - EmberKeySettings value - int16u.  The 2-byte value for EmberKeySettings
+     96           *     indicating key permissions.
+     97           *
+     98           */ 
+     99          #define EMBER_AF_DOXYGEN_CLI__SECURITY_MFG_TOKEN_COMMANDS
+    100          /** @} END addtogroup */
+    101          
+    102          #if !defined(XAP2B) && !defined(EMBER_AF_HAS_SECURITY_PROFILE_NONE)
+    103          void getSetMfgToken(void);
+    104          
+
+   \                                 In section .rodata, align 4, keep-with-next
+    105          EmberCommandEntry mfgToken[] = {
+   \                     mfgToken:
+   \   00000000   0x........         DC32 `?<Constant "get">`, getSetMfgToken, `?<Constant "">`
+   \              0x........   
+   \              0x........   
+   \   0000000C   0x........         DC32 `?<Constant "set">`, getSetMfgToken, `?<Constant "wv">`, 0H, 0H
+   \              0x........   
+   \              0x........   
+   \              0x00000000   
+   \              0x00000000   
+   \   00000020   0x00000000         DC32 0H
+    106            emberCommandEntryAction("get", getSetMfgToken, "",
+    107                                    "Print the MFG security config token"),
+    108            emberCommandEntryAction("set", getSetMfgToken, "wv",
+    109                                    "Set the MFG Security config token.  CANNOT BE UNSET BY CLI."),
+    110            emberCommandEntryTerminator(),
+    111          };
+    112          #endif
+    113          
+
+   \                                 In section .rodata, align 4, keep-with-next
+    114          EmberCommandEntry emAfSecurityCommands[] = {
+   \                     emAfSecurityCommands:
+   \   00000000   0x........         DC32 `?<Constant "mfg-token">`, 0H, mfgToken, 0H, 0H, 0H
+   \              0x00000000   
+   \              0x........   
+   \              0x00000000   
+   \              0x00000000   
+   \              0x00000000   
+    115          
+    116          #if !defined(XAP2B) && !defined(EMBER_AF_HAS_SECURITY_PROFILE_NONE)
+    117            emberCommandEntrySubMenu("mfg-token", mfgToken, 
+    118                                     "Get/set the MFG Security config token"),
+    119          #endif
+    120            emberCommandEntryTerminator(),
+    121          };
+    122          
+    123          //------------------------------------------------------------------------------
+    124          // Forward Declarations
+    125          
+    126          int8u printKeyTable(boolean preconfiguredKey);
+    127          int32u getOutgoingApsFrameCounter(void);
+    128          
+    129          //------------------------------------------------------------------------------
+    130          
+    131          // ******************************************************
+    132          // changekey link    <16 byte key>
+    133          // changekey network <16 byte key>
+    134          // ******************************************************
+    135          
+    136          // Changes the default link or network key that will be used when
+    137          // forming or joining a network.  
+
+   \                                 In section .text, align 2, keep-with-next
+    138          void changeKeyCommand(void) 
+    139          {
+   \                     changeKeyCommand: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    140            if (EMBER_NO_NETWORK != emberNetworkState()) {
+   \   00000002   0x.... 0x....      BL       emberNetworkState
+   \   00000006   0xB970             CBNZ.N   R0,??changeKeyCommand_0
+    141              emberAfCorePrintln("%pstack must be down.", "ERROR: ");
+    142            } else {
+    143              emberCopyKeyArgument(0, 
+    144                                   emberCurrentCommand->name[0] == 'l'
+    145                                   ? &cliPreconfiguredLinkKey
+    146                                   : &cliNetworkKey);
+   \   00000008   0x....             LDR.N    R0,??DataTable8
+   \   0000000A   0x....             LDR.N    R1,??DataTable8_1
+   \   0000000C   0x6800             LDR      R0,[R0, #+0]
+   \   0000000E   0x6800             LDR      R0,[R0, #+0]
+   \   00000010   0x7800             LDRB     R0,[R0, #+0]
+   \   00000012   0x286C             CMP      R0,#+108
+   \   00000014   0xBF18             IT       NE 
+   \   00000016   0x3110             ADDNE    R1,R1,#+16
+   \   00000018   0xE8BD 0x5000      POP      {R12,LR}
+   \   0000001C   0x2301             MOVS     R3,#+1
+   \   0000001E   0x2210             MOVS     R2,#+16
+   \   00000020   0x2000             MOVS     R0,#+0
+   \   00000022   0x.... 0x....      B.W      emberCopyStringArgument
+    147              emberAfDebugPrintln("set key");
+    148            }
+    149          }
+   \                     ??changeKeyCommand_0: (+1)
+   \   00000026   0xBD01             POP      {R0,PC}          ;; return
+    150          
+    151          // Key Establishment commands (cbke <command>) moved to 
+    152          //   app/framework/plugin/key-establishment/key-establishment-cli.c
+    153          
+    154          
+
+   \                                 In section .text, align 2, keep-with-next
+    155          void printKeyInfo(void)
+    156          {
+   \                     printKeyInfo: (+1)
+   \   00000000   0xB500             PUSH     {LR}
+   \   00000002   0xB08B             SUB      SP,SP,#+44
+    157            int8u entriesUsed;
+    158            EmberKeyStruct nwkKey;
+    159          
+    160          #if !defined(XAP2B) && !defined(EMBER_AF_HAS_SECURITY_PROFILE_NONE)
+    161            {
+    162              EmberMfgSecurityStruct config;
+    163              if (EMBER_SUCCESS == emberGetMfgSecurityConfig(&config)) {
+   \   00000004   0xA800             ADD      R0,SP,#+0
+   \   00000006   0x.... 0x....      BL       emberGetMfgSecurityConfig
+    164                if (!(config.keySettings & EMBER_KEY_PERMISSIONS_READING_ALLOWED)) {
+    165                  emberAfCorePrintln("\nWARNING:  READING OF KEY VALUES DISABLED BY MFG TOKEN\n");
+    166                  emberAfCoreFlush();
+    167                }
+    168              }
+    169            }
+    170          #endif
+    171          
+    172            if ( EMBER_SUCCESS != emberGetKey(EMBER_CURRENT_NETWORK_KEY,
+    173                                              &nwkKey)) {
+   \   0000000A   0xA901             ADD      R1,SP,#+4
+   \   0000000C   0x2003             MOVS     R0,#+3
+   \   0000000E   0x.... 0x....      BL       emberGetKey
+   \   00000012   0xB120             CBZ.N    R0,??printKeyInfo_0
+    174              MEMSET((int8u*)&nwkKey, 0xFF, sizeof(EmberKeyStruct));
+   \   00000014   0x2228             MOVS     R2,#+40
+   \   00000016   0x21FF             MOVS     R1,#+255
+   \   00000018   0xA801             ADD      R0,SP,#+4
+   \   0000001A   0x.... 0x....      BL       halCommonMemSet
+    175            }
+    176            emberAfCorePrintln("%p out FC: %4x",
+    177                               "NWK Key",
+    178                               nwkKey.outgoingFrameCounter);
+    179            emberAfCorePrintln("%p seq num: 0x%x",  
+    180                               "NWK Key",
+    181                               nwkKey.sequenceNumber);
+    182            emberAfCorePrint("%p: ", 
+    183                             "NWK Key");
+    184            emberAfPrintZigbeeKey(emberKeyContents(&nwkKey.key));
+   \                     ??printKeyInfo_0: (+1)
+   \   0000001E   0xF10D 0x0007      ADD      R0,SP,#+7
+   \   00000022   0x.... 0x....      BL       printZigbeeKey
+    185            
+    186            
+    187            emberAfCorePrintln("%p out FC: %4x",
+    188                               "Link Key",
+    189                               getOutgoingApsFrameCounter());
+    190            
+    191            emberAfCorePrintln("TC %p", "Link Key");
+    192            emberAfCoreFlush();
+    193            printKeyTable(TRUE);
+   \   00000026   0x2001             MOVS     R0,#+1
+   \   00000028   0x.... 0x....      BL       printKeyTable
+    194            
+    195            emberAfCorePrintln( "%p Table", "Link Key");
+    196            emberAfCoreFlush();
+    197            entriesUsed = printKeyTable(FALSE);
+   \   0000002C   0x2000             MOVS     R0,#+0
+   \   0000002E   0x.... 0x....      BL       printKeyTable
+    198            UNUSED_VAR(entriesUsed);
+    199            
+    200            emberAfCorePrintln("%d/%d entries used.", 
+    201                               entriesUsed,
+    202                               emberAfGetKeyTableSize());
+    203            emberAfCoreFlush();
+    204          }
+   \   00000032   0xB00B             ADD      SP,SP,#+44
+   \   00000034   0xBD00             POP      {PC}             ;; return
+    205          
+
+   \                                 In section .text, align 2, keep-with-next
+    206          int8u printKeyTable(boolean preconfiguredKey)
+    207          {
+   \                     printKeyTable: (+1)
+   \   00000000   0xB5F0             PUSH     {R4-R7,LR}
+   \   00000002   0xB08B             SUB      SP,SP,#+44
+   \   00000004   0x4604             MOV      R4,R0
+    208            int8u i;
+    209            int8u entriesUsed = 0;
+   \   00000006   0x2500             MOVS     R5,#+0
+    210            int8u loopCount = (preconfiguredKey ? 1 : emberAfGetKeyTableSize());
+   \   00000008   0xB10C             CBZ.N    R4,??printKeyTable_0
+   \   0000000A   0x2601             MOVS     R6,#+1
+   \   0000000C   0xE002             B.N      ??printKeyTable_1
+   \                     ??printKeyTable_0: (+1)
+   \   0000000E   0x.... 0x....      BL       emberAfGetKeyTableSize
+   \   00000012   0x4606             MOV      R6,R0
+    211          
+    212            emberAfDebugPrintln( "Index IEEE Address         In FC     Type  Auth  Key");
+    213          
+    214            for ( i = 0; i < loopCount; i++ ) {
+   \                     ??printKeyTable_1: (+1)
+   \   00000014   0x2700             MOVS     R7,#+0
+   \   00000016   0xE00A             B.N      ??printKeyTable_2
+    215              EmberKeyStruct entry;
+    216          
+    217              if (preconfiguredKey) {
+    218                i = 0xFE; // last
+    219          
+    220                // Try to get whatever key type is stored in the preconfigured key slot.
+    221                if ( (EMBER_SUCCESS !=
+    222                      emberGetKey(EMBER_TRUST_CENTER_MASTER_KEY, &entry))
+    223                     && (EMBER_SUCCESS
+    224                         != emberGetKey(EMBER_TRUST_CENTER_LINK_KEY, &entry)) ) {
+    225                  continue;
+    226                }
+    227              } else if ( EMBER_SUCCESS != emberGetKeyTableEntry(i, &entry) )
+   \                     ??printKeyTable_3: (+1)
+   \   00000018   0xA900             ADD      R1,SP,#+0
+   \   0000001A   0x4638             MOV      R0,R7
+   \   0000001C   0x.... 0x....      BL       emberGetKeyTableEntry
+   \   00000020   0xB920             CBNZ.N   R0,??printKeyTable_4
+    228                continue;
+    229          
+    230              if (!preconfiguredKey) {
+    231                emberAfCorePrint("%d     ", i);
+    232              } else {
+    233                emberAfCorePrint("-     ");
+    234              }
+    235              emberAfCoreDebugExec(emberAfPrintBigEndianEui64(entry.partnerEUI64));
+    236              emberAfCorePrint("  %4x  ", entry.incomingFrameCounter);
+    237              emberAfCorePrint("%c     %c     ",
+    238                            (( entry.type == EMBER_APPLICATION_MASTER_KEY
+    239                               || entry.type == EMBER_TRUST_CENTER_MASTER_KEY )
+    240                             ? 'M'
+    241                             : 'L' ),
+    242                            ( entry.bitmask & EMBER_KEY_IS_AUTHORIZED 
+    243                              ? 'y'
+    244                              : 'n' ));
+    245              
+    246              emberAfPrintZigbeeKey(emberKeyContents(&(entry.key)));
+   \                     ??printKeyTable_5: (+1)
+   \   00000022   0xF10D 0x0003      ADD      R0,SP,#+3
+   \   00000026   0x.... 0x....      BL       printZigbeeKey
+    247          
+    248              emberAfCoreFlush();
+    249              entriesUsed++;
+   \   0000002A   0x1C6D             ADDS     R5,R5,#+1
+   \                     ??printKeyTable_4: (+1)
+   \   0000002C   0x1C7F             ADDS     R7,R7,#+1
+   \                     ??printKeyTable_2: (+1)
+   \   0000002E   0xB2FF             UXTB     R7,R7
+   \   00000030   0x42B7             CMP      R7,R6
+   \   00000032   0xDA0F             BGE.N    ??printKeyTable_6
+   \   00000034   0x2C00             CMP      R4,#+0
+   \   00000036   0xD0EF             BEQ.N    ??printKeyTable_3
+   \   00000038   0x27FE             MOVS     R7,#+254
+   \   0000003A   0xA900             ADD      R1,SP,#+0
+   \   0000003C   0x2002             MOVS     R0,#+2
+   \   0000003E   0x.... 0x....      BL       emberGetKey
+   \   00000042   0x2800             CMP      R0,#+0
+   \   00000044   0xD0ED             BEQ.N    ??printKeyTable_5
+   \   00000046   0xA900             ADD      R1,SP,#+0
+   \   00000048   0x2001             MOVS     R0,#+1
+   \   0000004A   0x.... 0x....      BL       emberGetKey
+   \   0000004E   0x2800             CMP      R0,#+0
+   \   00000050   0xD1EC             BNE.N    ??printKeyTable_4
+   \   00000052   0xE7E6             B.N      ??printKeyTable_5
+    250            }
+    251          
+    252            return entriesUsed;
+   \                     ??printKeyTable_6: (+1)
+   \   00000054   0xB2E8             UXTB     R0,R5
+   \   00000056   0xB00B             ADD      SP,SP,#+44
+   \   00000058   0xBDF0             POP      {R4-R7,PC}       ;; return
+    253          }
+    254          
+
+   \                                 In section .text, align 2, keep-with-next
+    255          int32u getOutgoingApsFrameCounter(void)
+    256          {
+   \                     getOutgoingApsFrameCounter: (+1)
+   \   00000000   0xB500             PUSH     {LR}
+   \   00000002   0xB08B             SUB      SP,SP,#+44
+    257            EmberKeyStruct entry;
+    258            if (emberGetKey(EMBER_TRUST_CENTER_MASTER_KEY, &entry) != EMBER_SUCCESS
+    259                && emberGetKey(EMBER_TRUST_CENTER_LINK_KEY, &entry) != EMBER_SUCCESS) {
+   \   00000004   0xA900             ADD      R1,SP,#+0
+   \   00000006   0x2002             MOVS     R0,#+2
+   \   00000008   0x.... 0x....      BL       emberGetKey
+   \   0000000C   0xB138             CBZ.N    R0,??getOutgoingApsFrameCounter_0
+   \   0000000E   0xA900             ADD      R1,SP,#+0
+   \   00000010   0x2001             MOVS     R0,#+1
+   \   00000012   0x.... 0x....      BL       emberGetKey
+   \   00000016   0xB110             CBZ.N    R0,??getOutgoingApsFrameCounter_0
+    260              return 0xFFFFFFFFUL;
+   \   00000018   0xF04F 0x30FF      MOV      R0,#-1
+   \   0000001C   0xE000             B.N      ??getOutgoingApsFrameCounter_1
+    261            }
+    262            return entry.outgoingFrameCounter;
+   \                     ??getOutgoingApsFrameCounter_0: (+1)
+   \   0000001E   0x9805             LDR      R0,[SP, #+20]
+   \                     ??getOutgoingApsFrameCounter_1: (+1)
+   \   00000020   0xB00B             ADD      SP,SP,#+44
+   \   00000022   0xBD00             POP      {PC}             ;; return
+    263          }
+    264          
+    265          #if !defined(XAP2B) && !defined(EMBER_AF_HAS_SECURITY_PROFILE_NONE)
+
+   \                                 In section .text, align 2, keep-with-next
+    266          void getSetMfgToken(void)
+    267          {
+   \                     getSetMfgToken: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+    268            EmberMfgSecurityStruct config;
+    269            EmberStatus status;
+    270          
+    271            if (emberCurrentCommand->name[0] == 'g') {
+   \   00000002   0x....             LDR.N    R0,??DataTable8
+   \   00000004   0x6800             LDR      R0,[R0, #+0]
+   \   00000006   0xB082             SUB      SP,SP,#+8
+   \   00000008   0x6800             LDR      R0,[R0, #+0]
+   \   0000000A   0x7800             LDRB     R0,[R0, #+0]
+   \   0000000C   0x2867             CMP      R0,#+103
+   \   0000000E   0xD103             BNE.N    ??getSetMfgToken_0
+    272              status = emberGetMfgSecurityConfig(&config);
+   \   00000010   0xA800             ADD      R0,SP,#+0
+   \   00000012   0x.... 0x....      BL       emberGetMfgSecurityConfig
+    273              if (status == EMBER_SUCCESS) {
+   \   00000016   0xBD13             POP      {R0,R1,R4,PC}
+    274                emberAfSecurityPrintln("EmberKeySettings: 0x%2X", config.keySettings);
+    275                emberAfSecurityPrintln("  Permissions: %p", 
+    276                                       ((config.keySettings & EMBER_KEY_PERMISSIONS_READING_ALLOWED)
+    277                                        ? "Reading Allowed"
+    278                                        : ((config.keySettings & EMBER_KEY_PERMISSIONS_HASHING_ALLOWED)
+    279                                           ? "Hashing only"
+    280                                           : "NONE")));
+    281              } else {
+    282                emberAfSecurityPrintln("Error: Failed to get config, status: 0x%X", status);
+    283              }
+    284            } else {
+    285              int32u magicNumber = emberUnsignedCommandArgument(0);
+   \                     ??getSetMfgToken_0: (+1)
+   \   00000018   0x2000             MOVS     R0,#+0
+   \   0000001A   0x.... 0x....      BL       emberUnsignedCommandArgument
+   \   0000001E   0x4604             MOV      R4,R0
+    286              config.keySettings = (EmberKeySettings)emberUnsignedCommandArgument(1);
+   \   00000020   0x2001             MOVS     R0,#+1
+   \   00000022   0x.... 0x....      BL       emberUnsignedCommandArgument
+   \   00000026   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+    287              status = emberSetMfgSecurityConfig(magicNumber, &config);
+   \   0000002A   0xA900             ADD      R1,SP,#+0
+   \   0000002C   0x4620             MOV      R0,R4
+   \   0000002E   0x.... 0x....      BL       emberSetMfgSecurityConfig
+    288            }
+    289          
+    290            if (status != EMBER_SUCCESS) {
+    291              emberAfSecurityPrintln("Failed: 0x%X", status);
+    292            }
+    293          }
+   \   00000032   0xBD13             POP      {R0,R1,R4,PC}    ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8:
+   \   00000000   0x........         DC32     emberCurrentCommand
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable8_1:
+   \   00000000   0x........         DC32     cliPreconfiguredLinkKey
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "get">`:
+   \   00000000   0x67 0x65          DC8 "get"
+   \              0x74 0x00    
+
+   \                                 In section .rodata, align 1, keep-with-next
+   \                     `?<Constant "">`:
+   \   00000000   0x00               DC8 ""
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "set">`:
+   \   00000000   0x73 0x65          DC8 "set"
+   \              0x74 0x00    
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "wv">`:
+   \   00000000   0x77 0x76          DC8 "wv"
+   \              0x00         
+   \   00000003   0x00               DC8 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "mfg-token">`:
+   \   00000000   0x6D 0x66          DC8 "mfg-token"
+   \              0x67 0x2D    
+   \              0x74 0x6F    
+   \              0x6B 0x65    
+   \              0x6E 0x00    
+   \   0000000A   0x00 0x00          DC8 0, 0
+    294          #endif
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   changeKeyCommand
+         0   -> emberCopyStringArgument
+         8   -> emberNetworkState
+      48   getOutgoingApsFrameCounter
+        48   -> emberGetKey
+      16   getSetMfgToken
+        16   -> emberGetMfgSecurityConfig
+        16   -> emberSetMfgSecurityConfig
+        16   -> emberUnsignedCommandArgument
+      48   printKeyInfo
+        48   -> emberGetKey
+        48   -> emberGetMfgSecurityConfig
+        48   -> halCommonMemSet
+        48   -> printKeyTable
+        48   -> printZigbeeKey
+      64   printKeyTable
+        64   -> emberAfGetKeyTableSize
+        64   -> emberGetKey
+        64   -> emberGetKeyTableEntry
+        64   -> printZigbeeKey
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       1  ?<Constant "">
+       4  ?<Constant "get">
+      12  ?<Constant "mfg-token">
+       4  ?<Constant "set">
+       4  ?<Constant "wv">
+       4  ??DataTable8
+       4  ??DataTable8_1
+      40  changeKeyCommand
+      32  cliPreconfiguredLinkKey
+          cliNetworkKey
+      24  emAfSecurityCommands
+      36  getOutgoingApsFrameCounter
+      52  getSetMfgToken
+      36  mfgToken
+      54  printKeyInfo
+      90  printKeyTable
+
+ 
+  32 bytes in section .data
+  85 bytes in section .rodata
+ 280 bytes in section .text
+ 
+ 280 bytes of CODE  memory
+  85 bytes of CONST memory
+  32 bytes of DATA  memory
+
+Errors: none
+Warnings: none

@@ -1,0 +1,858 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        18/Apr/2016  13:01:27
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\util\serial\ember-printf.c
+#    Command line =  
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\util\serial\ember-printf.c"
+#        -D SWITCH_1_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"ember-printf.c\"" -lC "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\" --diag_suppress Pa050 -o "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\" --debug --endian=little --cpu=Cortex-M3
+#        --no_path_in_file_macros --separate_cluster_for_initialized_variables
+#        -e --fpu=None --dlib_config "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        "D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\util\serial\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\"
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\ember-printf.lst
+#    Object file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\ember-printf.o
+#
+###############################################################################
+
+D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\util\serial\ember-printf.c
+      1          /**
+      2           * File: ember-printf.c
+      3           * Description: Minimalistic implementation of printf().
+      4           *
+      5           *
+      6           * Copyright 2014 by Silicon Labs.  All rights reserved.                   *80*
+      7           */
+      8          
+      9          #include PLATFORM_HEADER
+     10          #include "stack/include/ember-types.h"
+     11          #include "stack/include/error.h"
+     12          
+     13          //Host processors do not use Ember Message Buffers.
+     14          #ifndef EZSP_HOST
+     15            #include "stack/include/packet-buffer.h"
+     16          #endif
+     17          
+     18          #include "hal/hal.h"
+     19          #include "serial.h"
+     20          
+     21          #if CORTEXM3_EFM32_MICRO
+     22          #include "em_device.h"
+     23          #include "com.h"
+     24          #endif
+     25          #include "ember-printf.h"
+     26          
+     27          #include <stdarg.h>
+     28          
+     29          #ifdef EMBER_SERIAL_USE_STDIO
+     30          #include <stdio.h>
+     31          #endif //EMBER_SERIAL_USE_STDIO
+     32          
+     33          //=============================================================================
+     34          // Globals
+     35          
+     36          // --------------------------------
+     37          // A simple printf() implementation
+     38          // Supported format specifiers are:
+     39          //  %% - percent sign
+     40          //  %c - single byte character
+     41          //  %s - ram string
+     42          //  %p - flash string  (non-standard)
+     43          //  %u - 2-byte unsigned decimal
+     44          //  %d - 2-byte signed decimal
+     45          //  %x %2x %4x - 1, 2, 4 BYTE hex value (always 0 padded) (non-standard)
+     46          //    Non-standard behavior: Normally a number after a % is interpreted to be
+     47          //    a minimum character width, and the value is not zero padded unless
+     48          //    there is a zero before the minimum width value.
+     49          //    i.e. '%2x' for the int16u value 0xb prints " b", while '%02x' would print
+     50          //    "0b".
+     51          //    Ember assumes the number after the % and before the 'x' to be the number
+     52          //    of BYTES, and all hex values are left-justified zero padded.
+     53          // 
+     54          // A few macros and a function help make this readable:
+     55          //   - flush the local buffer to the output
+     56          //   - ensure that there is some room in the local buffer
+     57          //   - add a single byte to the local buffer
+     58          //   - convert a nibble to its ascii hex character
+     59          //   - convert an int16u to a decimal string
+     60          // Most of these only work within the emPrintfInternal() function.
+     61          
+     62          // Current champion is %4x which writes 8 bytes.  (%s and %p can write
+     63          // more, but they do their own overflow checks).
+     64          #if CORTEXM3_EFM32_MICRO
+     65          #define LOCAL_BUFFER_SIZE 64
+     66          #else
+     67          #define LOCAL_BUFFER_SIZE 16
+     68          #endif
+     69          #define MAX_SINGLE_COMMAND_BYTES 8
+     70          
+
+   \                                 In section .text, align 4, keep-with-next
+     71          static PGM int32u powers10[9] = {
+   \                     powers10:
+   \   00000000   0x3B9ACA00         DC32 1000000000, 100000000, 10000000, 1000000, 100000, 10000, 1000, 100
+   \              0x05F5E100   
+   \              0x00989680   
+   \              0x000F4240   
+   \              0x000186A0   
+   \              0x00002710   
+   \              0x000003E8   
+   \              0x00000064   
+   \   00000020   0x0000000A         DC32 10
+     72            1000000000,
+     73            100000000,
+     74            10000000,
+     75            1000000,
+     76            100000,
+     77            10000,
+     78            1000,
+     79            100,
+     80            10
+     81          };
+     82          
+     83          #define flushBuffer() \
+     84          do { count = localBufferPointer - localBuffer;     \
+     85               if (flushHandler(port, localBuffer, count) != EMBER_SUCCESS) \
+     86                 goto fail;                                  \
+     87               total += count;                               \
+     88               localBufferPointer = localBuffer;             \
+     89               (void)localBufferPointer;                     \
+     90          } while (FALSE)                                           
+     91          
+     92          #define addByte(byte) \
+     93          do { *(localBufferPointer++) = (byte); } while (FALSE)
+     94          
+     95          //=============================================================================
+     96          
+
+   \                                 In section .text, align 2, keep-with-next
+     97          int8u *emWriteHexInternal(int8u *charBuffer, int16u value, int8u charCount)
+     98          {
+   \                     emWriteHexInternal: (+1)
+   \   00000000   0xB570             PUSH     {R4-R6,LR}
+     99            int8u c = charCount;
+   \   00000002   0x4613             MOV      R3,R2
+    100            charBuffer += charCount;
+   \   00000004   0x1810             ADDS     R0,R2,R0
+   \   00000006   0xE002             B.N      ??emWriteHexInternal_0
+    101            for (; c; c--) {
+    102              int8u n = value & 0x0F;
+    103              value = value >> 4;
+    104              *(--charBuffer) = n + (n < 10
+    105                                     ? '0'
+    106                                     : 'A' - 10);
+   \                     ??emWriteHexInternal_1: (+1)
+   \   00000008   0x19A4             ADDS     R4,R4,R6
+   \   0000000A   0x702C             STRB     R4,[R5, #+0]
+   \   0000000C   0x1E5B             SUBS     R3,R3,#+1
+   \                     ??emWriteHexInternal_0: (+1)
+   \   0000000E   0xB2DB             UXTB     R3,R3
+   \   00000010   0xB14B             CBZ.N    R3,??emWriteHexInternal_2
+   \   00000012   0xF001 0x060F      AND      R6,R1,#0xF
+   \   00000016   0x0909             LSRS     R1,R1,#+4
+   \   00000018   0x1E45             SUBS     R5,R0,#+1
+   \   0000001A   0x4628             MOV      R0,R5
+   \   0000001C   0x2E0A             CMP      R6,#+10
+   \   0000001E   0xBFB4             ITE      LT 
+   \   00000020   0x2430             MOVLT    R4,#+48
+   \   00000022   0x2437             MOVGE    R4,#+55
+   \   00000024   0xE7F0             B.N      ??emWriteHexInternal_1
+    107            }
+    108            return charBuffer + charCount;
+   \                     ??emWriteHexInternal_2: (+1)
+   \   00000026   0x1810             ADDS     R0,R2,R0
+   \   00000028   0xBD70             POP      {R4-R6,PC}       ;; return
+    109          }
+    110          
+    111          
+    112          // This function will write a decimal ASCII string to buffer 
+    113          // containing the passed 'value'.  Includes negative sign, if applicable.
+    114          // Returns the number of bytes written.
+    115          
+    116          static int8u decimalStringWrite(int32s value, int8u* buffer)
+    117          {
+    118            int8u length = 0;
+    119          
+    120            // We introduce this variable to accomodate the actual value to be printed.
+    121            // This is necessary for handling the case in which we print -2147483648,
+    122            // since we need to flip the sign and an int32s can represent up to 2147483647
+    123            // while an int32s can represent an integer as big as 4294967295.
+    124            int32u printValue = (int32u)value;
+    125          
+    126            // If the most significant bit is set to 1, i.e., if value is negative.
+    127            if (value & 0x80000000L)
+    128            {
+    129              buffer[length++] = '-';
+    130          
+    131              // Since we are assigning to an int32u we can safetly flip the sign and get
+    132              // the absolute value.
+    133              printValue = -value;
+    134            }
+    135          
+    136            {
+    137              int8u i;
+    138              boolean printedLeadingNonZeroValue = FALSE;
+    139              // To prevent using 32-bit divide or modulus,
+    140              // since those operations are expensive on a 16-bit processor,
+    141              // we use subtraction and a constant array with powers of 10.
+    142              for (i = 0; i < 9; i++) {
+    143                int8u digit = 0;
+    144                while (printValue >= powers10[i]) {
+    145                  printValue -= powers10[i];
+    146                  digit++;
+    147                }
+    148                if (digit != 0 || printedLeadingNonZeroValue) {
+    149                  buffer[length++] = '0' + digit;
+    150                  printedLeadingNonZeroValue = TRUE;
+    151                }
+    152              }
+    153              buffer[length++] = '0' + printValue;
+    154          
+    155              return length;
+    156            }
+    157          }
+    158          
+    159          
+    160          // Returns number of characters written
+
+   \                                 In section .text, align 2, keep-with-next
+    161          int8u emPrintfInternal(emPrintfFlushHandler flushHandler, 
+    162                                 COM_Port_t port,
+    163                                 PGM_P string, 
+    164                                 va_list args)
+    165          {
+   \                     emPrintfInternal: (+1)
+   \   00000000   0xE92D 0x4FF2      PUSH     {R1,R4-R11,LR}
+   \   00000004   0xB088             SUB      SP,SP,#+32
+   \   00000006   0x4680             MOV      R8,R0
+    166            int8u localBuffer[LOCAL_BUFFER_SIZE + MAX_SINGLE_COMMAND_BYTES];
+    167            int8u *localBufferPointer = localBuffer;
+    168            int8u *localBufferLimit = localBuffer + LOCAL_BUFFER_SIZE;
+    169            int8u count;
+    170            int8u total = 0;
+    171            boolean stillInsideFormatSpecifier = FALSE;
+   \   00000008   0xA801             ADD      R0,SP,#+4
+   \   0000000A   0x4614             MOV      R4,R2
+   \   0000000C   0x4699             MOV      R9,R3
+   \   0000000E   0xAD01             ADD      R5,SP,#+4
+   \   00000010   0xF04F 0x0B00      MOV      R11,#+0
+   \   00000014   0x2700             MOVS     R7,#+0
+   \   00000016   0xF88D 0x0000      STRB     R0,[SP, #+0]
+   \   0000001A   0xE010             B.N      ??emPrintfInternal_0
+    172          
+    173            for (; *string; string++) {
+    174              int8u next = *string;
+    175              if (next != '%' && !(stillInsideFormatSpecifier))
+    176                addByte(next);
+    177              else {
+    178                if (stillInsideFormatSpecifier) {
+    179                  stillInsideFormatSpecifier = FALSE;
+    180                } else {
+    181                  string += 1;
+    182                }
+    183                switch (*string) {
+    184                case '%':
+    185                  // escape for printing "%"
+    186                  addByte('%');
+    187                  break;
+    188                case 'c':
+    189                  // character
+    190                  addByte(va_arg(args, unsigned int) & 0xFF);
+    191                  break;
+    192                case 'p': 
+    193                  // only avr needs to special-case the pgm handling, all other current
+    194                  //  platforms fall through to standard string handling.
+    195                  #ifdef AVR_ATMEGA
+    196                    {
+    197                    // flash string
+    198                    PGM_P arg = va_arg(args, PGM_P);
+    199                    while (TRUE) {
+    200                      int8u ch = *arg++;
+    201                      if (ch == '\0')
+    202                        break;
+    203                      *(localBufferPointer++) = ch;
+    204                      if (localBufferLimit <= localBufferPointer)
+    205                        flushBuffer();
+    206                    }
+    207                    break;
+    208                  }
+    209                  #endif
+    210                case 's': {
+    211                  // string
+    212                  int8u len;
+    213                  int8u *arg = va_arg(args, int8u *);
+    214                  flushBuffer();
+    215                  for (len=0; arg[len] != '\0'; len++) {};
+    216                  if (flushHandler(port, arg, len) != EMBER_SUCCESS)
+    217                    goto fail;
+    218                  total += len;
+    219                  break; }
+    220          
+    221                // Note: We don't support printing unsigned 32-bit values.
+    222                case 'l':         // signed 4-byte
+    223                case 'u':         // unsigned 2-byte
+    224                case 'd': {       // signed 2-byte
+    225                  int32s value;
+    226                  if (*string == 'l') {
+    227                    value = va_arg(args, long int);
+    228                  } else if (*string == 'u') { // Need when sizeof(int) != sizeof(int16u)
+    229                    value = va_arg(args, unsigned int);
+    230                  } else {
+    231                    value = va_arg(args, int);
+    232                  }
+    233                  localBufferPointer += decimalStringWrite(value, localBufferPointer);
+    234                  break;
+    235                }
+    236                case 'x':
+    237                case 'X': {
+    238                  // single hex byte (always prints 2 chars, ex: 0A)
+    239                  int8u data = va_arg(args, int);
+    240                 
+    241                  localBufferPointer = emWriteHexInternal(localBufferPointer, data, 2);
+    242                  break; }
+    243                
+    244                case '0':
+    245                case '1':
+    246                case '3':
+    247                case '5':
+    248                case '6':
+    249                case '7':
+    250                case '8':
+    251                case '9':
+    252                  // We don't support width specifiers, but we want to accept
+    253                  // them so they can be ignored and thus we are compatible with
+    254                  // code that tries to use them.
+    255          
+    256                case '2':
+    257                  // %2x only, 2 hex bytes (always prints 4 chars)
+    258                case '4':
+    259                  // %4x only, 4 hex bytes (always prints 8 chars)
+    260          
+    261                  stillInsideFormatSpecifier = TRUE;
+    262                  if (*(string + 1) == 'x' || *(string + 1) == 'X') {
+    263                    string++;
+    264                    stillInsideFormatSpecifier = FALSE;
+    265                    if (*(string - 1) == '2') {
+    266                      int16u data = va_arg(args, int);
+    267                      localBufferPointer = emWriteHexInternal(localBufferPointer, data, 4);
+    268                    } else if (*(string - 1) == '4') {
+    269                      int32u data = va_arg(args, int32u);
+    270                      // On the AVR at least, the code size is smaller if we limit the
+    271                      // emWriteHexInternal() code to 16-bit numbers and call it twice in
+    272                      // this case.  Other processors may have a different tradeoff.
+    273                      localBufferPointer = emWriteHexInternal(localBufferPointer, 
+    274                                                              (int16u) (data >> 16), 
+    275                                                              4);
+    276                      localBufferPointer = emWriteHexInternal(localBufferPointer, 
+    277                                                              (int16u) data, 
+    278                                                              4);
+    279                    } else {
+    280                      stillInsideFormatSpecifier = TRUE;
+   \                     ??emPrintfInternal_1: (+1)
+   \   0000001C   0x2701             MOVS     R7,#+1
+    281                      string--;
+   \   0000001E   0x1E64             SUBS     R4,R4,#+1
+    282                    }
+    283                  } 
+    284          
+    285                  break;
+    286                case '\0':
+    287                  goto done;
+    288                default: {
+    289                }
+    290                } //close switch.
+    291              }
+    292              if (localBufferLimit <= localBufferPointer)
+   \                     ??emPrintfInternal_2: (+1)
+   \   00000020   0xA805             ADD      R0,SP,#+20
+   \   00000022   0x4285             CMP      R5,R0
+   \   00000024   0xD30A             BCC.N    ??emPrintfInternal_3
+    293                flushBuffer();
+   \   00000026   0xF89D 0x0000      LDRB     R0,[SP, #+0]
+   \   0000002A   0x1A2E             SUBS     R6,R5,R0
+   \   0000002C   0x.... 0x....      BL       ?Subroutine0
+   \                     ??CrossCallReturnLabel_1: (+1)
+   \   00000030   0x2800             CMP      R0,#+0
+   \   00000032   0xD139             BNE.N    ??emPrintfInternal_4
+   \   00000034   0x44B3             ADD      R11,R6,R11
+   \   00000036   0xFA5F 0xFB8B      UXTB     R11,R11
+   \   0000003A   0xAD01             ADD      R5,SP,#+4
+   \                     ??emPrintfInternal_3: (+1)
+   \   0000003C   0x1C64             ADDS     R4,R4,#+1
+   \                     ??emPrintfInternal_0: (+1)
+   \   0000003E   0xF89D 0x0000      LDRB     R0,[SP, #+0]
+   \   00000042   0x1A2E             SUBS     R6,R5,R0
+   \   00000044   0x7820             LDRB     R0,[R4, #+0]
+   \   00000046   0x2800             CMP      R0,#+0
+   \   00000048   0xD00B             BEQ.N    ??emPrintfInternal_5
+   \   0000004A   0x2825             CMP      R0,#+37
+   \   0000004C   0xD003             BEQ.N    ??emPrintfInternal_6
+   \   0000004E   0xB917             CBNZ.N   R7,??emPrintfInternal_6
+   \                     ??emPrintfInternal_7: (+1)
+   \   00000050   0xF805 0x0B01      STRB     R0,[R5], #+1
+   \   00000054   0xE7E4             B.N      ??emPrintfInternal_2
+   \                     ??emPrintfInternal_6: (+1)
+   \   00000056   0x2F00             CMP      R7,#+0
+   \   00000058   0xBF14             ITE      NE 
+   \   0000005A   0x2700             MOVNE    R7,#+0
+   \   0000005C   0x1C64             ADDEQ    R4,R4,#+1
+   \   0000005E   0x7820             LDRB     R0,[R4, #+0]
+   \   00000060   0x0001             MOVS     R1,R0
+   \                     ??emPrintfInternal_5: (+1)
+   \   00000062   0xF000 0x808E      BEQ.W    ??emPrintfInternal_8
+   \   00000066   0xF1B0 0x0125      SUBS     R1,R0,#+37
+   \   0000006A   0xD013             BEQ.N    ??emPrintfInternal_9
+   \   0000006C   0x390B             SUBS     R1,R1,#+11
+   \   0000006E   0x2909             CMP      R1,#+9
+   \   00000070   0xD967             BLS.N    ??emPrintfInternal_10
+   \   00000072   0x3928             SUBS     R1,R1,#+40
+   \   00000074   0xD05C             BEQ.N    ??emPrintfInternal_11
+   \   00000076   0x390B             SUBS     R1,R1,#+11
+   \   00000078   0xD00E             BEQ.N    ??emPrintfInternal_12
+   \   0000007A   0x1E49             SUBS     R1,R1,#+1
+   \   0000007C   0xD02C             BEQ.N    ??emPrintfInternal_13
+   \   0000007E   0x3908             SUBS     R1,R1,#+8
+   \   00000080   0xD02A             BEQ.N    ??emPrintfInternal_13
+   \   00000082   0x1F09             SUBS     R1,R1,#+4
+   \   00000084   0xD00B             BEQ.N    ??emPrintfInternal_14
+   \   00000086   0x1EC9             SUBS     R1,R1,#+3
+   \   00000088   0xD009             BEQ.N    ??emPrintfInternal_14
+   \   0000008A   0x1E89             SUBS     R1,R1,#+2
+   \   0000008C   0xD024             BEQ.N    ??emPrintfInternal_13
+   \   0000008E   0x1EC9             SUBS     R1,R1,#+3
+   \   00000090   0xD04E             BEQ.N    ??emPrintfInternal_11
+   \   00000092   0xE7C5             B.N      ??emPrintfInternal_2
+   \                     ??emPrintfInternal_9: (+1)
+   \   00000094   0x2025             MOVS     R0,#+37
+   \   00000096   0xE7DB             B.N      ??emPrintfInternal_7
+   \                     ??emPrintfInternal_12: (+1)
+   \   00000098   0xF859 0x0B04      LDR      R0,[R9], #+4
+   \   0000009C   0xE7D8             B.N      ??emPrintfInternal_7
+   \                     ??emPrintfInternal_14: (+1)
+   \   0000009E   0xF859 0xAB04      LDR      R10,[R9], #+4
+   \   000000A2   0x.... 0x....      BL       ?Subroutine0
+   \                     ??CrossCallReturnLabel_0: (+1)
+   \   000000A6   0x2800             CMP      R0,#+0
+   \                     ??emPrintfInternal_4: (+1)
+   \   000000A8   0xD175             BNE.N    ??emPrintfInternal_15
+   \   000000AA   0x44B3             ADD      R11,R6,R11
+   \   000000AC   0xFA5F 0xFB8B      UXTB     R11,R11
+   \   000000B0   0xAD01             ADD      R5,SP,#+4
+   \   000000B2   0x2600             MOVS     R6,#+0
+   \   000000B4   0xE000             B.N      ??emPrintfInternal_16
+   \                     ??emPrintfInternal_17: (+1)
+   \   000000B6   0x1C76             ADDS     R6,R6,#+1
+   \                     ??emPrintfInternal_16: (+1)
+   \   000000B8   0xB2F6             UXTB     R6,R6
+   \   000000BA   0xF816 0x000A      LDRB     R0,[R6, R10]
+   \   000000BE   0x2800             CMP      R0,#+0
+   \   000000C0   0xD1F9             BNE.N    ??emPrintfInternal_17
+   \   000000C2   0xF89D 0x0020      LDRB     R0,[SP, #+32]
+   \   000000C6   0x4632             MOV      R2,R6
+   \   000000C8   0x4651             MOV      R1,R10
+   \   000000CA   0x47C0             BLX      R8
+   \   000000CC   0x2800             CMP      R0,#+0
+   \   000000CE   0xD162             BNE.N    ??emPrintfInternal_15
+   \   000000D0   0x44B3             ADD      R11,R6,R11
+   \   000000D2   0xFA5F 0xFB8B      UXTB     R11,R11
+   \   000000D6   0xE7A3             B.N      ??emPrintfInternal_2
+   \                     ??emPrintfInternal_13: (+1)
+   \   000000D8   0xF859 0x0B04      LDR      R0,[R9], #+4
+   \   000000DC   0x2100             MOVS     R1,#+0
+   \   000000DE   0x2800             CMP      R0,#+0
+   \   000000E0   0xD503             BPL.N    ??emPrintfInternal_18
+   \   000000E2   0x212D             MOVS     R1,#+45
+   \   000000E4   0x7029             STRB     R1,[R5, #+0]
+   \   000000E6   0x4240             RSBS     R0,R0,#+0
+   \   000000E8   0x2101             MOVS     R1,#+1
+   \                     ??emPrintfInternal_18: (+1)
+   \   000000EA   0x2300             MOVS     R3,#+0
+   \   000000EC   0x2200             MOVS     R2,#+0
+   \                     ??emPrintfInternal_19: (+1)
+   \   000000EE   0xF04F 0x0C00      MOV      R12,#+0
+   \   000000F2   0xE002             B.N      ??emPrintfInternal_20
+   \                     ??emPrintfInternal_21: (+1)
+   \   000000F4   0x1B80             SUBS     R0,R0,R6
+   \   000000F6   0xF10C 0x0C01      ADD      R12,R12,#+1
+   \                     ??emPrintfInternal_20: (+1)
+   \   000000FA   0x.... 0x....      ADR.W    R6,powers10
+   \   000000FE   0xF856 0x6022      LDR      R6,[R6, R2, LSL #+2]
+   \   00000102   0x42B0             CMP      R0,R6
+   \   00000104   0xD2F6             BCS.N    ??emPrintfInternal_21
+   \   00000106   0xEA43 0x060C      ORR      R6,R3,R12
+   \   0000010A   0xB2F6             UXTB     R6,R6
+   \   0000010C   0x2E00             CMP      R6,#+0
+   \   0000010E   0xD005             BEQ.N    ??emPrintfInternal_22
+   \   00000110   0xB2C9             UXTB     R1,R1
+   \   00000112   0xF10C 0x0330      ADD      R3,R12,#+48
+   \   00000116   0x554B             STRB     R3,[R1, R5]
+   \   00000118   0x1C49             ADDS     R1,R1,#+1
+   \   0000011A   0x2301             MOVS     R3,#+1
+   \                     ??emPrintfInternal_22: (+1)
+   \   0000011C   0x1C52             ADDS     R2,R2,#+1
+   \   0000011E   0x2A09             CMP      R2,#+9
+   \   00000120   0xDBE5             BLT.N    ??emPrintfInternal_19
+   \   00000122   0xB2C9             UXTB     R1,R1
+   \   00000124   0x3030             ADDS     R0,R0,#+48
+   \   00000126   0x5548             STRB     R0,[R1, R5]
+   \   00000128   0x1C48             ADDS     R0,R1,#+1
+   \   0000012A   0xB2C0             UXTB     R0,R0
+   \   0000012C   0x1945             ADDS     R5,R0,R5
+   \   0000012E   0xE777             B.N      ??emPrintfInternal_2
+   \                     ??emPrintfInternal_11: (+1)
+   \   00000130   0xF859 0x1B04      LDR      R1,[R9], #+4
+   \   00000134   0x2202             MOVS     R2,#+2
+   \   00000136   0xB2C9             UXTB     R1,R1
+   \                     ??emPrintfInternal_23: (+1)
+   \   00000138   0x4628             MOV      R0,R5
+   \                     ??emPrintfInternal_24: (+1)
+   \   0000013A   0x.... 0x....      BL       emWriteHexInternal
+   \   0000013E   0x4605             MOV      R5,R0
+   \                     ??emPrintfInternal_25: (+1)
+   \   00000140   0xE76E             B.N      ??emPrintfInternal_2
+   \                     ??emPrintfInternal_10: (+1)
+   \   00000142   0x7860             LDRB     R0,[R4, #+1]
+   \   00000144   0x2701             MOVS     R7,#+1
+   \   00000146   0x2878             CMP      R0,#+120
+   \   00000148   0xBF18             IT       NE 
+   \   0000014A   0x2858             CMPNE    R0,#+88
+   \   0000014C   0xD1F8             BNE.N    ??emPrintfInternal_25
+   \   0000014E   0x1C64             ADDS     R4,R4,#+1
+   \   00000150   0x2700             MOVS     R7,#+0
+   \   00000152   0xF814 0x0C01      LDRB     R0,[R4, #-1]
+   \   00000156   0x2832             CMP      R0,#+50
+   \   00000158   0xD104             BNE.N    ??emPrintfInternal_26
+   \   0000015A   0xF859 0x1B04      LDR      R1,[R9], #+4
+   \   0000015E   0x2204             MOVS     R2,#+4
+   \   00000160   0xB289             UXTH     R1,R1
+   \   00000162   0xE7E9             B.N      ??emPrintfInternal_23
+   \                     ??emPrintfInternal_26: (+1)
+   \   00000164   0x2834             CMP      R0,#+52
+   \   00000166   0xF47F 0xAF59      BNE.W    ??emPrintfInternal_1
+   \   0000016A   0xF859 0xAB04      LDR      R10,[R9], #+4
+   \   0000016E   0x2204             MOVS     R2,#+4
+   \   00000170   0xEA4F 0x411A      LSR      R1,R10,#+16
+   \   00000174   0x4628             MOV      R0,R5
+   \   00000176   0x.... 0x....      BL       emWriteHexInternal
+   \   0000017A   0x2204             MOVS     R2,#+4
+   \   0000017C   0xFA1F 0xF18A      UXTH     R1,R10
+   \   00000180   0xE7DB             B.N      ??emPrintfInternal_24
+    294            }
+    295            
+    296           done:
+    297            flushBuffer();
+   \                     ??emPrintfInternal_8: (+1)
+   \   00000182   0xB2F2             UXTB     R2,R6
+   \   00000184   0xF89D 0x0020      LDRB     R0,[SP, #+32]
+   \   00000188   0xA901             ADD      R1,SP,#+4
+   \   0000018A   0x47C0             BLX      R8
+   \   0000018C   0xB918             CBNZ.N   R0,??emPrintfInternal_15
+    298            return total;
+   \   0000018E   0xEB06 0x000B      ADD      R0,R6,R11
+   \   00000192   0xB2C0             UXTB     R0,R0
+   \   00000194   0xE000             B.N      ??emPrintfInternal_27
+    299          
+    300           fail:
+    301            return 0;
+   \                     ??emPrintfInternal_15: (+1)
+   \   00000196   0x2000             MOVS     R0,#+0
+   \                     ??emPrintfInternal_27: (+1)
+   \   00000198   0xB009             ADD      SP,SP,#+36
+   \   0000019A   0xE8BD 0x8FF0      POP      {R4-R11,PC}      ;; return
+    302          }
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine0: (+1)
+   \   00000000   0xF89D 0x0020      LDRB     R0,[SP, #+32]
+   \   00000004   0xB2F2             UXTB     R2,R6
+   \   00000006   0xA901             ADD      R1,SP,#+4
+   \   00000008   0x4740             BX       R8
+    303          
+    304          #if CORTEXM3_EFM32_MICRO
+    305          
+    306          EmberStatus emberSerialWriteHex(int8u port, int8u dataByte)
+    307          {
+    308            return COM_WriteHex((COM_Port_t) port, dataByte);
+    309          }
+    310          
+    311          EmberStatus emberSerialPrintCarriageReturn(int8u port)
+    312          {
+    313            return emberSerialPrintf(port, "\r\n");
+    314          }
+    315          
+    316          EmberStatus emberSerialPrintf(int8u port, PGM_P formatString, ...)
+    317          {
+    318            Ecode_t stat;
+    319            va_list ap;
+    320            va_start (ap, formatString);
+    321            stat = COM_PrintfVarArg((COM_Port_t) port, formatString, ap);
+    322            va_end (ap);
+    323            return stat;
+    324          }
+    325          
+    326          EmberStatus emberSerialPrintfLine(int8u port, PGM_P formatString, ...)
+    327          {
+    328            EmberStatus stat;
+    329            va_list ap;
+    330            va_start (ap, formatString);
+    331            stat = COM_PrintfVarArg((COM_Port_t) port, formatString, ap);
+    332            va_end (ap);
+    333            COM_Printf((COM_Port_t) port, "\r\n");
+    334            return stat;
+    335          }
+    336          EmberStatus emberSerialPrintfVarArg(int8u port, PGM_P formatString, va_list ap)
+    337          {
+    338            return COM_PrintfVarArg((COM_Port_t) port, formatString, ap);
+    339          }
+    340          
+    341          #else //CORTEXM3_EFM32_MICRO
+    342          
+
+   \                                 In section .text, align 2, keep-with-next
+    343          EmberStatus emberSerialWriteHex(int8u port, int8u dataByte)
+    344          {
+   \                     emberSerialWriteHex: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0xB082             SUB      SP,SP,#+8
+   \   00000004   0x4604             MOV      R4,R0
+    345            int8u hex[2];
+    346            emWriteHexInternal(hex, dataByte, 2);
+   \   00000006   0x2202             MOVS     R2,#+2
+   \   00000008   0xA800             ADD      R0,SP,#+0
+   \   0000000A   0x.... 0x....      BL       emWriteHexInternal
+    347            return emberSerialWriteData(port, hex, 2);
+   \   0000000E   0x2202             MOVS     R2,#+2
+   \   00000010   0xA900             ADD      R1,SP,#+0
+   \   00000012   0x4620             MOV      R0,R4
+   \   00000014   0x.... 0x....      BL       emberSerialWriteData
+   \   00000018   0xBD16             POP      {R1,R2,R4,PC}    ;; return
+    348          }
+    349          
+
+   \                                 In section .text, align 2, keep-with-next
+    350          EmberStatus emberSerialPrintCarriageReturn(int8u port)
+    351          {
+    352            return emberSerialPrintf(port, "\r\n");
+   \                     emberSerialPrintCarriageReturn: (+1)
+   \   00000000   0x....             ADR.N    R1,??DataTable3  ;; 0x0D, 0x0A, 0x00, 0x00
+   \   00000002   0x....             B.N      emberSerialPrintf
+    353          }
+    354          
+
+   \                                 In section .text, align 2, keep-with-next
+    355          EmberStatus emberSerialPrintfVarArg(int8u port, PGM_P formatString, va_list ap)
+    356          {
+   \                     emberSerialPrintfVarArg: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+    357             EmberStatus stat = EMBER_SUCCESS;
+    358             
+    359          #ifdef EMBER_SERIAL_USE_STDIO
+    360            if(!emPrintfInternal(emberSerialWriteData, port, formatString, ap)) {
+    361              stat = EMBER_ERR_FATAL;
+    362            }
+    363          #else //EMBER_SERIAL_USE_STDIO
+    364            
+    365            switch(emSerialPortModes[port]) {
+   \   00000002   0x....             LDR.N    R3,??DataTable3_1
+   \   00000004   0x5CC3             LDRB     R3,[R0, R3]
+   \   00000006   0x2400             MOVS     R4,#+0
+   \   00000008   0x2B01             CMP      R3,#+1
+   \   0000000A   0xD107             BNE.N    ??emberSerialPrintfVarArg_0
+    366          #ifdef EM_ENABLE_SERIAL_FIFO
+    367            case EMBER_SERIAL_FIFO: {
+    368              if(!emPrintfInternal(emberSerialWriteData, port, formatString, ap))
+   \   0000000C   0x4613             MOV      R3,R2
+   \   0000000E   0x460A             MOV      R2,R1
+   \   00000010   0x4601             MOV      R1,R0
+   \   00000012   0x....             LDR.N    R0,??DataTable3_2
+   \   00000014   0x.... 0x....      BL       emPrintfInternal
+   \   00000018   0xB900             CBNZ.N   R0,??emberSerialPrintfVarArg_0
+    369                stat = EMBER_ERR_FATAL;
+   \   0000001A   0x2401             MOVS     R4,#+1
+    370              break;
+    371            }
+    372          #endif
+    373          #ifdef EM_ENABLE_SERIAL_BUFFER
+    374            case EMBER_SERIAL_BUFFER: {
+    375              EmberMessageBuffer buff = emberAllocateStackBuffer();
+    376              if(buff == EMBER_NULL_MESSAGE_BUFFER) {
+    377                stat = EMBER_NO_BUFFERS;
+    378                break;
+    379              }
+    380              if(emPrintfInternal(emberAppendToLinkedBuffers,
+    381                                  buff,
+    382                                  formatString,
+    383                                  ap)) {
+    384                stat = emberSerialWriteBuffer(port,buff,0,emberMessageBufferLength(buff));
+    385              } else {
+    386                stat = EMBER_NO_BUFFERS;
+    387              }
+    388              // Refcounts may be manipulated in ISR if DMA used
+    389              ATOMIC( emberReleaseMessageBuffer(buff); )
+    390          
+    391              break;
+    392            }
+    393          #endif
+    394            default: {
+    395            }
+    396            } //close switch.
+    397          #endif //EMBER_SERIAL_USE_STDIO
+    398            return stat;
+   \                     ??emberSerialPrintfVarArg_0: (+1)
+   \   0000001C   0x4620             MOV      R0,R4
+   \   0000001E   0xBD10             POP      {R4,PC}          ;; return
+    399          }
+    400          
+
+   \                                 In section .text, align 2, keep-with-next
+    401          EmberStatus emberSerialPrintf(int8u port, PGM_P formatString, ...)
+    402          {
+   \                     emberSerialPrintf: (+1)
+   \   00000000   0xB40C             PUSH     {R2,R3}
+   \   00000002   0xB580             PUSH     {R7,LR}
+    403            EmberStatus stat;
+    404            va_list ap;
+    405            va_start (ap, formatString);
+   \   00000004   0xAA02             ADD      R2,SP,#+8
+    406            stat = emberSerialPrintfVarArg(port, formatString, ap);
+    407            va_end (ap);
+    408            return stat;
+   \   00000006   0x.... 0x....      BL       emberSerialPrintfVarArg
+   \   0000000A   0xBC02             POP      {R1}
+   \   0000000C   0xF85D 0xFB0C      LDR      PC,[SP], #+12    ;; return
+    409          }
+    410          
+
+   \                                 In section .text, align 2, keep-with-next
+    411          EmberStatus emberSerialPrintfLine(int8u port, PGM_P formatString, ...)
+    412          {
+   \                     emberSerialPrintfLine: (+1)
+   \   00000000   0xB40C             PUSH     {R2,R3}
+   \   00000002   0xB538             PUSH     {R3-R5,LR}
+   \   00000004   0x4604             MOV      R4,R0
+    413            EmberStatus stat;
+    414            va_list ap;
+    415            va_start (ap, formatString);
+   \   00000006   0xAA04             ADD      R2,SP,#+16
+    416            stat = emberSerialPrintfVarArg(port, formatString, ap);
+   \   00000008   0x.... 0x....      BL       emberSerialPrintfVarArg
+   \   0000000C   0x4605             MOV      R5,R0
+    417            va_end (ap);
+    418            emberSerialPrintCarriageReturn(port);
+   \   0000000E   0x4620             MOV      R0,R4
+   \   00000010   0x.... 0x....      BL       emberSerialPrintCarriageReturn
+    419            return stat;
+   \   00000014   0x4628             MOV      R0,R5
+   \   00000016   0xBC32             POP      {R1,R4,R5}
+   \   00000018   0xF85D 0xFB0C      LDR      PC,[SP], #+12    ;; return
+    420          }
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable3:
+   \   00000000   0x0D 0x0A          DC8      0x0D, 0x0A, 0x00, 0x00
+   \              0x00 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable3_1:
+   \   00000000   0x........         DC32     emSerialPortModes
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable3_2:
+   \   00000000   0x........         DC32     emberSerialWriteData
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "\\r\\n">`:
+   \   00000000   0x0D 0x0A          DC8 "\015\012"
+   \              0x00         
+   \   00000003   0x00               DC8 0
+    421          #endif //CORTEXM3_EFM32_MICRO
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      72   emPrintfInternal
+        72   -- Indirect call
+        72   -> emWriteHexInternal
+      16   emWriteHexInternal
+       0   emberSerialPrintCarriageReturn
+         0   -> emberSerialPrintf
+      16   emberSerialPrintf
+        16   -> emberSerialPrintfVarArg
+      24   emberSerialPrintfLine
+        24   -> emberSerialPrintCarriageReturn
+        24   -> emberSerialPrintfVarArg
+       8   emberSerialPrintfVarArg
+         8   -> emPrintfInternal
+      16   emberSerialWriteHex
+        16   -> emWriteHexInternal
+        16   -> emberSerialWriteData
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ?<Constant "\r\n">
+       4  ??DataTable3
+       4  ??DataTable3_1
+       4  ??DataTable3_2
+      10  ?Subroutine0
+     414  emPrintfInternal
+      42  emWriteHexInternal
+       4  emberSerialPrintCarriageReturn
+      16  emberSerialPrintf
+      28  emberSerialPrintfLine
+      32  emberSerialPrintfVarArg
+      26  emberSerialWriteHex
+      36  powers10
+
+ 
+   4 bytes in section .rodata
+ 620 bytes in section .text
+ 
+ 620 bytes of CODE  memory
+   4 bytes of CONST memory
+
+Errors: none
+Warnings: none

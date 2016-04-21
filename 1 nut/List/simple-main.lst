@@ -1,0 +1,106 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        18/Apr/2016  13:01:51
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\simple-main\simple-main.c
+#    Command line =  
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\simple-main\simple-main.c"
+#        -D SWITCH_1_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"simple-main.c\"" -lC "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\" --diag_suppress Pa050 -o "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\" --debug --endian=little --cpu=Cortex-M3
+#        --no_path_in_file_macros --separate_cluster_for_initialized_variables
+#        -e --fpu=None --dlib_config "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\simple-main\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\"
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\simple-main.lst
+#    Object file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\simple-main.o
+#
+###############################################################################
+
+D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\simple-main\simple-main.c
+      1          // *******************************************************************
+      2          // * simple-main.c
+      3          // *
+      4          // * This file provides a definition for main() for non-RTOS applications.
+      5          // *
+      6          // * Copyright 2014 Silicon Laboratories, Inc.                                 *80*
+      7          // *******************************************************************
+      8          
+      9          #include PLATFORM_HEADER
+     10          #include "app/framework/include/af.h"
+     11          
+
+   \                                 In section .text, align 2, keep-with-next
+     12          int main(MAIN_FUNCTION_PARAMETERS)
+     13          {
+   \                     main: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     14            halInit();
+   \   00000002   0x.... 0x....      BL       halInit
+     15            return emberAfMain(MAIN_FUNCTION_ARGUMENTS);
+   \   00000006   0xE8BD 0x4001      POP      {R0,LR}
+   \   0000000A   0x.... 0x....      B.W      emberAfMain
+     16          }
+     17          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   main
+         0   -> emberAfMain
+         8   -> halInit
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      14  main
+
+ 
+ 14 bytes in section .text
+ 
+ 14 bytes of CODE memory
+
+Errors: none
+Warnings: none

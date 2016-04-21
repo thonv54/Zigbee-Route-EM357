@@ -1,0 +1,448 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        18/Apr/2016  13:01:26
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\em_usbtimer.c
+#    Command line =  
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\em_usbtimer.c"
+#        -D SWITCH_1_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"em_usbtimer.c\"" -lC "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\" --diag_suppress Pa050 -o "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\" --debug --endian=little --cpu=Cortex-M3
+#        --no_path_in_file_macros --separate_cluster_for_initialized_variables
+#        -e --fpu=None --dlib_config "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\"
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\em_usbtimer.lst
+#    Object file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\em_usbtimer.o
+#
+###############################################################################
+
+D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\em_usbtimer.c
+      1          /***************************************************************************//**
+      2           * @file em_usbtimer.c
+      3           * @brief USB protocol stack library, timer API.
+      4           * @version 3.20.10
+      5           *******************************************************************************
+      6           * @section License
+      7           * <b>(C) Copyright 2014 Silicon Labs, http://www.silabs.com</b>
+      8           *******************************************************************************
+      9           *
+     10           * This file is licensed under the Silabs License Agreement. See the file
+     11           * "Silabs_License_Agreement.txt" for details. Before using this software for
+     12           * any purpose, you must agree to the terms of that agreement.
+     13           *
+     14           ******************************************************************************/
+     15          
+     16          #include PLATFORM_HEADER
+     17          #include "stack/include/ember.h"
+     18          #include "hal/hal.h"
+     19          
+     20          #if CORTEXM3_EM35X_USB
+     21          #include "em_usb.h"
+     22          #include "em_usbtypes.h"
+     23          #include "em_usbhal.h"
+     24          
+     25          /** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
+     26          
+     27          #define TMR1_VECNUM 16
+     28          #define TMR2_VECNUM 17
+     29          
+     30          #ifndef USB_TIMER
+     31          #define USB_TIMER USB_TIMER0
+     32          #endif
+     33          
+     34          #if ( USB_TIMER == USB_TIMER0 )
+     35            #define TMR_INT_MASK      INT_TIM1CFG
+     36            #define TMR_CR1           TIM1_CR1
+     37            #define TMR_CR2           TIM1_CR2
+     38            #define TMR_SMCR          TIM1_SMCR
+     39            #define TMR_EGR           TIM1_EGR
+     40            #define TMR_CCMR1         TIM1_CCMR1
+     41            #define TMR_CCMR2         TIM1_CCMR2
+     42            #define TMR_CCER          TIM1_CCER
+     43            #define TMR_CNT           TIM1_CNT
+     44            #define TMR_PSC           TIM1_PSC
+     45            #define TMR_ARR           TIM1_ARR
+     46            #define TMR_CCR1          TIM1_CCR1
+     47            #define TMR_CCR2          TIM1_CCR2
+     48            #define TMR_CCR3          TIM1_CCR3
+     49            #define TMR_CCR4          TIM1_CCR4
+     50            #define TMR_OR            TIM1_OR
+     51            #define TMR_INT_SRC       INT_TIM1FLAG
+     52            #define TMR_INT_MISSED    INT_TIM1MISS
+     53            #define TMR_VECNUM        TMR1_VECNUM
+     54            #define INT_TIM           INT_TIM1
+     55          #elif ( USB_TIMER == USB_TIMER1 )
+     56            #define TMR_INT_MASK      INT_TIM2CFG
+     57            #define TMR_CR1           TIM2_CR1
+     58            #define TMR_CR2           TIM2_CR2
+     59            #define TMR_SMCR          TIM2_SMCR
+     60            #define TMR_EGR           TIM2_EGR
+     61            #define TMR_CCMR1         TIM2_CCMR1
+     62            #define TMR_CCMR2         TIM2_CCMR2
+     63            #define TMR_CCER          TIM2_CCER
+     64            #define TMR_CNT           TIM2_CNT
+     65            #define TMR_PSC           TIM2_PSC
+     66            #define TMR_ARR           TIM2_ARR
+     67            #define TMR_CCR1          TIM2_CCR1
+     68            #define TMR_CCR2          TIM2_CCR2
+     69            #define TMR_CCR3          TIM2_CCR3
+     70            #define TMR_CCR4          TIM2_CCR4
+     71            #define TMR_OR            TIM2_OR
+     72            #define TMR_INT_SRC       INT_TIM2FLAG
+     73            #define TMR_INT_MISSED    INT_TIM2MISS
+     74            #define TMR_VECNUM        TMR2_VECNUM
+     75            #define INT_TIM           INT_TIM2
+     76          #else
+     77          #error "Illegal USB TIMER definition"
+     78          #endif
+     79          
+     80          
+     81          typedef struct _timer
+     82          {
+     83            uint32_t                  timeout;  /* Delta value relative to prev. timer */
+     84            struct _timer             *next;
+     85            USBTIMER_Callback_TypeDef callback;
+     86            bool                      running;
+     87          } USBTIMER_Timer_TypeDef;
+     88          
+     89          #if ( NUM_QTIMERS > 0 )
+     90          static USBTIMER_Timer_TypeDef timers[ NUM_QTIMERS ];
+     91          static USBTIMER_Timer_TypeDef *head = NULL;
+     92          #endif
+     93          
+     94          static uint32_t ticksPrMs, ticksPr1us, ticksPr10us, ticksPr100us;
+     95          
+     96          #if ( NUM_QTIMERS > 0 )
+     97          
+     98          static void TimerTick( void );
+     99          
+    100          void TIMER_IRQHandler( void )
+    101          {
+    102            if ( TMR_INT_SRC & INT_TIMCC1IF )
+    103            {
+    104              // clear compare interrupt flag
+    105              TMR_INT_SRC |= INT_TIMCC1IF_MASK;
+    106              //set compare register
+    107              TMR_CCR1 = TMR_CNT + ticksPrMs;
+    108              
+    109              TimerTick();
+    110            }
+    111          }
+    112          #endif /* ( NUM_QTIMERS > 0 ) */
+    113          
+    114          static void DelayTicks( uint16_t ticks )
+    115          {
+    116            uint16_t startTime;
+    117            volatile uint16_t now;
+    118          
+    119            if ( ticks )
+    120            {
+    121              startTime = TMR_CNT;
+    122              do
+    123              {
+    124                now = TMR_CNT;
+    125              } while ( (uint16_t)( now - startTime ) < ticks );
+    126            }
+    127          }
+    128          
+    129          /** @endcond */
+    130          
+    131          /** @addtogroup USB_COMMON
+    132           *  @{*/
+    133          
+    134          /***************************************************************************//**
+    135           * @brief
+    136           *   Active wait millisecond delay function. Can also be used inside
+    137           *   interrupt handlers.
+    138           *
+    139           * @param[in] msec
+    140           *   Number of milliseconds to wait.
+    141           ******************************************************************************/
+    142          void USBTIMER_DelayMs( uint32_t msec )
+    143          {
+    144            uint64_t totalTicks;
+    145          
+    146            totalTicks = (uint64_t)ticksPrMs * msec;
+    147            while ( totalTicks > 20000 )
+    148            {
+    149              DelayTicks( 20000 );
+    150              totalTicks -= 20000;
+    151            }
+    152            DelayTicks( (uint16_t)totalTicks );
+    153          }
+    154          
+    155          /***************************************************************************//**
+    156           * @brief
+    157           *   Active wait microsecond delay function. Can also be used inside
+    158           *   interrupt handlers.
+    159           *
+    160           * @param[in] usec
+    161           *   Number of microseconds to wait.
+    162           ******************************************************************************/
+    163          void USBTIMER_DelayUs( uint32_t usec )
+    164          {
+    165            uint64_t totalTicks;
+    166          
+    167            totalTicks = (uint64_t)ticksPr1us * usec;
+    168            if ( totalTicks == 0 )
+    169            {
+    170              usec /= 10;
+    171              totalTicks = (uint64_t)ticksPr10us * usec;
+    172          
+    173              if ( totalTicks == 0 )
+    174              {
+    175                usec /= 10;
+    176                totalTicks = (uint64_t)ticksPr100us * usec;
+    177              }
+    178            }
+    179          
+    180            while ( totalTicks > 60000 )
+    181            {
+    182              DelayTicks( 60000 );
+    183              totalTicks -= 60000;
+    184            }
+    185            DelayTicks( (uint16_t)totalTicks );
+    186          }
+    187          
+    188          /***************************************************************************//**
+    189           * @brief
+    190           *   Activate the hardware timer used to pace the 1 millisecond timer system.
+    191           *
+    192           * @details
+    193           *   Call this function whenever the HFPERCLK frequency is changed.
+    194           *   This function is initially called by HOST and DEVICE stack xxxx_Init()
+    195           *   functions.
+    196           ******************************************************************************/
+    197          void USBTIMER_Init( void )
+    198          {
+    199            uint32_t freq;
+    200            freq = halPeripheralClockHz();
+    201            ticksPrMs = ( freq + 500 ) / 1000;
+    202            ticksPr1us = ( freq + 500000 ) / 1000000;
+    203            ticksPr10us = ( freq + 50000 ) / 100000;
+    204            ticksPr100us = ( freq + 5000 ) / 10000;
+    205          
+    206          #if ( NUM_QTIMERS > 0 )
+    207            halRegisterRamVector(TMR_VECNUM, (int32u)TIMER_IRQHandler);
+    208            //set compare register
+    209            TMR_CCR1 = TMR_CNT + ticksPrMs;
+    210            // enable interrupt
+    211            TMR_INT_MASK = INT_TIMCC1IF;
+    212            INT_CFGSET = INT_TIM;  
+    213          #endif /* ( NUM_QTIMERS > 0 ) */
+    214            //configure channel as output
+    215            TMR_CCMR1 &= ~TIM_CC1S_MASK;
+    216            //enable output pin
+    217            TMR_CCER |= TIM_CC1E_MASK;
+    218            //set output mode to toggle output pin when counter reaches
+    219            //compare values, preload is not used and the output pin is
+    220            //active high.
+    221            TMR_CCMR1 &= ~TIM_OC1M_MASK;
+    222            TMR_CCMR1 |= (0x3 << TIM_OC1M_BIT);
+    223            //enable timer
+    224            TMR_CR1 |= TIM_CEN_MASK;
+    225          }
+    226          
+    227          #if ( NUM_QTIMERS > 0 ) || defined( DOXY_DOC_ONLY )
+    228          /***************************************************************************//**
+    229           * @brief
+    230           *   Start a timer.
+    231           *
+    232           * @details
+    233           *   If the timer is already running, it will be restarted with new timeout.
+    234           *
+    235           * @param[in] id
+    236           *   Timer id (0..).
+    237           *
+    238           * @param[in] timeout
+    239           *   Number of milliseconds before timer will elapse.
+    240           *
+    241           * @param[in] callback
+    242           *   Function to be called on timer elapse, ref. @ref USBTIMER_Callback_TypeDef.
+    243           ******************************************************************************/
+    244          void USBTIMER_Start( uint32_t id, uint32_t timeout,
+    245                               USBTIMER_Callback_TypeDef callback )
+    246          {
+    247            uint32_t accumulated;
+    248            USBTIMER_Timer_TypeDef *this, **last;
+    249          
+    250            
+    251            DECLARE_INTERRUPT_STATE;
+    252            DISABLE_INTERRUPTS();
+    253          
+    254            if ( timers[ id ].running )
+    255            {
+    256              USBTIMER_Stop( id );
+    257            }
+    258          
+    259            if ( timeout == 0 )
+    260            {
+    261              callback();
+    262              RESTORE_INTERRUPTS();
+    263              return;
+    264            }
+    265          
+    266            timers[ id ].running  = true;
+    267            timers[ id ].callback = callback;
+    268            timers[ id ].next     = NULL;
+    269          
+    270            if ( !head )                                        /* Queue empty ? */
+    271            {
+    272              timers[ id ].timeout  = timeout;
+    273              head = &timers[ id ];
+    274            }
+    275            else
+    276            {
+    277              this = head;
+    278              last = &head;
+    279              accumulated = 0;
+    280          
+    281              /* Do a sorted insert */
+    282              while ( this  )
+    283              {
+    284                if ( timeout < accumulated + this->timeout )  /* Insert before "this" ? */
+    285                {
+    286                  timers[ id ].timeout  = timeout - accumulated;
+    287                  timers[ id ].next     = this;
+    288                  *last = &timers[ id ];
+    289                  this->timeout -= timers[ id ].timeout;        /* Adjust timeout     */
+    290                  break;
+    291                }
+    292                else if ( this->next == NULL )                  /* At end of queue ?  */
+    293                {
+    294                  timers[ id ].timeout  = timeout - accumulated - this->timeout;
+    295                  this->next = &timers[ id ];
+    296                  break;
+    297                }
+    298                accumulated += this->timeout;
+    299                last = &this->next;
+    300                this = this->next;
+    301              }
+    302            }
+    303          
+    304            RESTORE_INTERRUPTS();
+    305          }
+    306          
+    307          /***************************************************************************//**
+    308           * @brief
+    309           *   Stop a timer.
+    310           *
+    311           * @param[in] id
+    312           *   Timer id (0..).
+    313           ******************************************************************************/
+    314          void USBTIMER_Stop( uint32_t id )
+    315          {
+    316            USBTIMER_Timer_TypeDef *this, **last;
+    317          
+    318            ATOMIC(
+    319            if ( head )                                           /* Queue empty ?    */
+    320            {
+    321              this = head;
+    322              last = &head;
+    323              timers[ id ].running = false;
+    324          
+    325              while ( this  )
+    326              {
+    327                if ( this == &timers[ id ] )                      /* Correct timer ?  */
+    328                {
+    329                  if ( this->next )
+    330                  {
+    331                    this->next->timeout += timers[ id ].timeout;  /* Adjust timeout   */
+    332                  }
+    333                  *last = this->next;
+    334                  break;
+    335                }
+    336                last = &this->next;
+    337                this = this->next;
+    338              }
+    339            }
+    340            ) //ATOMIC
+    341          }
+    342          #endif /* ( NUM_QTIMERS > 0 ) */
+    343          
+    344          /** @} (end addtogroup USB_COMMON) */
+    345          
+    346          #if ( NUM_QTIMERS > 0 )
+    347          /** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
+    348          
+    349          static void TimerTick( void )
+    350          {
+    351            USBTIMER_Callback_TypeDef cb;
+    352          
+    353            ATOMIC(
+    354            if ( head )
+    355            {
+    356              head->timeout--;
+    357          
+    358              while ( head  )
+    359              {
+    360                if ( head->timeout == 0 )
+    361                {
+    362                  cb = head->callback;
+    363                  head->running = false;
+    364                  head = head->next;
+    365                  /* The callback may place new items in the queue !!! */
+    366                  if ( cb )
+    367                  {
+    368                    (cb)();
+    369                  }
+    370                  continue; /* There might be more than one timeout pr. tick */
+    371                }
+    372                break;
+    373              }
+    374            }
+    375            ) //ATOMIC
+    376          }
+    377          /** @endcond */
+    378          #endif /* ( NUM_QTIMERS > 0 ) */
+    379          
+    380          #endif //CORTEXM3_EM35X_USB
+
+
+ 
+
+ 
+
+
+Errors: none
+Warnings: none

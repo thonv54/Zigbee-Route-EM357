@@ -1,0 +1,1837 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        31/Aug/2015  14:18:42
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\simple-metering-server\simple-metering-server.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\simple-metering-server\simple-metering-server.c
+#        -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"simple-metering-server.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\simple-metering-server\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\simple-metering-server.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\simple-metering-server.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\simple-metering-server\simple-metering-server.c
+      1          // *******************************************************************
+      2          // * ami-simple-metering.c
+      3          // *
+      4          // *
+      5          // * Copyright 2007 by Ember Corporation. All rights reserved.              *80*
+      6          // *******************************************************************
+      7          
+      8          // this file contains all the common includes for clusters in the util
+      9          #include "../../include/af.h"
+     10          #include "../../util/common.h"
+     11          #include "simple-metering-server.h"
+     12          #include "simple-metering-test.h"
+     13          
+     14          #define MAX_FAST_POLLING_PERIOD 15
+     15          #define PROVIDER_ID 0x44556677
+     16          
+     17          
+     18          // Bug: SE1P2-18
+     19          // Get Sampled Data Response does not send the maximum number of samples.
+     20          // If we want 5 samples(which we interpret as diff's between 2 consecutive sampling data points)
+     21          // we need 6 data points.
+     22          #define REAL_MAX_SAMPLES_PER_SESSION (EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_MAX_SAMPLES_PER_SESSION + 1)
+     23          
+     24          
+     25          // Bug:SE1P2-19
+     26          int32u minIssuerEventId = 0x00000000;
+     27          
+     28          typedef struct {
+     29            int8u endpoint;
+     30            int32u issuerEventId;
+     31            int32u startTime;
+     32            int16u sampleId;
+     33            int8u  sampleType;
+     34            int16u sampleRequestInterval;
+     35            int16u maxNumberOfSamples;
+     36            int8u  validSamples;
+     37            int8u  samples[6][REAL_MAX_SAMPLES_PER_SESSION];
+     38          } EmberAfSimpleMeteringClusterSamplingData;
+     39          
+     40          typedef struct SupplyEvent{
+     41            int8u srcEndpoint;
+     42            int8u destEndpoint;
+     43            int16u nodeId;
+     44            int32u providerId;
+     45            int32u issuerEventId;
+     46            int32u implementationDateTime;
+     47            int8u proposedSupplyStatus;
+     48          } EmberAfSimpleMeteringClusterSupplyEvent;
+     49          
+     50          
+     51          static int32u fastPollEndTimeUtcTable[EMBER_AF_SIMPLE_METERING_CLUSTER_SERVER_ENDPOINT_COUNT];
+     52          static EmberAfSimpleMeteringClusterSamplingData samplingData[EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_MAX_SAMPLING_SESSIONS];
+     53          static EmberAfSimpleMeteringClusterSupplyEvent changeSupply;
+     54          
+     55          EmberEventControl emberAfPluginSimpleMeteringServerSamplingEventControl;
+     56          EmberEventControl emberAfPluginSimpleMeteringServerSupplyEventControl;
+     57          
+     58          static int8u fastPolling = 0;
+     59          
+
+   \                                 In section .text, align 2, keep-with-next
+     60          void emAfToggleFastPolling(int8u enableFastPolling)
+     61          {
+     62            fastPolling = enableFastPolling;
+   \                     emAfToggleFastPolling: (+1)
+   \   00000000   0x.... 0x....      LDR.W    R1,??DataTable16
+   \   00000004   0x7008             STRB     R0,[R1, #+0]
+     63          }
+   \   00000006   0x4770             BX       LR               ;; return
+     64          
+     65          static void fastPollEndTimeUtcTableInit(void)
+     66          {
+     67            int8u i;
+     68            for (i = 0; i < EMBER_AF_SIMPLE_METERING_CLUSTER_SERVER_ENDPOINT_COUNT; i++) {
+     69              fastPollEndTimeUtcTable[i] = 0x00000000;
+     70            }
+     71          }
+     72          
+     73          static void samplingDataInit(void)
+     74          {
+     75            int8u i;
+     76            for(i = 0; i < EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_MAX_SAMPLING_SESSIONS; i++) {
+     77              samplingData[i].sampleId = 0xFFFF;
+     78              samplingData[i].validSamples = 0x00;
+     79            }
+     80          }
+     81          
+
+   \                                 In section .text, align 2, keep-with-next
+     82          static int8u findSamplingSession(int16u sampleId)
+     83          {
+     84            int8u i;
+     85            for(i = 0; i < EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_MAX_SAMPLING_SESSIONS; i++) {
+   \                     findSamplingSession: (+1)
+   \   00000000   0x2100             MOVS     R1,#+0
+   \   00000002   0x.... 0x....      LDR.W    R2,??DataTable16_1
+     86              if(samplingData[i].sampleId == sampleId)
+   \                     ??findSamplingSession_0: (+1)
+   \   00000006   0x233C             MOVS     R3,#+60
+   \   00000008   0xFB03 0x2301      MLA      R3,R3,R1,R2
+   \   0000000C   0x899B             LDRH     R3,[R3, #+12]
+   \   0000000E   0x4283             CMP      R3,R0
+   \   00000010   0xD101             BNE.N    ??findSamplingSession_1
+     87                return i;
+   \   00000012   0x4608             MOV      R0,R1
+   \   00000014   0x4770             BX       LR
+     88            }
+   \                     ??findSamplingSession_1: (+1)
+   \   00000016   0x1C49             ADDS     R1,R1,#+1
+   \   00000018   0xB2C9             UXTB     R1,R1
+   \   0000001A   0x2905             CMP      R1,#+5
+   \   0000001C   0xDBF3             BLT.N    ??findSamplingSession_0
+     89            return 0xFF;
+   \   0000001E   0x20FF             MOVS     R0,#+255
+   \   00000020   0x4770             BX       LR               ;; return
+     90          }
+     91          
+     92          static int8u findSamplingSessionByEventId(int32u issuerEventId)
+     93          {
+     94            int8u i;
+     95            for(i = 0; i < EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_MAX_SAMPLING_SESSIONS; i++) {
+     96              if(samplingData[i].issuerEventId == issuerEventId)
+     97                return i;
+     98            }
+     99            return 0xFF;
+    100          }
+
+   \                                 In section .text, align 2, keep-with-next
+    101          void emberAfSimpleMeteringClusterServerInitCallback(int8u endpoint) 
+    102          {
+   \                     emberAfSimpleMeteringClusterServerInitCallback: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0x4604             MOV      R4,R0
+    103            emAfTestMeterInit(endpoint);
+   \   00000004   0x.... 0x....      BL       emAfTestMeterInit
+    104            fastPollEndTimeUtcTableInit();
+   \   00000008   0x.... 0x....      LDR.W    R1,??DataTable16
+   \   0000000C   0x2000             MOVS     R0,#+0
+   \   0000000E   0x6048             STR      R0,[R1, #+4]
+    105            samplingDataInit();
+   \                     ??emberAfSimpleMeteringClusterServerInitCallbac_0: (+1)
+   \   00000010   0x213C             MOVS     R1,#+60
+   \   00000012   0x.... 0x....      LDR.W    R2,??DataTable16_1
+   \   00000016   0xFB01 0x2100      MLA      R1,R1,R0,R2
+   \   0000001A   0xF64F 0x72FF      MOVW     R2,#+65535
+   \   0000001E   0x818A             STRH     R2,[R1, #+12]
+   \   00000020   0x1C40             ADDS     R0,R0,#+1
+   \   00000022   0x2200             MOVS     R2,#+0
+   \   00000024   0x750A             STRB     R2,[R1, #+20]
+   \   00000026   0x2805             CMP      R0,#+5
+   \   00000028   0xDBF2             BLT.N    ??emberAfSimpleMeteringClusterServerInitCallbac_0
+    106            emberAfScheduleServerTick(endpoint,
+    107                                      ZCL_SIMPLE_METERING_CLUSTER_ID,
+    108                                      MILLISECOND_TICKS_PER_SECOND);
+   \   0000002A   0x....             B.N      ?Subroutine0
+    109          }
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine0: (+1)
+   \   00000000   0x4620             MOV      R0,R4
+   \   00000002   0xE8BD 0x4010      POP      {R4,LR}
+   \   00000006   0xF44F 0x6280      MOV      R2,#+1024
+   \   0000000A   0xF240 0x7102      MOVW     R1,#+1794
+   \   0000000E   0x.... 0x....      B.W      emberAfScheduleServerTick
+    110          
+
+   \                                 In section .text, align 2, keep-with-next
+    111          void emberAfSimpleMeteringClusterServerTickCallback(int8u endpoint) 
+    112          {
+   \                     emberAfSimpleMeteringClusterServerTickCallback: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0x4604             MOV      R4,R0
+    113            emAfTestMeterTick(endpoint); //run test module
+   \   00000004   0x.... 0x....      BL       emAfTestMeterTick
+    114            emberAfScheduleServerTick(endpoint,
+    115                                      ZCL_SIMPLE_METERING_CLUSTER_ID,
+    116                                      MILLISECOND_TICKS_PER_SECOND);
+   \   00000008                      REQUIRE ?Subroutine0
+   \   00000008                      ;; // Fall through to label ?Subroutine0
+    117          }
+    118          
+
+   \                                 In section .text, align 2, keep-with-next
+    119          boolean emberAfSimpleMeteringClusterGetProfileCallback(int8u intervalChannel,
+    120                                                                 int32u endTime,
+    121                                                                 int8u numberOfPeriods)
+    122          {
+    123            return emAfTestMeterGetProfiles(intervalChannel, endTime, numberOfPeriods);
+   \                     emberAfSimpleMeteringClusterGetProfileCallback: (+1)
+   \   00000000   0x.... 0x....      B.W      emAfTestMeterGetProfiles
+    124          }
+    125          
+
+   \                                 In section .text, align 2, keep-with-next
+    126          boolean emberAfSimpleMeteringClusterRequestFastPollModeCallback(int8u fastPollUpdatePeriod, 
+    127                                                                          int8u duration) 
+    128          {
+   \                     emberAfSimpleMeteringClusterRequestFastPollModeCallback: (+1)
+   \   00000000   0xE92D 0x4FFE      PUSH     {R1-R11,LR}
+    129            int8u endpoint;
+    130            int8u ep;
+    131            int8u appliedUpdateRate;
+    132            EmberStatus status;
+    133            int8u fastPollingUpdateAttribute;
+    134          
+    135            if(!fastPolling) {
+   \   00000004   0x.... 0x....      LDR.W    R9,??DataTable16
+   \   00000008   0x4605             MOV      R5,R0
+   \   0000000A   0xF899 0x0000      LDRB     R0,[R9, #+0]
+   \   0000000E   0x460C             MOV      R4,R1
+   \   00000010   0xB918             CBNZ.N   R0,??emberAfSimpleMeteringClusterRequestFastPollMo_0
+    136              emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_UNSUP_CLUSTER_COMMAND);
+   \   00000012   0x2081             MOVS     R0,#+129
+   \   00000014   0x.... 0x....      BL       emberAfSendImmediateDefaultResponse
+    137              return TRUE;
+   \   00000018   0xE040             B.N      ??emberAfSimpleMeteringClusterRequestFastPollMo_1
+    138            }
+    139            endpoint = emberAfCurrentEndpoint();
+   \                     ??emberAfSimpleMeteringClusterRequestFastPollMo_0: (+1)
+   \   0000001A   0x.... 0x....      LDR.W    R0,??DataTable16_2
+   \   0000001E   0x6800             LDR      R0,[R0, #+0]
+   \   00000020   0x6800             LDR      R0,[R0, #+0]
+   \   00000022   0xF890 0xA005      LDRB     R10,[R0, #+5]
+    140            ep = emberAfFindClusterServerEndpointIndex(endpoint,
+    141                                                             ZCL_SIMPLE_METERING_CLUSTER_ID);
+   \   00000026   0xF240 0x7802      MOVW     R8,#+1794
+   \   0000002A   0x4641             MOV      R1,R8
+   \   0000002C   0x4650             MOV      R0,R10
+   \   0000002E   0x.... 0x....      BL       emberAfFindClusterServerEndpointIndex
+   \   00000032   0x4683             MOV      R11,R0
+    142            
+    143            appliedUpdateRate = fastPollUpdatePeriod;
+   \   00000034   0x462E             MOV      R6,R5
+    144          
+    145            if (ep == 0xFF) {
+   \   00000036   0xF1BB 0x0FFF      CMP      R11,#+255
+   \   0000003A   0xBF08             IT       EQ 
+    146              emberAfSimpleMeteringClusterPrintln("Invalid endpoint %x", emberAfCurrentEndpoint());
+    147              return FALSE;
+   \   0000003C   0x2000             MOVEQ    R0,#+0
+   \   0000003E   0xD02E             BEQ.N    ??emberAfSimpleMeteringClusterRequestFastPollMo_2
+    148            }
+    149          
+    150            status = emberAfReadServerAttribute(endpoint,
+    151                                                ZCL_SIMPLE_METERING_CLUSTER_ID,
+    152                                                ZCL_FAST_POLL_UPDATE_PERIOD_ATTRIBUTE_ID,
+    153                                                (int8u *)&fastPollingUpdateAttribute,
+    154                                                sizeof(fastPollingUpdateAttribute));
+    155          
+    156            if(status == EMBER_SUCCESS) {
+   \   00000040   0x2001             MOVS     R0,#+1
+   \   00000042   0x9000             STR      R0,[SP, #+0]
+   \   00000044   0x....             ADR.N    R7,??DataTable12  ;; 0x75, 0x77, 0x00, 0x00
+   \   00000046   0xAB02             ADD      R3,SP,#+8
+   \   00000048   0x220B             MOVS     R2,#+11
+   \   0000004A   0x4641             MOV      R1,R8
+   \   0000004C   0x4650             MOV      R0,R10
+   \   0000004E   0x.... 0x....      BL       emberAfReadServerAttribute
+   \   00000052   0xB978             CBNZ.N   R0,??emberAfSimpleMeteringClusterRequestFastPollMo_3
+    157              if(fastPollUpdatePeriod < fastPollingUpdateAttribute) {
+   \   00000054   0xF89D 0x0008      LDRB     R0,[SP, #+8]
+   \   00000058   0x4285             CMP      R5,R0
+   \   0000005A   0xBF38             IT       CC 
+    158                appliedUpdateRate = fastPollingUpdateAttribute;
+   \   0000005C   0x4606             MOVCC    R6,R0
+    159                emberAfSimpleMeteringClusterPrintln("Applying fast Poll rate %x ep %u",appliedUpdateRate,ep);
+    160              }
+    161            } else {
+    162              emberAfSimpleMeteringClusterPrintln("Reading fast Poll Attribute failed. ep %u  status %x",ep,status);
+    163              emberAfFillCommandSimpleMeteringClusterRequestFastPollModeResponse(0, 
+    164                                                                                 0);
+    165              emberAfSendResponse();
+    166              return TRUE;
+    167            }
+    168          
+    169            if (emberAfGetCurrentTime() > fastPollEndTimeUtcTable[ep]) {
+   \   0000005E   0x.... 0x....      BL       emberAfGetCurrentTime
+   \   00000062   0xEB09 0x058B      ADD      R5,R9,R11, LSL #+2
+   \   00000066   0x6869             LDR      R1,[R5, #+4]
+   \   00000068   0x4281             CMP      R1,R0
+   \   0000006A   0xD20D             BCS.N    ??emberAfSimpleMeteringClusterRequestFastPollMo_4
+    170              duration = duration > MAX_FAST_POLLING_PERIOD ? MAX_FAST_POLLING_PERIOD : duration;
+   \   0000006C   0x2C10             CMP      R4,#+16
+   \   0000006E   0xDB05             BLT.N    ??emberAfSimpleMeteringClusterRequestFastPollMo_5
+   \   00000070   0x240F             MOVS     R4,#+15
+   \   00000072   0xE003             B.N      ??emberAfSimpleMeteringClusterRequestFastPollMo_5
+   \                     ??emberAfSimpleMeteringClusterRequestFastPollMo_3: (+1)
+   \   00000074   0x2000             MOVS     R0,#+0
+   \   00000076   0x9001             STR      R0,[SP, #+4]
+   \   00000078   0x9000             STR      R0,[SP, #+0]
+   \   0000007A   0xE008             B.N      ??emberAfSimpleMeteringClusterRequestFastPollMo_6
+    171              fastPollEndTimeUtcTable[ep] = emberAfGetCurrentTime() + (duration * 60);
+   \                     ??emberAfSimpleMeteringClusterRequestFastPollMo_5: (+1)
+   \   0000007C   0x.... 0x....      BL       emberAfGetCurrentTime
+   \   00000080   0x213C             MOVS     R1,#+60
+   \   00000082   0xFB01 0x0004      MLA      R0,R1,R4,R0
+   \   00000086   0x6068             STR      R0,[R5, #+4]
+    172              emberAfSimpleMeteringClusterPrintln("Starting fast polling for %u minutes  End Time 0x%4x,current Time 0x%4x",duration,fastPollEndTimeUtcTable[ep],emberAfGetCurrentTime());
+    173            } else {
+    174              emberAfSimpleMeteringClusterPrintln("Fast polling mode currently active. ep %u fastPollEndTimeUtcTable[%u] 0x%4x current Time 0x%4x ",ep,ep,fastPollEndTimeUtcTable[ep],emberAfGetCurrentTime());
+    175            }
+    176            emberAfFillCommandSimpleMeteringClusterRequestFastPollModeResponse(appliedUpdateRate, 
+    177                                                                               fastPollEndTimeUtcTable[ep]);
+   \                     ??emberAfSimpleMeteringClusterRequestFastPollMo_4: (+1)
+   \   00000088   0x6868             LDR      R0,[R5, #+4]
+   \   0000008A   0x9001             STR      R0,[SP, #+4]
+   \   0000008C   0x9600             STR      R6,[SP, #+0]
+   \                     ??emberAfSimpleMeteringClusterRequestFastPollMo_6: (+1)
+   \   0000008E   0x463B             MOV      R3,R7
+   \   00000090   0x2203             MOVS     R2,#+3
+   \   00000092   0x4641             MOV      R1,R8
+   \   00000094   0x.... 0x....      BL       ??Subroutine6_0
+    178            emberAfSendResponse();
+   \                     ??CrossCallReturnLabel_13: (+1)
+   \   00000098   0x.... 0x....      BL       emberAfSendResponse
+    179            return TRUE;
+   \                     ??emberAfSimpleMeteringClusterRequestFastPollMo_1: (+1)
+   \   0000009C   0x2001             MOVS     R0,#+1
+   \                     ??emberAfSimpleMeteringClusterRequestFastPollMo_2: (+1)
+   \   0000009E   0xE8BD 0x8FFE      POP      {R1-R11,PC}      ;; return
+    180          }
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine6: (+1)
+   \   00000000   0x9000             STR      R0,[SP, #+0]
+   \                     ??Subroutine6_0: (+1)
+   \   00000002   0x2009             MOVS     R0,#+9
+   \   00000004   0x.... 0x....      B.W      emberAfFillExternalBuffer
+    181          
+
+   \                                 In section .text, align 2, keep-with-next
+    182          void emberAfSimpleMeteringClusterServerDefaultResponseCallback(int8u endpoint,
+    183                                                                         int8u commandId,
+    184                                                                         EmberAfStatus status)
+    185          {
+    186            if(commandId == ZCL_REMOVE_MIRROR_COMMAND_ID &&
+    187               status != EMBER_ZCL_STATUS_SUCCESS){
+    188              emberAfSimpleMeteringClusterPrintln("Mirror remove FAILED status 0x%x",status);
+    189            }
+    190          }
+   \                     emberAfSimpleMeteringClusterServerDefaultResponseCallback: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+    191          
+    192          
+
+   \                                 In section .text, align 2, keep-with-next
+    193          boolean emberAfSimpleMeteringClusterGetSampledDataCallback(int16u sampleId,
+    194                                                                     int32u earliestSampleTime,
+    195                                                                     int8u sampleType,
+    196                                                                     int16u numberOfSamples)
+    197          {
+   \                     emberAfSimpleMeteringClusterGetSampledDataCallback: (+1)
+   \   00000000   0xB5F0             PUSH     {R4-R7,LR}
+   \   00000002   0x461C             MOV      R4,R3
+   \   00000004   0xB085             SUB      SP,SP,#+20
+    198            int8u i;
+    199            emberAfSimpleMeteringClusterPrintln("sampleId %u earliestSampleTime %u sampleType %u numberOfSamples %u",sampleId,earliestSampleTime,sampleType,numberOfSamples);
+    200            for(i = 0; i < EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_MAX_SAMPLING_SESSIONS; i++) {
+   \   00000006   0x2600             MOVS     R6,#+0
+   \   00000008   0xF64F 0x73FF      MOVW     R3,#+65535
+    201              int8u j;
+    202              int32u diff;
+    203              if(samplingData[i].sampleId == sampleId &&
+    204                samplingData[i].sampleId < 0xFFFF &&
+    205                 samplingData[i].startTime <= earliestSampleTime &&
+    206                 samplingData[i].sampleType == sampleType) {
+   \                     ??emberAfSimpleMeteringClusterGetSampledDataCal_0: (+1)
+   \   0000000C   0x253C             MOVS     R5,#+60
+   \   0000000E   0x.... 0x....      LDR.W    R7,??DataTable16_1
+   \   00000012   0xFB05 0x7506      MLA      R5,R5,R6,R7
+   \   00000016   0x89AF             LDRH     R7,[R5, #+12]
+   \   00000018   0x4287             CMP      R7,R0
+   \   0000001A   0xD141             BNE.N    ??emberAfSimpleMeteringClusterGetSampledDataCal_1
+   \   0000001C   0x429F             CMP      R7,R3
+   \   0000001E   0xD03F             BEQ.N    ??emberAfSimpleMeteringClusterGetSampledDataCal_1
+   \   00000020   0x68AF             LDR      R7,[R5, #+8]
+   \   00000022   0x42B9             CMP      R1,R7
+   \   00000024   0xD33C             BCC.N    ??emberAfSimpleMeteringClusterGetSampledDataCal_1
+   \   00000026   0x7BAF             LDRB     R7,[R5, #+14]
+   \   00000028   0x4297             CMP      R7,R2
+   \   0000002A   0xD139             BNE.N    ??emberAfSimpleMeteringClusterGetSampledDataCal_1
+    207          
+    208                //If we have only one sample data point or lesser, we don't have enough information
+    209                //for even one sample.
+    210                if(samplingData[i].validSamples <= 1)
+   \   0000002C   0x7D28             LDRB     R0,[R5, #+20]
+   \   0000002E   0x2802             CMP      R0,#+2
+   \   00000030   0xDB3A             BLT.N    ??emberAfSimpleMeteringClusterGetSampledDataCal_2
+    211                  goto kickout;
+    212          
+    213                //Bug SE1P2-19: Use the max field from the client.
+    214          
+    215                if(numberOfSamples > samplingData[i].validSamples - 1){
+   \   00000032   0x1E41             SUBS     R1,R0,#+1
+   \   00000034   0x42A1             CMP      R1,R4
+   \   00000036   0xBFB8             IT       LT 
+    216                  numberOfSamples = samplingData[i].validSamples - 1;
+   \   00000038   0x181C             ADDLT    R4,R3,R0
+    217                }
+    218          
+    219                emberAfFillExternalBuffer((ZCL_CLUSTER_SPECIFIC_COMMAND \
+    220                                     | ZCL_FRAME_CONTROL_SERVER_TO_CLIENT), \
+    221                                    ZCL_SIMPLE_METERING_CLUSTER_ID, \
+    222                                    ZCL_GET_SAMPLED_DATA_RESPONSE_COMMAND_ID, \
+    223                                    "vwuvv", \
+    224                                    samplingData[i].sampleId, \
+    225                                    samplingData[i].startTime, \
+    226                                    samplingData[i].sampleType, \
+    227                                    samplingData[i].sampleRequestInterval, \
+    228                                    numberOfSamples);
+   \   0000003A   0xB2A4             UXTH     R4,R4
+   \   0000003C   0x9404             STR      R4,[SP, #+16]
+   \   0000003E   0x2207             MOVS     R2,#+7
+   \   00000040   0x8A28             LDRH     R0,[R5, #+16]
+   \   00000042   0x.... 0x....      ADR.W    R3,`?<Constant "vwuvv">`
+   \   00000046   0x9003             STR      R0,[SP, #+12]
+   \   00000048   0xF240 0x7102      MOVW     R1,#+1794
+   \   0000004C   0x7BA8             LDRB     R0,[R5, #+14]
+   \   0000004E   0x9002             STR      R0,[SP, #+8]
+   \   00000050   0x68A8             LDR      R0,[R5, #+8]
+   \   00000052   0x9001             STR      R0,[SP, #+4]
+   \   00000054   0x89A8             LDRH     R0,[R5, #+12]
+   \   00000056   0x.... 0x....      BL       ?Subroutine6
+    229          
+    230          
+    231                emberAfSimpleMeteringClusterPrintln("numberOfSamples 0x%2x", numberOfSamples);
+    232          
+    233          
+    234          
+    235                
+    236                for(j = 0; j < numberOfSamples; j++) {
+   \                     ??CrossCallReturnLabel_15: (+1)
+   \   0000005A   0x2600             MOVS     R6,#+0
+   \   0000005C   0xE01B             B.N      ??emberAfSimpleMeteringClusterGetSampledDataCal_3
+    237                  int32u b = (samplingData[i].samples[j+1][3] << 24) | (samplingData[i].samples[j+1][2] << 16) | (samplingData[i].samples[j+1][1] << 8) | (samplingData[i].samples[j+1][0] << 0);
+    238                  int32u a = (samplingData[i].samples[j][3] << 24) | (samplingData[i].samples[j][2] << 16) | (samplingData[i].samples[j][1] << 8) | (samplingData[i].samples[j][0] << 0);
+    239          
+    240                  diff = b - a;
+    241                  emberAfPutInt24uInResp(diff);
+   \                     ??emberAfSimpleMeteringClusterGetSampledDataCal_4: (+1)
+   \   0000005E   0x2006             MOVS     R0,#+6
+   \   00000060   0xFB00 0x5006      MLA      R0,R0,R6,R5
+   \   00000064   0x7F42             LDRB     R2,[R0, #+29]
+   \   00000066   0x7F81             LDRB     R1,[R0, #+30]
+   \   00000068   0x7DC3             LDRB     R3,[R0, #+23]
+   \   0000006A   0x0412             LSLS     R2,R2,#+16
+   \   0000006C   0xEA42 0x6101      ORR      R1,R2,R1, LSL #+24
+   \   00000070   0x7F02             LDRB     R2,[R0, #+28]
+   \   00000072   0xEA41 0x2102      ORR      R1,R1,R2, LSL #+8
+   \   00000076   0x7EC2             LDRB     R2,[R0, #+27]
+   \   00000078   0x4311             ORRS     R1,R2,R1
+   \   0000007A   0x7E02             LDRB     R2,[R0, #+24]
+   \   0000007C   0x041B             LSLS     R3,R3,#+16
+   \   0000007E   0xEA43 0x6202      ORR      R2,R3,R2, LSL #+24
+   \   00000082   0x7D83             LDRB     R3,[R0, #+22]
+   \   00000084   0x7D40             LDRB     R0,[R0, #+21]
+   \   00000086   0xEA42 0x2203      ORR      R2,R2,R3, LSL #+8
+   \   0000008A   0x4310             ORRS     R0,R0,R2
+   \   0000008C   0x1A08             SUBS     R0,R1,R0
+   \   0000008E   0x.... 0x....      BL       emberAfPutInt24uInResp
+    242                  emberAfSimpleMeteringClusterPrintln("index %u numberOfSamples %u diff %u",j,numberOfSamples,diff);
+    243                }
+   \   00000092   0x1C76             ADDS     R6,R6,#+1
+   \   00000094   0xB2F6             UXTB     R6,R6
+   \                     ??emberAfSimpleMeteringClusterGetSampledDataCal_3: (+1)
+   \   00000096   0x42A6             CMP      R6,R4
+   \   00000098   0xDBE1             BLT.N    ??emberAfSimpleMeteringClusterGetSampledDataCal_4
+    244                emberAfSendResponse();
+   \   0000009A   0x.... 0x....      BL       emberAfSendResponse
+    245                return TRUE;
+   \   0000009E   0xE006             B.N      ??emberAfSimpleMeteringClusterGetSampledDataCal_5
+    246              }    
+    247            }
+   \                     ??emberAfSimpleMeteringClusterGetSampledDataCal_1: (+1)
+   \   000000A0   0x1C76             ADDS     R6,R6,#+1
+   \   000000A2   0xB2F6             UXTB     R6,R6
+   \   000000A4   0x2E05             CMP      R6,#+5
+   \   000000A6   0xDBB1             BLT.N    ??emberAfSimpleMeteringClusterGetSampledDataCal_0
+    248          
+    249            kickout:
+    250            emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_NOT_FOUND);
+   \                     ??emberAfSimpleMeteringClusterGetSampledDataCal_2: (+1)
+   \   000000A8   0x208B             MOVS     R0,#+139
+   \   000000AA   0x.... 0x....      BL       emberAfSendImmediateDefaultResponse
+    251            return TRUE;
+   \                     ??emberAfSimpleMeteringClusterGetSampledDataCal_5: (+1)
+   \   000000AE   0x2001             MOVS     R0,#+1
+   \   000000B0   0xB005             ADD      SP,SP,#+20
+   \   000000B2   0xBDF0             POP      {R4-R7,PC}       ;; return
+    252          }
+    253          
+
+   \                                 In section .text, align 2, keep-with-next
+    254          int16u emberAfPluginSimpleMeteringServerStartSampling(int16u requestedSampleId,
+    255                                                                int32u issuerEventId,
+    256                                                                int32u startSamplingTime,
+    257                                                                int8u sampleType,
+    258                                                                int16u sampleRequestInterval,
+    259                                                                int16u maxNumberOfSamples,
+    260                                                                int8u endpoint)
+    261          {
+   \                     emberAfPluginSimpleMeteringServerStartSampling: (+1)
+   \   00000000   0xE92D 0x47FC      PUSH     {R2-R10,LR}
+   \   00000004   0x4605             MOV      R5,R0
+    262            int32u delay;
+    263            int32u currentTime;
+    264            static int16u nextSampleId = 0x0001;
+    265            int16u sampleId;
+    266            int8u index;
+    267          
+    268          
+    269            emberAfSimpleMeteringClusterPrintln("StartSampling: requestedSampleId %u issuerEventId %u startSamplingTime %u sampleType %u sampleRequestInterval %u maxNumberOfSamples %u endpoint %u",requestedSampleId,issuerEventId,startSamplingTime,sampleType,sampleRequestInterval,maxNumberOfSamples,endpoint);
+    270          
+    271          
+    272          
+    273            // Find an unused sampling session table entry
+    274            index = findSamplingSession(0xFFFF);
+   \   00000006   0xF64F 0x77FF      MOVW     R7,#+65535
+   \   0000000A   0x460E             MOV      R6,R1
+   \   0000000C   0x4614             MOV      R4,R2
+   \   0000000E   0x4699             MOV      R9,R3
+   \   00000010   0x4638             MOV      R0,R7
+   \   00000012   0x.... 0x....      BL       findSamplingSession
+   \   00000016   0x4680             MOV      R8,R0
+    275            if (index == 0xFF) {
+   \   00000018   0xF1B8 0x0FFF      CMP      R8,#+255
+   \   0000001C   0xD006             BEQ.N    ??emberAfPluginSimpleMeteringServerStartSamplin_0
+    276              emberAfSimpleMeteringClusterPrintln("ERR: No available entries in sampling session table");
+    277              return 0xFFFF;
+    278            }
+    279          
+    280            // if the caller requested a specific sampleId then check to make sure it's
+    281            // not already in use.
+    282            if (requestedSampleId != 0xFFFF) {
+   \   0000001E   0x42BD             CMP      R5,R7
+   \   00000020   0xD006             BEQ.N    ??emberAfPluginSimpleMeteringServerStartSamplin_1
+    283              if (findSamplingSession(requestedSampleId) != 0xFF) {
+   \   00000022   0x4628             MOV      R0,R5
+   \   00000024   0x.... 0x....      BL       findSamplingSession
+   \   00000028   0x28FF             CMP      R0,#+255
+   \   0000002A   0xD018             BEQ.N    ??emberAfPluginSimpleMeteringServerStartSamplin_2
+    284                emberAfSimpleMeteringClusterPrintln("ERR: requested sampleId already in use");
+    285                return 0xFFFF;
+   \                     ??emberAfPluginSimpleMeteringServerStartSamplin_0: (+1)
+   \   0000002C   0x4638             MOV      R0,R7
+   \   0000002E   0xE038             B.N      ??emberAfPluginSimpleMeteringServerStartSamplin_3
+    286              } else {
+    287                sampleId = requestedSampleId;
+    288              }
+    289            } else {
+   \                     ??emberAfPluginSimpleMeteringServerStartSamplin_1: (+1)
+   \   00000030   0x.... 0x....      LDR.W    R0,??DataTable16_3
+   \   00000034   0x8805             LDRH     R5,[R0, #+0]
+   \   00000036   0xF64F 0x7AFE      MOVW     R10,#+65534
+    290              sampleId = nextSampleId;
+    291              while (findSamplingSession(sampleId) != 0xFF) {
+   \                     ??emberAfPluginSimpleMeteringServerStartSamplin_4: (+1)
+   \   0000003A   0x1C6F             ADDS     R7,R5,#+1
+   \   0000003C   0xB2AD             UXTH     R5,R5
+   \   0000003E   0x4628             MOV      R0,R5
+   \   00000040   0x.... 0x....      BL       findSamplingSession
+   \   00000044   0x28FF             CMP      R0,#+255
+   \   00000046   0xD004             BEQ.N    ??emberAfPluginSimpleMeteringServerStartSamplin_5
+    292                sampleId = (sampleId == 0xFFFE) ? 1 : (sampleId + 1);
+   \   00000048   0x4555             CMP      R5,R10
+   \   0000004A   0xBF14             ITE      NE 
+   \   0000004C   0x463D             MOVNE    R5,R7
+   \   0000004E   0x2501             MOVEQ    R5,#+1
+   \   00000050   0xE7F3             B.N      ??emberAfPluginSimpleMeteringServerStartSamplin_4
+    293              }
+    294              nextSampleId = (sampleId == 0xFFFE) ? 1 : (sampleId + 1);
+   \                     ??emberAfPluginSimpleMeteringServerStartSamplin_5: (+1)
+   \   00000052   0x4555             CMP      R5,R10
+   \   00000054   0xBF08             IT       EQ 
+   \   00000056   0x2701             MOVEQ    R7,#+1
+   \   00000058   0x.... 0x....      LDR.W    R0,??DataTable16_3
+   \   0000005C   0x8007             STRH     R7,[R0, #+0]
+    295            }
+    296          
+    297            samplingData[index].sampleId = sampleId;
+   \                     ??emberAfPluginSimpleMeteringServerStartSamplin_2: (+1)
+   \   0000005E   0x203C             MOVS     R0,#+60
+   \   00000060   0xFB00 0xF108      MUL      R1,R0,R8
+   \   00000064   0x.... 0x....      LDR.W    R2,??DataTable16_1
+   \   00000068   0x188B             ADDS     R3,R1,R2
+   \   0000006A   0x819D             STRH     R5,[R3, #+12]
+    298            samplingData[index].issuerEventId = issuerEventId;
+   \   0000006C   0x605E             STR      R6,[R3, #+4]
+    299            samplingData[index].startTime = startSamplingTime;
+   \   0000006E   0x609C             STR      R4,[R3, #+8]
+    300            samplingData[index].sampleType = sampleType;
+   \   00000070   0xF883 0x900E      STRB     R9,[R3, #+14]
+    301            samplingData[index].sampleRequestInterval = sampleRequestInterval;
+   \   00000074   0x980A             LDR      R0,[SP, #+40]
+   \   00000076   0x8218             STRH     R0,[R3, #+16]
+   \   00000078   0x980B             LDR      R0,[SP, #+44]
+    302          
+    303            //This is a hardcoded limit in EmberAfSimpleMeteringClusterSamplingData.
+    304            if(maxNumberOfSamples > REAL_MAX_SAMPLES_PER_SESSION) {
+   \   0000007A   0x2807             CMP      R0,#+7
+   \   0000007C   0xBFA8             IT       GE 
+    305              maxNumberOfSamples = REAL_MAX_SAMPLES_PER_SESSION;
+   \   0000007E   0x2006             MOVGE    R0,#+6
+    306            }
+    307            samplingData[index].maxNumberOfSamples = maxNumberOfSamples;
+   \   00000080   0x8258             STRH     R0,[R3, #+18]
+    308            samplingData[index].endpoint = endpoint;
+   \   00000082   0x980C             LDR      R0,[SP, #+48]
+   \   00000084   0x5488             STRB     R0,[R1, R2]
+    309          
+    310            currentTime = emberAfGetCurrentTime();
+   \   00000086   0x.... 0x....      BL       emberAfGetCurrentTime
+    311            if(startSamplingTime < currentTime) startSamplingTime = currentTime;
+   \   0000008A   0x4284             CMP      R4,R0
+   \   0000008C   0xBF38             IT       CC 
+   \   0000008E   0x4604             MOVCC    R4,R0
+    312            delay = startSamplingTime - currentTime;
+    313            emberEventControlSetDelayMS(emberAfPluginSimpleMeteringServerSamplingEventControl,
+    314                                        (delay*1000));
+   \   00000090   0x1A20             SUBS     R0,R4,R0
+   \   00000092   0xF44F 0x717A      MOV      R1,#+1000
+   \   00000096   0x4341             MULS     R1,R1,R0
+   \   00000098   0x.... 0x....      LDR.W    R0,??DataTable16_4
+   \   0000009C   0x.... 0x....      BL       emEventControlSetDelayMS
+    315            return sampleId;
+   \   000000A0   0x4628             MOV      R0,R5
+   \                     ??emberAfPluginSimpleMeteringServerStartSamplin_3: (+1)
+   \   000000A2   0xE8BD 0x87F6      POP      {R1,R2,R4-R10,PC}  ;; return
+    316          }
+
+   \                                 In section .data, align 2
+   \                     ??nextSampleId:
+   \   00000000   0x0001             DC16 1
+    317          
+
+   \                                 In section .text, align 2, keep-with-next
+    318          boolean emberAfSimpleMeteringClusterStartSamplingCallback(int32u issuerEventId,
+    319                                                                    int32u startSamplingTime,
+    320                                                                    int8u sampleType,
+    321                                                                    int16u sampleRequestInterval,
+    322                                                                    int16u maxNumberOfSamples)
+    323          {
+   \                     emberAfSimpleMeteringClusterStartSamplingCallback: (+1)
+   \   00000000   0xB570             PUSH     {R4-R6,LR}
+    324          
+    325            static int8u firstIssuerId = 0;
+    326          
+    327            // Bug: SE1P2-19
+    328            // Issuer Eventid should not be ignored. We accept *anything* for the first time.
+    329            // After that, we only accept values greater than the max id received so far(which
+    330            // should be the last valid issuerId received).
+    331            if(firstIssuerId == 0) {
+   \   00000002   0x.... 0x....      LDR.W    R4,??DataTable16_5
+   \   00000006   0x7825             LDRB     R5,[R4, #+0]
+   \   00000008   0xB084             SUB      SP,SP,#+16
+   \   0000000A   0xB91D             CBNZ.N   R5,??emberAfSimpleMeteringClusterStartSamplingCall_0
+    332              minIssuerEventId = issuerEventId;
+    333              firstIssuerId = 1;
+   \   0000000C   0x2601             MOVS     R6,#+1
+   \   0000000E   0x4605             MOV      R5,R0
+   \   00000010   0x7026             STRB     R6,[R4, #+0]
+   \   00000012   0xE008             B.N      ??emberAfSimpleMeteringClusterStartSamplingCall_1
+    334            } else if(issuerEventId <= minIssuerEventId && startSamplingTime != 0xFFFFFFFF) {
+   \                     ??emberAfSimpleMeteringClusterStartSamplingCall_0: (+1)
+   \   00000014   0x6865             LDR      R5,[R4, #+4]
+   \   00000016   0x4285             CMP      R5,R0
+   \   00000018   0xD304             BCC.N    ??emberAfSimpleMeteringClusterStartSamplingCall_2
+   \   0000001A   0xF111 0x0F01      CMN      R1,#+1
+   \   0000001E   0xD001             BEQ.N    ??emberAfSimpleMeteringClusterStartSamplingCall_2
+    335              emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_FAILURE);
+   \   00000020   0x2001             MOVS     R0,#+1
+   \   00000022   0xE01E             B.N      ??emberAfSimpleMeteringClusterStartSamplingCall_3
+    336              emberAfSimpleMeteringClusterPrintln("Rejecting StartSamplingCallback issuerEventId %u minIssuerEventId %u",issuerEventId,minIssuerEventId);
+    337              return TRUE;
+    338            } else {
+    339              minIssuerEventId = issuerEventId;
+   \                     ??emberAfSimpleMeteringClusterStartSamplingCall_2: (+1)
+   \   00000024   0x4605             MOV      R5,R0
+   \                     ??emberAfSimpleMeteringClusterStartSamplingCall_1: (+1)
+   \   00000026   0x6065             STR      R5,[R4, #+4]
+    340            }
+    341          
+    342            // Bug: SE1P2-17
+    343            // StartSampling Event ID field is ignored by the metering server
+    344            //Special time reserved to cancel a startSampling Request.
+    345            if(startSamplingTime == 0xFFFFFFFF) {
+   \   00000028   0xF64F 0x74FF      MOVW     R4,#+65535
+   \   0000002C   0xF111 0x0F01      CMN      R1,#+1
+   \   00000030   0xD11A             BNE.N    ??emberAfSimpleMeteringClusterStartSamplingCall_4
+    346              int8u eventIndex = findSamplingSessionByEventId(issuerEventId);
+   \   00000032   0x2100             MOVS     R1,#+0
+   \   00000034   0x223C             MOVS     R2,#+60
+   \   00000036   0x.... 0x....      LDR.W    R3,??DataTable16_1
+   \                     ??emberAfSimpleMeteringClusterStartSamplingCall_5: (+1)
+   \   0000003A   0xFB02 0x3501      MLA      R5,R2,R1,R3
+   \   0000003E   0x686D             LDR      R5,[R5, #+4]
+   \   00000040   0x4285             CMP      R5,R0
+   \   00000042   0xD004             BEQ.N    ??emberAfSimpleMeteringClusterStartSamplingCall_6
+   \   00000044   0x1C49             ADDS     R1,R1,#+1
+   \   00000046   0xB2C9             UXTB     R1,R1
+   \   00000048   0x2905             CMP      R1,#+5
+   \   0000004A   0xDBF6             BLT.N    ??emberAfSimpleMeteringClusterStartSamplingCall_5
+   \   0000004C   0xE001             B.N      ??emberAfSimpleMeteringClusterStartSamplingCall_7
+    347              //Event not found.
+    348              if(eventIndex == 0xFF) {
+   \                     ??emberAfSimpleMeteringClusterStartSamplingCall_6: (+1)
+   \   0000004E   0x29FF             CMP      R1,#+255
+   \   00000050   0xD101             BNE.N    ??emberAfSimpleMeteringClusterStartSamplingCall_8
+    349                emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_NOT_FOUND);
+   \                     ??emberAfSimpleMeteringClusterStartSamplingCall_7: (+1)
+   \   00000052   0x208B             MOVS     R0,#+139
+   \   00000054   0xE005             B.N      ??emberAfSimpleMeteringClusterStartSamplingCall_3
+    350                return TRUE;
+    351              } else {
+    352                samplingData[eventIndex].sampleId = 0xFFFF;
+   \                     ??emberAfSimpleMeteringClusterStartSamplingCall_8: (+1)
+   \   00000056   0xFB02 0x3001      MLA      R0,R2,R1,R3
+    353                samplingData[eventIndex].validSamples = 0x00;
+   \   0000005A   0x2100             MOVS     R1,#+0
+   \   0000005C   0x8184             STRH     R4,[R0, #+12]
+   \   0000005E   0x7501             STRB     R1,[R0, #+20]
+    354                emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
+   \   00000060   0x2000             MOVS     R0,#+0
+   \                     ??emberAfSimpleMeteringClusterStartSamplingCall_3: (+1)
+   \   00000062   0x.... 0x....      BL       emberAfSendImmediateDefaultResponse
+    355                return TRUE;
+   \   00000066   0xE017             B.N      ??emberAfSimpleMeteringClusterStartSamplingCall_9
+    356              }
+    357            }
+    358          
+    359            int16u sampleId = emberAfPluginSimpleMeteringServerStartSampling(0xFFFF,
+    360                                                                             issuerEventId,
+    361                                                                             startSamplingTime,
+    362                                                                             sampleType,
+    363                                                                             sampleRequestInterval,
+    364                                                                             maxNumberOfSamples,
+    365                                                                             emberAfCurrentEndpoint());
+   \                     ??emberAfSimpleMeteringClusterStartSamplingCall_4: (+1)
+   \   00000068   0x.... 0x....      LDR.W    R5,??DataTable16_2
+   \   0000006C   0x682D             LDR      R5,[R5, #+0]
+   \   0000006E   0x682D             LDR      R5,[R5, #+0]
+   \   00000070   0x796D             LDRB     R5,[R5, #+5]
+   \   00000072   0x9300             STR      R3,[SP, #+0]
+   \   00000074   0x9502             STR      R5,[SP, #+8]
+   \   00000076   0x4613             MOV      R3,R2
+   \   00000078   0x9D08             LDR      R5,[SP, #+32]
+   \   0000007A   0x9501             STR      R5,[SP, #+4]
+   \   0000007C   0x460A             MOV      R2,R1
+   \   0000007E   0x4601             MOV      R1,R0
+   \   00000080   0x4620             MOV      R0,R4
+   \   00000082   0x.... 0x....      BL       emberAfPluginSimpleMeteringServerStartSampling
+    366            emberAfFillCommandSimpleMeteringClusterStartSamplingResponse(sampleId);
+   \   00000086   0x9000             STR      R0,[SP, #+0]
+   \   00000088   0x....             ADR.N    R3,??DataTable15  ;; "v"
+   \   0000008A   0x220D             MOVS     R2,#+13
+   \   0000008C   0xF240 0x7102      MOVW     R1,#+1794
+   \   00000090   0x.... 0x....      BL       ??Subroutine6_0
+    367            emberAfSendResponse();
+   \                     ??CrossCallReturnLabel_12: (+1)
+   \   00000094   0x.... 0x....      BL       emberAfSendResponse
+    368            return TRUE;
+   \                     ??emberAfSimpleMeteringClusterStartSamplingCall_9: (+1)
+   \   00000098   0x2001             MOVS     R0,#+1
+   \   0000009A   0xB004             ADD      SP,SP,#+16
+   \   0000009C   0xBD70             POP      {R4-R6,PC}       ;; return
+    369          }
+
+   \                                 In section .bss, align 4
+   \                     ??firstIssuerId:
+   \   00000000                      DS8 1
+   \   00000001                      DS8 3
+   \                     minIssuerEventId:
+   \   00000004                      DS8 4
+
+   \                                 In section .bss, align 4
+   \                     fastPolling:
+   \   00000000                      DS8 1
+   \   00000001                      DS8 3
+   \   00000004                      DS8 4
+
+   \                                 In section .bss, align 4
+   \                     samplingData:
+   \   00000000                      DS8 300
+
+   \                                 In section .bss, align 4
+   \                     changeSupply:
+   \   00000000                      DS8 20
+   \                     emberAfPluginSimpleMeteringServerSupplyEventControl:
+   \   00000014                      DS8 8
+
+   \                                 In section .bss, align 4
+   \                     emberAfPluginSimpleMeteringServerSamplingEventControl:
+   \   00000000                      DS8 8
+    370          
+
+   \                                 In section .text, align 2, keep-with-next
+    371          void emberAfPluginSimpleMeteringServerSamplingEventHandler(void)
+    372          {
+   \                     emberAfPluginSimpleMeteringServerSamplingEventHandler: (+1)
+   \   00000000   0xB5F0             PUSH     {R4-R7,LR}
+    373            int8u i;
+    374            EmberAfAttributeType dataType;
+    375            EmberStatus status;
+    376            emberEventControlSetInactive(emberAfPluginSimpleMeteringServerSamplingEventControl);
+   \   00000002   0x.... 0x....      LDR.W    R4,??DataTable16_4
+    377          
+    378            // Now let's adjust the summation
+    379            for(i = 0; i < EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_MAX_SAMPLING_SESSIONS; i++) {
+   \   00000006   0x.... 0x....      LDR.W    R6,??DataTable16_1
+   \   0000000A   0x2000             MOVS     R0,#+0
+   \   0000000C   0xB085             SUB      SP,SP,#+20
+   \   0000000E   0x7020             STRB     R0,[R4, #+0]
+   \   00000010   0x2500             MOVS     R5,#+0
+    380              if(samplingData[i].startTime <= emberAfGetCurrentTime() &&
+    381                 samplingData[i].validSamples <= samplingData[i].maxNumberOfSamples &&
+    382                 samplingData[i].sampleId < 0xFFFF) {
+   \                     ??emberAfPluginSimpleMeteringServerSamplingEven_0: (+1)
+   \   00000012   0x.... 0x....      BL       emberAfGetCurrentTime
+   \   00000016   0x213C             MOVS     R1,#+60
+   \   00000018   0xFB01 0xFC05      MUL      R12,R1,R5
+   \   0000001C   0xEB0C 0x0706      ADD      R7,R12,R6
+   \   00000020   0x68B9             LDR      R1,[R7, #+8]
+   \   00000022   0x4288             CMP      R0,R1
+   \   00000024   0xBF22             ITTT     CS 
+   \   00000026   0x8A78             LDRHCS   R0,[R7, #+18]
+   \   00000028   0x7D39             LDRBCS   R1,[R7, #+20]
+   \   0000002A   0x4288             CMPCS    R0,R1
+   \   0000002C   0xD321             BCC.N    ??emberAfPluginSimpleMeteringServerSamplingEven_1
+   \   0000002E   0x89B8             LDRH     R0,[R7, #+12]
+   \   00000030   0xF64F 0x71FF      MOVW     R1,#+65535
+   \   00000034   0x4288             CMP      R0,R1
+   \   00000036   0xD01C             BEQ.N    ??emberAfPluginSimpleMeteringServerSamplingEven_1
+    383                status = emberAfReadAttribute(samplingData[i].endpoint,
+    384                                              ZCL_SIMPLE_METERING_CLUSTER_ID,
+    385                                              ZCL_CURRENT_SUMMATION_DELIVERED_ATTRIBUTE_ID,
+    386                                              CLUSTER_MASK_SERVER,
+    387                                              samplingData[i].samples[samplingData[i].validSamples],
+    388                                              6,
+    389                                              &dataType);
+    390                if(status == EMBER_SUCCESS) {
+   \   00000038   0xA803             ADD      R0,SP,#+12
+   \   0000003A   0x9002             STR      R0,[SP, #+8]
+   \   0000003C   0x2106             MOVS     R1,#+6
+   \   0000003E   0x2006             MOVS     R0,#+6
+   \   00000040   0x9001             STR      R0,[SP, #+4]
+   \   00000042   0x2340             MOVS     R3,#+64
+   \   00000044   0x7D38             LDRB     R0,[R7, #+20]
+   \   00000046   0xFB01 0x7000      MLA      R0,R1,R0,R7
+   \   0000004A   0x3015             ADDS     R0,R0,#+21
+   \   0000004C   0x9000             STR      R0,[SP, #+0]
+   \   0000004E   0x2200             MOVS     R2,#+0
+   \   00000050   0xF81C 0x0006      LDRB     R0,[R12, R6]
+   \   00000054   0xF240 0x7102      MOVW     R1,#+1794
+   \   00000058   0x.... 0x....      BL       emberAfReadAttribute
+   \   0000005C   0xB910             CBNZ.N   R0,??emberAfPluginSimpleMeteringServerSamplingEven_2
+    391                  emberAfSimpleMeteringClusterPrintln("Sample %u: 0x%x%x%x%x%x%x",
+    392                                                      samplingData[i].validSamples,
+    393                                                      samplingData[i].samples[samplingData[i].validSamples][0],
+    394                                                      samplingData[i].samples[samplingData[i].validSamples][1],
+    395                                                      samplingData[i].samples[samplingData[i].validSamples][2],
+    396                                                      samplingData[i].samples[samplingData[i].validSamples][3],
+    397                                                      samplingData[i].samples[samplingData[i].validSamples][4],
+    398                                                      samplingData[i].samples[samplingData[i].validSamples][5]);
+    399                  samplingData[i].validSamples++;
+   \   0000005E   0x7D38             LDRB     R0,[R7, #+20]
+   \   00000060   0x1C40             ADDS     R0,R0,#+1
+   \   00000062   0x7538             STRB     R0,[R7, #+20]
+    400                }
+    401                emberAfSimpleMeteringClusterPrintln("Interval %u",samplingData[i].sampleRequestInterval);
+    402                emberEventControlSetDelayMS(emberAfPluginSimpleMeteringServerSamplingEventControl,
+    403                                            samplingData[i].sampleRequestInterval * 1000);
+   \                     ??emberAfPluginSimpleMeteringServerSamplingEven_2: (+1)
+   \   00000064   0xF44F 0x717A      MOV      R1,#+1000
+   \   00000068   0x8A38             LDRH     R0,[R7, #+16]
+   \   0000006A   0x4341             MULS     R1,R1,R0
+   \   0000006C   0x4620             MOV      R0,R4
+   \   0000006E   0x.... 0x....      BL       emEventControlSetDelayMS
+    404              }
+    405            }
+   \                     ??emberAfPluginSimpleMeteringServerSamplingEven_1: (+1)
+   \   00000072   0x1C6D             ADDS     R5,R5,#+1
+   \   00000074   0x2D05             CMP      R5,#+5
+   \   00000076   0xDBCC             BLT.N    ??emberAfPluginSimpleMeteringServerSamplingEven_0
+    406          }
+   \   00000078   0xB005             ADD      SP,SP,#+20
+   \   0000007A   0xBDF0             POP      {R4-R7,PC}       ;; return
+    407          
+    408          
+    409          
+    410          
+
+   \                                 In section .text, align 2, keep-with-next
+    411          void emberAfPluginSimpleMeteringServerSupplyEventHandler(void)
+    412          {
+   \                     emberAfPluginSimpleMeteringServerSupplyEventHandler: (+1)
+   \   00000000   0xB530             PUSH     {R4,R5,LR}
+    413            int32u changeTime;
+    414            int32u currentTime;
+    415            emberEventControlSetInactive(emberAfPluginSimpleMeteringServerSupplyEventControl);
+   \   00000002   0x....             LDR.N    R4,??DataTable16_6
+   \   00000004   0x2000             MOVS     R0,#+0
+   \   00000006   0x7520             STRB     R0,[R4, #+20]
+   \   00000008   0xB085             SUB      SP,SP,#+20
+    416          
+    417            emberAfReadServerAttribute(changeSupply.srcEndpoint,
+    418                                       ZCL_SIMPLE_METERING_CLUSTER_ID,
+    419                                       ZCL_PROPOSED_CHANGE_SUPPLY_IMPLEMENTATION_TIME_ATTRIBUTE_ID,
+    420                                       (int8u *)&changeTime,
+    421                                       sizeof(changeTime));
+   \   0000000A   0x2004             MOVS     R0,#+4
+   \   0000000C   0x9000             STR      R0,[SP, #+0]
+   \   0000000E   0xF240 0x7502      MOVW     R5,#+1794
+   \   00000012   0x7820             LDRB     R0,[R4, #+0]
+   \   00000014   0xAB04             ADD      R3,SP,#+16
+   \   00000016   0xF44F 0x6230      MOV      R2,#+2816
+   \   0000001A   0x4629             MOV      R1,R5
+   \   0000001C   0x.... 0x....      BL       emberAfReadServerAttribute
+    422            currentTime = emberAfGetCurrentTime();
+   \   00000020   0x.... 0x....      BL       emberAfGetCurrentTime
+    423            if(changeTime > currentTime) {
+   \   00000024   0x9904             LDR      R1,[SP, #+16]
+   \   00000026   0x4288             CMP      R0,R1
+   \   00000028   0xD208             BCS.N    ??emberAfPluginSimpleMeteringServerSupplyEventH_0
+    424              int32u delay = changeTime - currentTime;
+    425              emberEventControlSetDelayMS(emberAfPluginSimpleMeteringServerSupplyEventControl,
+    426                                          delay*1000 );    
+   \   0000002A   0x1A08             SUBS     R0,R1,R0
+   \   0000002C   0xF44F 0x717A      MOV      R1,#+1000
+   \   00000030   0x4341             MULS     R1,R1,R0
+   \   00000032   0xF104 0x0014      ADD      R0,R4,#+20
+   \   00000036   0x.... 0x....      BL       emEventControlSetDelayMS
+   \   0000003A   0xE014             B.N      ??emberAfPluginSimpleMeteringServerSupplyEventH_1
+    427            } else {
+    428          
+    429              emberAfFillCommandSimpleMeteringClusterSupplyStatusResponse(changeSupply.providerId,
+    430                                                                          changeSupply.issuerEventId,
+    431                                                                          changeSupply.implementationDateTime,
+    432                                                                          changeSupply.proposedSupplyStatus);
+   \                     ??emberAfPluginSimpleMeteringServerSupplyEventH_0: (+1)
+   \   0000003C   0x7C20             LDRB     R0,[R4, #+16]
+   \   0000003E   0x.... 0x....      ADR.W    R3,`?<Constant "wwwu">`
+   \   00000042   0x9003             STR      R0,[SP, #+12]
+   \   00000044   0x220C             MOVS     R2,#+12
+   \   00000046   0x68E0             LDR      R0,[R4, #+12]
+   \   00000048   0x9002             STR      R0,[SP, #+8]
+   \   0000004A   0x4629             MOV      R1,R5
+   \   0000004C   0x68A0             LDR      R0,[R4, #+8]
+   \   0000004E   0x9001             STR      R0,[SP, #+4]
+   \   00000050   0x6860             LDR      R0,[R4, #+4]
+   \   00000052   0x.... 0x....      BL       ?Subroutine6
+    433              emberAfSetCommandEndpoints(changeSupply.srcEndpoint, changeSupply.destEndpoint);
+   \                     ??CrossCallReturnLabel_14: (+1)
+   \   00000056   0x7861             LDRB     R1,[R4, #+1]
+   \   00000058   0x7820             LDRB     R0,[R4, #+0]
+   \   0000005A   0x.... 0x....      BL       emberAfSetCommandEndpoints
+    434              emberAfSendCommandUnicast(EMBER_OUTGOING_DIRECT, changeSupply.nodeId);
+   \   0000005E   0x8861             LDRH     R1,[R4, #+2]
+   \   00000060   0x2000             MOVS     R0,#+0
+   \   00000062   0x.... 0x....      BL       emberAfSendCommandUnicast
+    435            }
+    436          }
+   \                     ??emberAfPluginSimpleMeteringServerSupplyEventH_1: (+1)
+   \   00000066   0xB005             ADD      SP,SP,#+20
+   \   00000068   0xBD30             POP      {R4,R5,PC}       ;; return
+    437          
+
+   \                                 In section .text, align 2, keep-with-next
+    438          boolean emberAfSimpleMeteringClusterResetLoadLimitCounterCallback(int32u providerId,
+    439                                                                            int32u issuerEventId)
+    440          {
+   \                     emberAfSimpleMeteringClusterResetLoadLimitCounterCallback: (+1)
+   \   00000000   0xB5E0             PUSH     {R5-R7,LR}
+    441            int8u counter = 0;
+   \   00000002   0x2000             MOVS     R0,#+0
+   \   00000004   0xF88D 0x0008      STRB     R0,[SP, #+8]
+    442            emberAfSimpleMeteringClusterPrintln("Reset Load Counter providerId %u issuerEventId %u",providerId,issuerEventId);
+    443            emberAfWriteAttribute(emberAfCurrentEndpoint(),
+    444                                  ZCL_SIMPLE_METERING_CLUSTER_ID,
+    445                                  ZCL_LOAD_LIMIT_COUNTER_ATTRIBUTE_ID,
+    446                                  CLUSTER_MASK_SERVER,
+    447                                  &counter,
+    448                                  ZCL_INT8U_ATTRIBUTE_TYPE);  
+   \   00000008   0x2340             MOVS     R3,#+64
+   \   0000000A   0x2020             MOVS     R0,#+32
+   \   0000000C   0x9001             STR      R0,[SP, #+4]
+   \   0000000E   0xF240 0x6206      MOVW     R2,#+1542
+   \   00000012   0xA802             ADD      R0,SP,#+8
+   \   00000014   0x9000             STR      R0,[SP, #+0]
+   \   00000016   0xF240 0x7102      MOVW     R1,#+1794
+   \   0000001A   0x....             LDR.N    R0,??DataTable16_2
+   \   0000001C   0x6800             LDR      R0,[R0, #+0]
+   \   0000001E   0x6800             LDR      R0,[R0, #+0]
+   \   00000020   0x7940             LDRB     R0,[R0, #+5]
+   \   00000022   0x.... 0x....      BL       emberAfWriteAttribute
+    449            return TRUE;
+   \   00000026   0x2001             MOVS     R0,#+1
+   \   00000028   0xBD0E             POP      {R1-R3,PC}       ;; return
+    450          }
+    451          
+
+   \                                 In section .text, align 2, keep-with-next
+    452          boolean emberAfSimpleMeteringClusterChangeSupplyCallback(int32u providerId,
+    453                                                                   int32u issuerEventId,
+    454                                                                   int32u requestDateTime,
+    455                                                                   int32u implementationDateTime,
+    456                                                                   int8u proposedSupplyStatus,
+    457                                                                   int8u supplyControlBits)
+    458          {
+   \                     emberAfSimpleMeteringClusterChangeSupplyCallback: (+1)
+   \   00000000   0xE92D 0x4FF8      PUSH     {R3-R11,LR}
+    459            int32u delay;
+    460            EmberAfClusterCommand *cmd;
+    461          
+    462            emberAfSimpleMeteringClusterPrintln("Change Supply Callback providerId %u issuerEventId %u implementationDateTime %u supplyStatus %u",providerId,issuerEventId,implementationDateTime,supplyControlBits);
+    463            // TODO: fix this hard-coded check
+    464            if(providerId != PROVIDER_ID){
+   \   00000004   0x.... 0x....      LDR.W    R9,??DataTable16_7  ;; 0x44556677
+   \   00000008   0xB084             SUB      SP,SP,#+16
+   \   0000000A   0x460D             MOV      R5,R1
+   \   0000000C   0x4548             CMP      R0,R9
+   \   0000000E   0xD001             BEQ.N    ??emberAfSimpleMeteringClusterChangeSupplyCallb_0
+    465              emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_NOT_AUTHORIZED);
+   \   00000010   0x207E             MOVS     R0,#+126
+   \   00000012   0xE053             B.N      ??emberAfSimpleMeteringClusterChangeSupplyCallb_1
+    466              return TRUE;
+    467            }
+    468            if(implementationDateTime < emberAfGetCurrentTime() && implementationDateTime != 0){
+   \                     ??emberAfSimpleMeteringClusterChangeSupplyCallb_0: (+1)
+   \   00000014   0x.... 0x....      BL       emberAfGetCurrentTime
+   \   00000018   0x9904             LDR      R1,[SP, #+16]
+   \   0000001A   0x9C0F             LDR      R4,[SP, #+60]
+   \   0000001C   0x.... 0x....      ADR.W    R10,`?<Constant "wwwu">`
+   \   00000020   0x....             LDR.N    R6,??DataTable16_2
+   \   00000022   0xF640 0x3801      MOVW     R8,#+2817
+   \   00000026   0xF240 0x7B02      MOVW     R11,#+1794
+   \   0000002A   0x4281             CMP      R1,R0
+   \   0000002C   0xD203             BCS.N    ??emberAfSimpleMeteringClusterChangeSupplyCallb_2
+   \   0000002E   0x2900             CMP      R1,#+0
+   \   00000030   0xD032             BEQ.N    ??emberAfSimpleMeteringClusterChangeSupplyCallb_3
+    469              emberAfSimpleMeteringClusterPrintln("implementationDateTime %u",implementationDateTime);
+    470              emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_INVALID_VALUE);
+   \   00000032   0x2087             MOVS     R0,#+135
+   \   00000034   0xE042             B.N      ??emberAfSimpleMeteringClusterChangeSupplyCallb_1
+    471              return TRUE;
+    472            }
+    473            if(implementationDateTime == 0xFFFFFFFF) {
+   \                     ??emberAfSimpleMeteringClusterChangeSupplyCallb_2: (+1)
+   \   00000036   0x....             LDR.N    R7,??DataTable16_6
+   \   00000038   0xF111 0x0F01      CMN      R1,#+1
+   \   0000003C   0xD12A             BNE.N    ??emberAfSimpleMeteringClusterChangeSupplyCallb_4
+   \   0000003E   0x2000             MOVS     R0,#+0
+   \   00000040   0x7538             STRB     R0,[R7, #+20]
+    474              emberAfSimpleMeteringClusterPrintln("Canceling change supply");
+    475              emberEventControlSetInactive(emberAfPluginSimpleMeteringServerSupplyEventControl);
+    476            }
+    477            if(implementationDateTime == 0x00000000 ) {
+    478              emberAfWriteAttribute(emberAfCurrentEndpoint(),
+    479                                    ZCL_SIMPLE_METERING_CLUSTER_ID,
+    480                                    ZCL_PROPOSED_CHANGE_SUPPLY_IMPLEMENTATION_TIME_ATTRIBUTE_ID,
+    481                                    CLUSTER_MASK_SERVER,
+    482                                    (int8u *)&implementationDateTime,
+    483                                    ZCL_UTC_TIME_ATTRIBUTE_TYPE);
+    484          
+    485              emberAfWriteAttribute(emberAfCurrentEndpoint(),
+    486                                    ZCL_SIMPLE_METERING_CLUSTER_ID,
+    487                                    ZCL_PROPOSED_CHANGE_SUPPLY_STATUS_ATTRIBUTE_ID,
+    488                                    CLUSTER_MASK_SERVER,
+    489                                    &proposedSupplyStatus,
+    490                                    ZCL_ENUM8_ATTRIBUTE_TYPE); 
+    491          
+    492              if((supplyControlBits & 0x01) == 0x01 || proposedSupplyStatus == 2) {
+    493                emberAfFillCommandSimpleMeteringClusterSupplyStatusResponse(providerId,
+    494                                                                            issuerEventId,
+    495                                                                            implementationDateTime,
+    496                                                                            proposedSupplyStatus);
+    497                emberAfSendResponse();
+    498              } else {
+    499                emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
+    500              }
+    501            } else {
+    502              emberAfWriteAttribute(emberAfCurrentEndpoint(),
+    503                                    ZCL_SIMPLE_METERING_CLUSTER_ID,
+    504                                    ZCL_PROPOSED_CHANGE_SUPPLY_IMPLEMENTATION_TIME_ATTRIBUTE_ID,
+    505                                    CLUSTER_MASK_SERVER,
+    506                                    (int8u *)&implementationDateTime,
+    507                                    ZCL_UTC_TIME_ATTRIBUTE_TYPE);
+   \                     ??emberAfSimpleMeteringClusterChangeSupplyCallb_5: (+1)
+   \   00000042   0x.... 0x....      BL       ?Subroutine2
+    508          
+    509              emberAfWriteAttribute(emberAfCurrentEndpoint(),
+    510                                    ZCL_SIMPLE_METERING_CLUSTER_ID,
+    511                                    ZCL_PROPOSED_CHANGE_SUPPLY_STATUS_ATTRIBUTE_ID,
+    512                                    CLUSTER_MASK_SERVER,
+    513                                    &proposedSupplyStatus,
+    514                                    ZCL_ENUM8_ATTRIBUTE_TYPE); 
+   \                     ??CrossCallReturnLabel_21: (+1)
+   \   00000046   0x.... 0x....      BL       ?Subroutine7
+   \                     ??CrossCallReturnLabel_16: (+1)
+   \   0000004A   0x.... 0x....      BL       ??Subroutine8_0
+    515              emberAfFillCommandSimpleMeteringClusterSupplyStatusResponse(providerId,
+    516                                                                          issuerEventId,
+    517                                                                          implementationDateTime,
+    518                                                                          proposedSupplyStatus);
+   \                     ??CrossCallReturnLabel_19: (+1)
+   \   0000004E   0xF89D 0x0038      LDRB     R0,[SP, #+56]
+   \   00000052   0x.... 0x....      BL       ?Subroutine5
+    519              delay = implementationDateTime - emberAfGetCurrentTime();
+   \                     ??CrossCallReturnLabel_11: (+1)
+   \   00000056   0x.... 0x....      BL       emberAfGetCurrentTime
+   \   0000005A   0x9904             LDR      R1,[SP, #+16]
+   \   0000005C   0x1A08             SUBS     R0,R1,R0
+    520              cmd = emberAfCurrentCommand();
+   \   0000005E   0x6831             LDR      R1,[R6, #+0]
+    521              changeSupply.srcEndpoint = cmd->apsFrame->destinationEndpoint;
+   \   00000060   0x680A             LDR      R2,[R1, #+0]
+   \   00000062   0x7952             LDRB     R2,[R2, #+5]
+   \   00000064   0x703A             STRB     R2,[R7, #+0]
+    522              changeSupply.destEndpoint = cmd->apsFrame->sourceEndpoint;
+   \   00000066   0x680A             LDR      R2,[R1, #+0]
+   \   00000068   0x7912             LDRB     R2,[R2, #+4]
+   \   0000006A   0x707A             STRB     R2,[R7, #+1]
+    523              changeSupply.nodeId = cmd->source; 
+   \   0000006C   0x88C9             LDRH     R1,[R1, #+6]
+   \   0000006E   0x8079             STRH     R1,[R7, #+2]
+    524              changeSupply.providerId = providerId;
+   \   00000070   0xF8C7 0x9004      STR      R9,[R7, #+4]
+    525              changeSupply.issuerEventId = issuerEventId;
+   \   00000074   0x60BD             STR      R5,[R7, #+8]
+    526              changeSupply.implementationDateTime = implementationDateTime;
+   \   00000076   0x9904             LDR      R1,[SP, #+16]
+   \   00000078   0x60F9             STR      R1,[R7, #+12]
+    527              changeSupply.proposedSupplyStatus = proposedSupplyStatus;
+   \   0000007A   0xF89D 0x1038      LDRB     R1,[SP, #+56]
+   \   0000007E   0x7439             STRB     R1,[R7, #+16]
+    528              if((supplyControlBits & 0x01) == 0x01) {
+   \   00000080   0x07E1             LSLS     R1,R4,#+31
+   \   00000082   0xD51A             BPL.N    ??emberAfSimpleMeteringClusterChangeSupplyCallb_6
+    529                emberEventControlSetDelayMS(emberAfPluginSimpleMeteringServerSupplyEventControl,
+    530                                            delay*1000 );      
+   \   00000084   0xF44F 0x717A      MOV      R1,#+1000
+   \   00000088   0x4341             MULS     R1,R1,R0
+   \   0000008A   0xF107 0x0014      ADD      R0,R7,#+20
+   \   0000008E   0x.... 0x....      BL       emEventControlSetDelayMS
+   \   00000092   0xE015             B.N      ??emberAfSimpleMeteringClusterChangeSupplyCallb_7
+    531              } else {
+   \                     ??emberAfSimpleMeteringClusterChangeSupplyCallb_4: (+1)
+   \   00000094   0x2900             CMP      R1,#+0
+   \   00000096   0xD1D4             BNE.N    ??emberAfSimpleMeteringClusterChangeSupplyCallb_5
+   \                     ??emberAfSimpleMeteringClusterChangeSupplyCallb_3: (+1)
+   \   00000098   0x.... 0x....      BL       ?Subroutine2
+   \                     ??CrossCallReturnLabel_20: (+1)
+   \   0000009C   0x.... 0x....      BL       ?Subroutine7
+   \                     ??CrossCallReturnLabel_17: (+1)
+   \   000000A0   0x.... 0x....      BL       ??Subroutine8_0
+   \                     ??CrossCallReturnLabel_18: (+1)
+   \   000000A4   0xF89D 0x0038      LDRB     R0,[SP, #+56]
+   \   000000A8   0x07E1             LSLS     R1,R4,#+31
+   \   000000AA   0xD401             BMI.N    ??emberAfSimpleMeteringClusterChangeSupplyCallb_8
+   \   000000AC   0x2802             CMP      R0,#+2
+   \   000000AE   0xD104             BNE.N    ??emberAfSimpleMeteringClusterChangeSupplyCallb_6
+   \                     ??emberAfSimpleMeteringClusterChangeSupplyCallb_8: (+1)
+   \   000000B0   0x.... 0x....      BL       ?Subroutine5
+   \                     ??CrossCallReturnLabel_10: (+1)
+   \   000000B4   0x.... 0x....      BL       emberAfSendResponse
+   \   000000B8   0xE002             B.N      ??emberAfSimpleMeteringClusterChangeSupplyCallb_7
+    532                emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
+   \                     ??emberAfSimpleMeteringClusterChangeSupplyCallb_6: (+1)
+   \   000000BA   0x2000             MOVS     R0,#+0
+   \                     ??emberAfSimpleMeteringClusterChangeSupplyCallb_1: (+1)
+   \   000000BC   0x.... 0x....      BL       emberAfSendImmediateDefaultResponse
+    533              }
+    534            }
+    535          
+    536            return TRUE;
+   \                     ??emberAfSimpleMeteringClusterChangeSupplyCallb_7: (+1)
+   \   000000C0   0x2001             MOVS     R0,#+1
+   \   000000C2   0xB005             ADD      SP,SP,#+20
+   \   000000C4   0xE8BD 0x8FF0      POP      {R4-R11,PC}      ;; return
+    537          }
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine7: (+1)
+   \   00000000   0x2030             MOVS     R0,#+48
+   \   00000002   0x9001             STR      R0,[SP, #+4]
+   \   00000004   0x2340             MOVS     R3,#+64
+   \   00000006   0xA80E             ADD      R0,SP,#+56
+   \   00000008   0x9000             STR      R0,[SP, #+0]
+   \   0000000A   0x4642             MOV      R2,R8
+   \   0000000C   0x4770             BX       LR
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine5: (+1)
+   \   00000000   0x9003             STR      R0,[SP, #+12]
+   \   00000002   0x9501             STR      R5,[SP, #+4]
+   \   00000004   0xF8CD 0x9000      STR      R9,[SP, #+0]
+   \   00000008   0x4653             MOV      R3,R10
+   \   0000000A   0x9804             LDR      R0,[SP, #+16]
+   \   0000000C   0x9002             STR      R0,[SP, #+8]
+   \   0000000E   0x220C             MOVS     R2,#+12
+   \   00000010   0x4659             MOV      R1,R11
+   \   00000012   0x2009             MOVS     R0,#+9
+   \   00000014   0x.... 0x....      B.W      emberAfFillExternalBuffer
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine2: (+1)
+   \   00000000   0x20E2             MOVS     R0,#+226
+   \   00000002   0x9001             STR      R0,[SP, #+4]
+   \   00000004   0x2340             MOVS     R3,#+64
+   \   00000006   0xA804             ADD      R0,SP,#+16
+   \   00000008   0x9000             STR      R0,[SP, #+0]
+   \   0000000A   0xF44F 0x6230      MOV      R2,#+2816
+   \   0000000E                      REQUIRE ??Subroutine8_0
+   \   0000000E                      ;; // Fall through to label ??Subroutine8_0
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ??Subroutine8_0: (+1)
+   \   00000000   0x6830             LDR      R0,[R6, #+0]
+   \   00000002   0x6800             LDR      R0,[R0, #+0]
+   \   00000004   0x7940             LDRB     R0,[R0, #+5]
+   \   00000006   0x4659             MOV      R1,R11
+   \   00000008   0x.... 0x....      B.W      emberAfWriteAttribute
+    538          
+
+   \                                 In section .text, align 2, keep-with-next
+    539          boolean emberAfSimpleMeteringClusterLocalChangeSupplyCallback(int8u proposedSupplyStatus)
+    540          {
+   \                     emberAfSimpleMeteringClusterLocalChangeSupplyCallback: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    541            if(proposedSupplyStatus < 1 || proposedSupplyStatus > 2)
+   \   00000002   0xB108             CBZ.N    R0,??emberAfSimpleMeteringClusterLocalChangeSupply_0
+   \   00000004   0x2803             CMP      R0,#+3
+   \   00000006   0xDB01             BLT.N    ??emberAfSimpleMeteringClusterLocalChangeSupply_1
+    542              emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_NOT_AUTHORIZED);
+   \                     ??emberAfSimpleMeteringClusterLocalChangeSupply_0: (+1)
+   \   00000008   0x207E             MOVS     R0,#+126
+   \   0000000A   0xE000             B.N      ??emberAfSimpleMeteringClusterLocalChangeSupply_2
+    543            else{
+    544              emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
+   \                     ??emberAfSimpleMeteringClusterLocalChangeSupply_1: (+1)
+   \   0000000C   0x2000             MOVS     R0,#+0
+    545              emberAfSimpleMeteringClusterPrintln("Setting localSupply Status %u",proposedSupplyStatus);
+    546            }
+   \                     ??emberAfSimpleMeteringClusterLocalChangeSupply_2: (+1)
+   \   0000000E   0x....             B.N      ?Subroutine1
+    547            return TRUE;
+    548          }                                                                 
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine1: (+1)
+   \   00000000   0x.... 0x....      BL       emberAfSendImmediateDefaultResponse
+   \   00000004   0x2001             MOVS     R0,#+1
+   \   00000006   0xBD02             POP      {R1,PC}          ;; return
+    549          
+
+   \                                 In section .text, align 2, keep-with-next
+    550          boolean emberAfSimpleMeteringClusterSetSupplyStatusCallback(int32u issuerEventId,
+    551                                                                      int8u supplyTamperState,
+    552                                                                      int8u supplyDepletionState,
+    553                                                                      int8u supplyUncontrolledFlowState,
+    554                                                                      int8u loadLimitSupplyState)
+    555          {
+   \                     emberAfSimpleMeteringClusterSetSupplyStatusCallback: (+1)
+   \   00000000   0xB53E             PUSH     {R1-R5,LR}
+   \   00000002   0xB082             SUB      SP,SP,#+8
+    556            emberAfWriteAttribute(emberAfCurrentEndpoint(),
+    557                                  ZCL_SIMPLE_METERING_CLUSTER_ID,
+    558                                  ZCL_SUPPLY_TAMPER_STATE_ATTRIBUTE_ID,
+    559                                  CLUSTER_MASK_SERVER,
+    560                                  &supplyTamperState,
+    561                                  ZCL_ENUM8_ATTRIBUTE_TYPE);
+   \   00000004   0x2030             MOVS     R0,#+48
+   \   00000006   0x9001             STR      R0,[SP, #+4]
+   \   00000008   0xF240 0x7502      MOVW     R5,#+1794
+   \   0000000C   0xA802             ADD      R0,SP,#+8
+   \   0000000E   0x....             LDR.N    R4,??DataTable16_2
+   \   00000010   0x9000             STR      R0,[SP, #+0]
+   \   00000012   0x2340             MOVS     R3,#+64
+   \   00000014   0x6820             LDR      R0,[R4, #+0]
+   \   00000016   0x6800             LDR      R0,[R0, #+0]
+   \   00000018   0x7940             LDRB     R0,[R0, #+5]
+   \   0000001A   0xF240 0x6207      MOVW     R2,#+1543
+   \   0000001E   0x4629             MOV      R1,R5
+   \   00000020   0x.... 0x....      BL       emberAfWriteAttribute
+    562          
+    563            emberAfWriteAttribute(emberAfCurrentEndpoint(),
+    564                                  ZCL_SIMPLE_METERING_CLUSTER_ID,
+    565                                  ZCL_SUPPLY_DEPLETION_STATE_ATTRIBUTE_ID,
+    566                                  CLUSTER_MASK_SERVER,
+    567                                  &supplyDepletionState,
+    568                                  ZCL_ENUM8_ATTRIBUTE_TYPE);
+   \   00000024   0x2030             MOVS     R0,#+48
+   \   00000026   0x9001             STR      R0,[SP, #+4]
+   \   00000028   0x2340             MOVS     R3,#+64
+   \   0000002A   0xA803             ADD      R0,SP,#+12
+   \   0000002C   0x9000             STR      R0,[SP, #+0]
+   \   0000002E   0xF44F 0x62C1      MOV      R2,#+1544
+   \   00000032   0x.... 0x....      BL       ?Subroutine4
+    569          
+    570            emberAfWriteAttribute(emberAfCurrentEndpoint(),
+    571                                  ZCL_SIMPLE_METERING_CLUSTER_ID,
+    572                                  ZCL_SUPPLY_UNCONTROLLED_FLOW_STATE_ATTRIBUTE_ID,
+    573                                  CLUSTER_MASK_SERVER,
+    574                                  &supplyUncontrolledFlowState,
+    575                                  ZCL_ENUM8_ATTRIBUTE_TYPE);
+   \                     ??CrossCallReturnLabel_9: (+1)
+   \   00000036   0x2030             MOVS     R0,#+48
+   \   00000038   0x9001             STR      R0,[SP, #+4]
+   \   0000003A   0x2340             MOVS     R3,#+64
+   \   0000003C   0xA804             ADD      R0,SP,#+16
+   \   0000003E   0x9000             STR      R0,[SP, #+0]
+   \   00000040   0xF240 0x6209      MOVW     R2,#+1545
+   \   00000044   0x.... 0x....      BL       ?Subroutine4
+    576          
+    577            emberAfWriteAttribute(emberAfCurrentEndpoint(),
+    578                                  ZCL_SIMPLE_METERING_CLUSTER_ID,
+    579                                  ZCL_LOAD_LIMIT_SUPPLY_STATE_ATTRIBUTE_ID,
+    580                                  CLUSTER_MASK_SERVER,
+    581                                  &loadLimitSupplyState,
+    582                                  ZCL_ENUM8_ATTRIBUTE_TYPE);
+   \                     ??CrossCallReturnLabel_8: (+1)
+   \   00000048   0x2030             MOVS     R0,#+48
+   \   0000004A   0x9001             STR      R0,[SP, #+4]
+   \   0000004C   0x2340             MOVS     R3,#+64
+   \   0000004E   0xA808             ADD      R0,SP,#+32
+   \   00000050   0x9000             STR      R0,[SP, #+0]
+   \   00000052   0xF240 0x6205      MOVW     R2,#+1541
+   \   00000056   0x.... 0x....      BL       ?Subroutine4
+    583            emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
+   \                     ??CrossCallReturnLabel_7: (+1)
+   \   0000005A   0x2000             MOVS     R0,#+0
+   \   0000005C   0x.... 0x....      BL       emberAfSendImmediateDefaultResponse
+    584            return TRUE;
+   \   00000060   0x2001             MOVS     R0,#+1
+   \   00000062   0xB005             ADD      SP,SP,#+20
+   \   00000064   0xBD30             POP      {R4,R5,PC}       ;; return
+    585          }
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine4: (+1)
+   \   00000000   0x6820             LDR      R0,[R4, #+0]
+   \   00000002   0x6800             LDR      R0,[R0, #+0]
+   \   00000004   0x7940             LDRB     R0,[R0, #+5]
+   \   00000006   0x4629             MOV      R1,R5
+   \   00000008   0x.... 0x....      B.W      emberAfWriteAttribute
+    586          
+
+   \                                 In section .text, align 2, keep-with-next
+    587          boolean emberAfSimpleMeteringClusterSetUncontrolledFlowThresholdCallback(int32u providerId,
+    588                                                                                   int32u issuerEventId,
+    589                                                                                   int16u uncontrolledFlowThreshold,
+    590                                                                                   int8u unitOfMeasure,
+    591                                                                                   int16u multiplier,
+    592                                                                                   int16u divisor,
+    593                                                                                   int8u stabilisationPeriod,
+    594                                                                                   int16u measurementPeriod)
+    595          {
+   \                     emberAfSimpleMeteringClusterSetUncontrolledFlowThresholdCallback: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    596            emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
+   \   00000002   0x2000             MOVS     R0,#+0
+   \   00000004                      REQUIRE ?Subroutine1
+   \   00000004                      ;; // Fall through to label ?Subroutine1
+    597            return TRUE;
+    598          }
+    599          
+    600          
+
+   \                                 In section .text, align 2, keep-with-next
+    601          boolean emberAfSimpleMeteringClusterMirrorReportAttributeResponseCallback(int8u notificationScheme,
+    602                                                                                    int8u* notificationFlags)
+    603          {
+   \                     emberAfSimpleMeteringClusterMirrorReportAttributeResponseCallback: (+1)
+   \   00000000   0xE92D 0x41F0      PUSH     {R4-R8,LR}
+   \   00000004   0x460C             MOV      R4,R1
+    604            if (notificationScheme == 0x01) {
+   \   00000006   0x2801             CMP      R0,#+1
+   \   00000008   0xD10C             BNE.N    ??emberAfSimpleMeteringClusterMirrorReportAttri_0
+    605              int32u functionalFlags = emberAfGetInt32u(notificationFlags,0,4);
+   \   0000000A   0x2204             MOVS     R2,#+4
+   \   0000000C   0x.... 0x....      BL       ?Subroutine3
+   \                     ??CrossCallReturnLabel_6: (+1)
+   \   00000010   0x4601             MOV      R1,R0
+    606              emberAfPluginSimpleMeteringServerProcessNotificationFlagsCallback(ZCL_FUNCTIONAL_NOTIFICATION_FLAGS_ATTRIBUTE_ID, functionalFlags);
+   \   00000012   0x2000             MOVS     R0,#+0
+   \                     ??emberAfSimpleMeteringClusterMirrorReportAttri_1: (+1)
+   \   00000014   0x.... 0x....      BL       emberAfPluginSimpleMeteringServerProcessNotificationFlagsCallback
+    607            } else if (notificationScheme == 0x02) {
+    608              int32u functionalFlags = emberAfGetInt32u(notificationFlags,0,20);
+    609              int32u notificationFlags2 = emberAfGetInt32u(notificationFlags,4,20);
+    610              int32u notificationFlags3 = emberAfGetInt32u(notificationFlags,8,20);
+    611              int32u notificationFlags4 = emberAfGetInt32u(notificationFlags,12,20);
+    612              int32u notificationFlags5 = emberAfGetInt32u(notificationFlags,16,20);
+    613              emberAfSimpleMeteringClusterPrintln("functionalFlags 0x%4x notificationFlags2-5 0x%4x 0x%4x 0x%4x 0x%4x",
+    614                                                  functionalFlags, notificationFlags2, notificationFlags3,
+    615                                                  notificationFlags4, notificationFlags5);
+    616              emberAfPluginSimpleMeteringServerProcessNotificationFlagsCallback(ZCL_FUNCTIONAL_NOTIFICATION_FLAGS_ATTRIBUTE_ID, functionalFlags);
+    617              emberAfPluginSimpleMeteringServerProcessNotificationFlagsCallback(ZCL_NOTIFICATION_FLAGS_2_ATTRIBUTE_ID, notificationFlags2);
+    618              emberAfPluginSimpleMeteringServerProcessNotificationFlagsCallback(ZCL_NOTIFICATION_FLAGS_3_ATTRIBUTE_ID, notificationFlags3);
+    619              emberAfPluginSimpleMeteringServerProcessNotificationFlagsCallback(ZCL_NOTIFICATION_FLAGS_4_ATTRIBUTE_ID, notificationFlags4);
+    620              emberAfPluginSimpleMeteringServerProcessNotificationFlagsCallback(ZCL_NOTIFICATION_FLAGS_5_ATTRIBUTE_ID, notificationFlags5);
+    621            } else {
+    622              return FALSE;
+    623            }
+    624            emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_SUCCESS);
+   \   00000018   0x2000             MOVS     R0,#+0
+   \   0000001A   0x.... 0x....      BL       emberAfSendImmediateDefaultResponse
+    625            return TRUE;
+   \   0000001E   0x2001             MOVS     R0,#+1
+   \                     ??emberAfSimpleMeteringClusterMirrorReportAttri_2: (+1)
+   \   00000020   0xE8BD 0x81F0      POP      {R4-R8,PC}       ;; return
+   \                     ??emberAfSimpleMeteringClusterMirrorReportAttri_0: (+1)
+   \   00000024   0x2802             CMP      R0,#+2
+   \   00000026   0xD12A             BNE.N    ??emberAfSimpleMeteringClusterMirrorReportAttri_3
+   \   00000028   0x2214             MOVS     R2,#+20
+   \   0000002A   0x.... 0x....      BL       ?Subroutine3
+   \                     ??CrossCallReturnLabel_5: (+1)
+   \   0000002E   0x4605             MOV      R5,R0
+   \   00000030   0x2214             MOVS     R2,#+20
+   \   00000032   0x2104             MOVS     R1,#+4
+   \   00000034   0x.... 0x....      BL       ??Subroutine3_0
+   \                     ??CrossCallReturnLabel_4: (+1)
+   \   00000038   0x4606             MOV      R6,R0
+   \   0000003A   0x2214             MOVS     R2,#+20
+   \   0000003C   0x2108             MOVS     R1,#+8
+   \   0000003E   0x.... 0x....      BL       ??Subroutine3_0
+   \                     ??CrossCallReturnLabel_3: (+1)
+   \   00000042   0x4607             MOV      R7,R0
+   \   00000044   0x2214             MOVS     R2,#+20
+   \   00000046   0x210C             MOVS     R1,#+12
+   \   00000048   0x.... 0x....      BL       ??Subroutine3_0
+   \                     ??CrossCallReturnLabel_2: (+1)
+   \   0000004C   0x4680             MOV      R8,R0
+   \   0000004E   0x2214             MOVS     R2,#+20
+   \   00000050   0x2110             MOVS     R1,#+16
+   \   00000052   0x.... 0x....      BL       ??Subroutine3_0
+   \                     ??CrossCallReturnLabel_1: (+1)
+   \   00000056   0x4604             MOV      R4,R0
+   \   00000058   0x4629             MOV      R1,R5
+   \   0000005A   0x2000             MOVS     R0,#+0
+   \   0000005C   0x.... 0x....      BL       emberAfPluginSimpleMeteringServerProcessNotificationFlagsCallback
+   \   00000060   0x4631             MOV      R1,R6
+   \   00000062   0x2001             MOVS     R0,#+1
+   \   00000064   0x.... 0x....      BL       emberAfPluginSimpleMeteringServerProcessNotificationFlagsCallback
+   \   00000068   0x4639             MOV      R1,R7
+   \   0000006A   0x2002             MOVS     R0,#+2
+   \   0000006C   0x.... 0x....      BL       emberAfPluginSimpleMeteringServerProcessNotificationFlagsCallback
+   \   00000070   0x4641             MOV      R1,R8
+   \   00000072   0x2003             MOVS     R0,#+3
+   \   00000074   0x.... 0x....      BL       emberAfPluginSimpleMeteringServerProcessNotificationFlagsCallback
+   \   00000078   0x4621             MOV      R1,R4
+   \   0000007A   0x2004             MOVS     R0,#+4
+   \   0000007C   0xE7CA             B.N      ??emberAfSimpleMeteringClusterMirrorReportAttri_1
+   \                     ??emberAfSimpleMeteringClusterMirrorReportAttri_3: (+1)
+   \   0000007E   0x2000             MOVS     R0,#+0
+   \   00000080   0xE7CE             B.N      ??emberAfSimpleMeteringClusterMirrorReportAttri_2
+    626          }
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine3: (+1)
+   \   00000000   0x2100             MOVS     R1,#+0
+   \                     ??Subroutine3_0: (+1)
+   \   00000002   0x4620             MOV      R0,R4
+   \   00000004   0x.... 0x....      B.W      emberAfGetInt32u
+    627          
+
+   \                                 In section .text, align 2, keep-with-next
+    628          void emberAfPluginSimpleMeteringClusterReadAttributesResponseCallback(EmberAfClusterId clusterId,
+    629                                                                                int8u *buffer,
+    630                                                                                int16u bufLen)
+    631          {
+   \                     emberAfPluginSimpleMeteringClusterReadAttributesResponseCallback: (+1)
+   \   00000000   0xE92D 0x43F8      PUSH     {R3-R9,LR}
+   \   00000004   0x460C             MOV      R4,R1
+    632            int16u bufIndex = 0;
+   \   00000006   0x2500             MOVS     R5,#+0
+    633          
+    634            if (clusterId != ZCL_SIMPLE_METERING_CLUSTER_ID
+    635                || emberAfCurrentCommand()->direction != ZCL_FRAME_CONTROL_CLIENT_TO_SERVER) {
+   \   00000008   0xF240 0x7102      MOVW     R1,#+1794
+   \   0000000C   0x4690             MOV      R8,R2
+   \   0000000E   0x4288             CMP      R0,R1
+   \   00000010   0xD136             BNE.N    ??emberAfPluginSimpleMeteringClusterReadAttribu_0
+   \   00000012   0x....             LDR.N    R0,??DataTable16_2
+   \   00000014   0x6800             LDR      R0,[R0, #+0]
+   \   00000016   0x7D40             LDRB     R0,[R0, #+21]
+   \   00000018   0xB1A0             CBZ.N    R0,??emberAfPluginSimpleMeteringClusterReadAttribu_1
+    636              return;
+   \   0000001A   0xE031             B.N      ??emberAfPluginSimpleMeteringClusterReadAttribu_0
+    637            }
+    638          
+    639            // Each record in the response has a two-byte attribute id and a one-byte
+    640            // status.  If the status is SUCCESS, there will also be a one-byte type and
+    641            // variable-length data.
+    642            while (bufIndex + 3 <= bufLen) {
+    643              EmberAfStatus status;
+    644              EmberAfAttributeId attributeId = (EmberAfAttributeId)emberAfGetInt16u(buffer,
+    645                                                                                    bufIndex,
+    646                                                                                    bufLen);
+    647              bufIndex += 2;
+    648              status = (EmberAfStatus)emberAfGetInt8u(buffer, bufIndex, bufLen);
+    649              bufIndex++;
+    650              if (status == EMBER_ZCL_STATUS_SUCCESS) {
+    651                int8u dataSize;
+    652                int8u dataType = emberAfGetInt8u(buffer, bufIndex, bufLen);
+    653                bufIndex++;
+    654          
+    655                // For strings, the data size is the length of the string (specified by
+    656                // the first byte of data) plus one for the length byte itself.  For
+    657                // everything else, the size is just the size of the data type.
+    658                dataSize = (emberAfIsThisDataTypeAStringType(dataType)
+    659                            ? emberAfStringLength(buffer + bufIndex) + 1
+    660                            : emberAfGetDataSize(dataType));
+   \                     ??emberAfPluginSimpleMeteringClusterReadAttribu_2: (+1)
+   \   0000001C   0x4630             MOV      R0,R6
+   \   0000001E   0x.... 0x....      BL       emberAfGetDataSize
+   \   00000022   0x4607             MOV      R7,R0
+   \                     ??emberAfPluginSimpleMeteringClusterReadAttribu_3: (+1)
+   \   00000024   0xB2FE             UXTB     R6,R7
+    661          
+    662                if (bufIndex + dataSize <= bufLen) {
+   \   00000026   0x1970             ADDS     R0,R6,R5
+   \   00000028   0x4580             CMP      R8,R0
+   \   0000002A   0xDB0A             BLT.N    ??emberAfPluginSimpleMeteringClusterReadAttribu_4
+    663                  // The Notification Attribute Set is in the range of 0x0000 - 0x00FF
+    664                  // and are all 32 bit BitMap types. Each application may decide to
+    665                  // handle the notification flags differently so we'll callback to the
+    666                  // application for each notification flags attribute.
+    667                  if (attributeId < 0x0100) {
+   \   0000002C   0xF1B9 0x0FFF      CMP      R9,#+255
+   \   00000030   0xDC07             BGT.N    ??emberAfPluginSimpleMeteringClusterReadAttribu_4
+    668                    int32u bitMap = emberAfGetInt32u(buffer, bufIndex, bufLen);
+   \   00000032   0x4642             MOV      R2,R8
+   \   00000034   0x4629             MOV      R1,R5
+   \   00000036   0x.... 0x....      BL       ??Subroutine3_0
+   \                     ??CrossCallReturnLabel_0: (+1)
+   \   0000003A   0x4601             MOV      R1,R0
+    669                    emberAfSimpleMeteringClusterPrintln("Attribute value 0x%4x", bitMap);
+    670                    emberAfPluginSimpleMeteringServerProcessNotificationFlagsCallback(attributeId, bitMap);
+   \   0000003C   0x4648             MOV      R0,R9
+   \   0000003E   0x.... 0x....      BL       emberAfPluginSimpleMeteringServerProcessNotificationFlagsCallback
+    671                  }
+    672                }
+    673                bufIndex += dataSize;
+   \                     ??emberAfPluginSimpleMeteringClusterReadAttribu_4: (+1)
+   \   00000042   0x1975             ADDS     R5,R6,R5
+   \                     ??emberAfPluginSimpleMeteringClusterReadAttribu_1: (+1)
+   \   00000044   0xB2AE             UXTH     R6,R5
+   \   00000046   0x1CF0             ADDS     R0,R6,#+3
+   \   00000048   0x4580             CMP      R8,R0
+   \   0000004A   0xDB19             BLT.N    ??emberAfPluginSimpleMeteringClusterReadAttribu_0
+   \   0000004C   0x4642             MOV      R2,R8
+   \   0000004E   0x4631             MOV      R1,R6
+   \   00000050   0x4620             MOV      R0,R4
+   \   00000052   0x.... 0x....      BL       emberAfGetInt16u
+   \   00000056   0x4681             MOV      R9,R0
+   \   00000058   0x1CB0             ADDS     R0,R6,#+2
+   \   0000005A   0xB280             UXTH     R0,R0
+   \   0000005C   0x1C45             ADDS     R5,R0,#+1
+   \   0000005E   0x5D01             LDRB     R1,[R0, R4]
+   \   00000060   0x2900             CMP      R1,#+0
+   \   00000062   0xD1EF             BNE.N    ??emberAfPluginSimpleMeteringClusterReadAttribu_1
+   \   00000064   0xB2A8             UXTH     R0,R5
+   \   00000066   0x5D06             LDRB     R6,[R0, R4]
+   \   00000068   0x1C40             ADDS     R0,R0,#+1
+   \   0000006A   0xB285             UXTH     R5,R0
+   \   0000006C   0x4630             MOV      R0,R6
+   \   0000006E   0x.... 0x....      BL       emberAfIsThisDataTypeAStringType
+   \   00000072   0x2800             CMP      R0,#+0
+   \   00000074   0xD0D2             BEQ.N    ??emberAfPluginSimpleMeteringClusterReadAttribu_2
+   \   00000076   0x1928             ADDS     R0,R5,R4
+   \   00000078   0x.... 0x....      BL       emberAfStringLength
+   \   0000007C   0x1C47             ADDS     R7,R0,#+1
+   \   0000007E   0xE7D1             B.N      ??emberAfPluginSimpleMeteringClusterReadAttribu_3
+    674              }
+    675            }
+    676          }
+   \                     ??emberAfPluginSimpleMeteringClusterReadAttribu_0: (+1)
+   \   00000080   0xE8BD 0x83F1      POP      {R0,R4-R9,PC}    ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12:
+   \   00000000   0x75 0x77          DC8      0x75, 0x77, 0x00, 0x00
+   \              0x00 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable15:
+   \   00000000   0x76 0x00          DC8      "v",0x0,0x0
+   \              0x00 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable16:
+   \   00000000   0x........         DC32     fastPolling
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable16_1:
+   \   00000000   0x........         DC32     samplingData
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable16_2:
+   \   00000000   0x........         DC32     emAfCurrentCommand
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable16_3:
+   \   00000000   0x........         DC32     ??nextSampleId
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable16_4:
+   \   00000000   0x........         DC32     emberAfPluginSimpleMeteringServerSamplingEventControl
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable16_5:
+   \   00000000   0x........         DC32     ??firstIssuerId
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable16_6:
+   \   00000000   0x........         DC32     changeSupply
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable16_7:
+   \   00000000   0x44556677         DC32     0x44556677
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "uw">`:
+   \   00000000   0x75 0x77          DC8 "uw"
+   \              0x00         
+   \   00000003   0x00               DC8 0
+
+   \                                 In section .rodata, align 2, keep-with-next
+   \                     `?<Constant "v">`:
+   \   00000000   0x76 0x00          DC8 "v"
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "vwuvv">`:
+   \   00000000   0x76 0x77          DC8 "vwuvv"
+   \              0x75 0x76    
+   \              0x76 0x00    
+   \   00000006   0x00 0x00          DC8 0, 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "wwwu">`:
+   \   00000000   0x77 0x77          DC8 "wwwu"
+   \              0x77 0x75    
+   \              0x00         
+   \   00000005   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   emAfToggleFastPolling
+      32   emberAfPluginSimpleMeteringClusterReadAttributesResponseCallback
+        32   -> emberAfGetDataSize
+        32   -> emberAfGetInt16u
+        32   -> emberAfGetInt32u
+        32   -> emberAfIsThisDataTypeAStringType
+        32   -> emberAfPluginSimpleMeteringServerProcessNotificationFlagsCallback
+        32   -> emberAfStringLength
+      40   emberAfPluginSimpleMeteringServerSamplingEventHandler
+        40   -> emEventControlSetDelayMS
+        40   -> emberAfGetCurrentTime
+        40   -> emberAfReadAttribute
+      40   emberAfPluginSimpleMeteringServerStartSampling
+        40   -> emEventControlSetDelayMS
+        40   -> emberAfGetCurrentTime
+        40   -> findSamplingSession
+      32   emberAfPluginSimpleMeteringServerSupplyEventHandler
+        32   -> emEventControlSetDelayMS
+        32   -> emberAfFillExternalBuffer
+        32   -> emberAfGetCurrentTime
+        32   -> emberAfReadServerAttribute
+        32   -> emberAfSendCommandUnicast
+        32   -> emberAfSetCommandEndpoints
+      56   emberAfSimpleMeteringClusterChangeSupplyCallback
+        56   -> emEventControlSetDelayMS
+        56   -> emberAfFillExternalBuffer
+        56   -> emberAfGetCurrentTime
+        56   -> emberAfSendImmediateDefaultResponse
+        56   -> emberAfSendResponse
+        56   -> emberAfWriteAttribute
+       0   emberAfSimpleMeteringClusterGetProfileCallback
+         0   -> emAfTestMeterGetProfiles
+      40   emberAfSimpleMeteringClusterGetSampledDataCallback
+        40   -> emberAfFillExternalBuffer
+        40   -> emberAfPutInt24uInResp
+        40   -> emberAfSendImmediateDefaultResponse
+        40   -> emberAfSendResponse
+       8   emberAfSimpleMeteringClusterLocalChangeSupplyCallback
+         8   -> emberAfSendImmediateDefaultResponse
+      24   emberAfSimpleMeteringClusterMirrorReportAttributeResponseCallback
+        24   -> emberAfGetInt32u
+        24   -> emberAfPluginSimpleMeteringServerProcessNotificationFlagsCallback
+        24   -> emberAfSendImmediateDefaultResponse
+      48   emberAfSimpleMeteringClusterRequestFastPollModeCallback
+        48   -> emberAfFillExternalBuffer
+        48   -> emberAfFindClusterServerEndpointIndex
+        48   -> emberAfGetCurrentTime
+        48   -> emberAfReadServerAttribute
+        48   -> emberAfSendImmediateDefaultResponse
+        48   -> emberAfSendResponse
+      16   emberAfSimpleMeteringClusterResetLoadLimitCounterCallback
+        16   -> emberAfWriteAttribute
+       0   emberAfSimpleMeteringClusterServerDefaultResponseCallback
+       8   emberAfSimpleMeteringClusterServerInitCallback
+         8   -> emAfTestMeterInit
+         0   -> emberAfScheduleServerTick
+       8   emberAfSimpleMeteringClusterServerTickCallback
+         8   -> emAfTestMeterTick
+         0   -> emberAfScheduleServerTick
+      32   emberAfSimpleMeteringClusterSetSupplyStatusCallback
+        32   -> emberAfSendImmediateDefaultResponse
+        32   -> emberAfWriteAttribute
+       8   emberAfSimpleMeteringClusterSetUncontrolledFlowThresholdCallback
+         8   -> emberAfSendImmediateDefaultResponse
+      32   emberAfSimpleMeteringClusterStartSamplingCallback
+        32   -> emberAfFillExternalBuffer
+        32   -> emberAfPluginSimpleMeteringServerStartSampling
+        32   -> emberAfSendImmediateDefaultResponse
+        32   -> emberAfSendResponse
+       0   findSamplingSession
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ?<Constant "uw">
+       2  ?<Constant "v">
+       8  ?<Constant "vwuvv">
+       8  ?<Constant "wwwu">
+       4  ??DataTable12
+       4  ??DataTable15
+       4  ??DataTable16
+       4  ??DataTable16_1
+       4  ??DataTable16_2
+       4  ??DataTable16_3
+       4  ??DataTable16_4
+       4  ??DataTable16_5
+       4  ??DataTable16_6
+       4  ??DataTable16_7
+      12  ??Subroutine8_0
+      18  ?Subroutine0
+       8  ?Subroutine1
+      14  ?Subroutine2
+       8  ?Subroutine3
+      12  ?Subroutine4
+      24  ?Subroutine5
+       8  ?Subroutine6
+      14  ?Subroutine7
+      28  changeSupply
+          emberAfPluginSimpleMeteringServerSupplyEventControl
+       8  emAfToggleFastPolling
+     132  emberAfPluginSimpleMeteringClusterReadAttributesResponseCallback
+       8  emberAfPluginSimpleMeteringServerSamplingEventControl
+     124  emberAfPluginSimpleMeteringServerSamplingEventHandler
+     166  emberAfPluginSimpleMeteringServerStartSampling
+     106  emberAfPluginSimpleMeteringServerSupplyEventHandler
+     200  emberAfSimpleMeteringClusterChangeSupplyCallback
+       4  emberAfSimpleMeteringClusterGetProfileCallback
+     180  emberAfSimpleMeteringClusterGetSampledDataCallback
+      16  emberAfSimpleMeteringClusterLocalChangeSupplyCallback
+     130  emberAfSimpleMeteringClusterMirrorReportAttributeResponseCallback
+     162  emberAfSimpleMeteringClusterRequestFastPollModeCallback
+      42  emberAfSimpleMeteringClusterResetLoadLimitCounterCallback
+       2  emberAfSimpleMeteringClusterServerDefaultResponseCallback
+      44  emberAfSimpleMeteringClusterServerInitCallback
+       8  emberAfSimpleMeteringClusterServerTickCallback
+     102  emberAfSimpleMeteringClusterSetSupplyStatusCallback
+       4  emberAfSimpleMeteringClusterSetUncontrolledFlowThresholdCallback
+     158  emberAfSimpleMeteringClusterStartSamplingCallback
+       8  fastPolling
+          fastPollEndTimeUtcTable
+      34  findSamplingSession
+       8  firstIssuerId
+          minIssuerEventId
+       2  nextSampleId
+     300  samplingData
+
+ 
+   352 bytes in section .bss
+     2 bytes in section .data
+     6 bytes in section .rodata
+ 1 796 bytes in section .text
+ 
+ 1 796 bytes of CODE  memory
+     6 bytes of CONST memory
+   354 bytes of DATA  memory
+
+Errors: none
+Warnings: none

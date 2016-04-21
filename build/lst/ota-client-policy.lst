@@ -1,0 +1,314 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        31/Aug/2015  14:04:35
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-client-policy\ota-client-policy.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-client-policy\ota-client-policy.c
+#        -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"ota-client-policy.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-client-policy\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\ota-client-policy.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ota-client-policy.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-client-policy\ota-client-policy.c
+      1          // *****************************************************************************
+      2          // * ota-client-policy.c
+      3          // *
+      4          // * This file handle how the application can configure and interact with the OTA
+      5          // * cluster.
+      6          // * 
+      7          // * Copyright 2009 by Ember Corporation. All rights reserved.              *80*
+      8          // *****************************************************************************
+      9          
+     10          
+     11          #include "app/framework/include/af.h"
+     12          #include "callback.h"
+     13          #include "app/framework/plugin/ota-common/ota.h"
+     14          #include "app/framework/plugin/ota-storage-common/ota-storage.h"
+     15          #include "app/framework/util/util.h"
+     16          #include "app/framework/util/common.h"
+     17          
+     18          #include "ota-client-policy.h"
+     19          
+     20          #if defined(ZCL_USING_OTA_BOOTLOAD_CLUSTER_CLIENT)
+     21          
+     22          // Right now this sample policy only supports a single set of version 
+     23          // information for the device, which will be supplied to the OTA cluster in 
+     24          // order to query and download a new image when it is available.  This does not 
+     25          // support multiple products with multiple download images.
+     26          
+     27          #if defined(EMBER_AF_PLUGIN_OTA_CLIENT_POLICY_INCLUDE_HARDWARE_VERSION)
+     28            #define HARDWARE_VERSION EMBER_AF_PLUGIN_OTA_CLIENT_POLICY_HARDWARE_VERSION
+     29          #else
+     30            #define HARDWARE_VERSION EMBER_AF_INVALID_HARDWARE_VERSION
+     31          #endif
+     32          
+     33          //------------------------------------------------------------------------------
+     34          // Globals
+     35          
+     36          //------------------------------------------------------------------------------
+     37          
+
+   \                                 In section .text, align 2, keep-with-next
+     38          void emberAfOtaClientVersionInfoCallback(EmberAfOtaImageId* currentImageInfo,
+     39                                                   int16u* hardwareVersion)
+     40          {
+   \                     emberAfOtaClientVersionInfoCallback: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+   \   00000002   0x460D             MOV      R5,R1
+   \   00000004   0x4604             MOV      R4,R0
+     41            // This callback is fired when a new query and download is initiated.
+     42            // The application will fill in the currentImageInfo with their manufacturer 
+     43            // ID, image type ID, and current software version number to use in that
+     44            // query. The deviceSpecificFileEui64 can be ignored.
+     45          
+     46            // It may be necessary to dynamically determine this data by talking to
+     47            // another device, as is the case with a host talking to an NCP device.
+     48          
+     49            // The OTA client plugin will cache the data returned by this callback
+     50            // and use it for the subsequent transaction, which could be a query
+     51            // or a query and download.  Therefore it is possible to instruct the 
+     52            // OTA client cluster code to query about multiple images by returning
+     53            // different values.
+     54          
+     55            MEMSET(currentImageInfo, 0, sizeof(EmberAfOtaImageId));
+   \   00000006   0x2210             MOVS     R2,#+16
+   \   00000008   0x2100             MOVS     R1,#+0
+   \   0000000A   0x.... 0x....      BL       halCommonMemSet
+     56            currentImageInfo->manufacturerId  = EMBER_AF_MANUFACTURER_CODE;
+   \   0000000E   0xF241 0x100D      MOVW     R0,#+4365
+   \   00000012   0x8020             STRH     R0,[R4, #+0]
+     57            currentImageInfo->imageTypeId     = EMBER_AF_PLUGIN_OTA_CLIENT_POLICY_IMAGE_TYPE_ID;
+   \   00000014   0x2000             MOVS     R0,#+0
+   \   00000016   0x8060             STRH     R0,[R4, #+2]
+     58            currentImageInfo->firmwareVersion = EMBER_AF_PLUGIN_OTA_CLIENT_POLICY_FIRMWARE_VERSION;
+   \   00000018   0x2001             MOVS     R0,#+1
+   \   0000001A   0x6060             STR      R0,[R4, #+4]
+     59          
+     60            if (hardwareVersion != NULL) {
+   \   0000001C   0xB115             CBZ.N    R5,??emberAfOtaClientVersionInfoCallback_0
+     61              *hardwareVersion = HARDWARE_VERSION;
+   \   0000001E   0xF64F 0x70FF      MOVW     R0,#+65535
+   \   00000022   0x8028             STRH     R0,[R5, #+0]
+     62            }
+     63          }
+   \                     ??emberAfOtaClientVersionInfoCallback_0: (+1)
+   \   00000024   0xBD31             POP      {R0,R4,R5,PC}    ;; return
+     64          
+
+   \                                 In section .text, align 2, keep-with-next
+     65          EmberAfImageVerifyStatus emberAfOtaClientCustomVerifyCallback(boolean newVerification,
+     66                                                                        const EmberAfOtaImageId* id)
+     67          {
+   \                     emberAfOtaClientCustomVerifyCallback: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0x4604             MOV      R4,R0
+     68            // Manufacturing specific checks can be made to the image in this function to
+     69            // determine if it is valid.  This function is called AFTER cryptographic 
+     70            // checks have passed.  If the cryptographic checks failed, this function will
+     71            // never be called.
+     72          
+     73            // The function shall return one of the following based on its own 
+     74            // verification process.
+     75            // 1) EMBER_AF_IMAGE_GOOD - the image has passed all checks
+     76            // 2) EMBER_AF_IMAGE_BAD  - the image is not valid 
+     77            // 3) EMBER_AF_IMAGE_VERIFY_IN_PROGRESS - the image is valid so far, but more
+     78            //      checks are needed.  This callback shall be re-executed later to 
+     79            //      continue verification.  This allows other code in the framework to run.
+     80          
+     81            // Note that EBL verification is an SoC-only feature.
+     82          
+     83          #if !defined(EZSP_HOST) && defined(EMBER_AF_PLUGIN_OTA_CLIENT_POLICY_EBL_VERIFICATION)
+     84            int16u pages;
+     85          
+     86            // For sleepies, we must re-initalize the EEPROM / bootloader
+     87            // after each nap/hibernate.  This call will only re-initalize the EEPROM
+     88            // if that is the case.
+     89            emberAfEepromInitCallback();
+   \   00000004   0x.... 0x....      BL       emberAfEepromInitCallback
+     90          
+     91            if (newVerification) {
+   \   00000008   0xB10C             CBZ.N    R4,??emberAfOtaClientCustomVerifyCallback_0
+     92              otaPrintln("Starting EBL verification");
+     93              halAppBootloaderImageIsValidReset();
+   \   0000000A   0x.... 0x....      BL       halAppBootloaderImageIsValidReset
+     94            }
+     95            pages = halAppBootloaderImageIsValid();
+   \                     ??emberAfOtaClientCustomVerifyCallback_0: (+1)
+   \   0000000E   0x.... 0x....      BL       halAppBootloaderImageIsValid
+     96            if (pages == BL_IMAGE_IS_VALID_CONTINUE) {
+   \   00000012   0xF64F 0x71FF      MOVW     R1,#+65535
+   \   00000016   0x4288             CMP      R0,R1
+   \   00000018   0xD101             BNE.N    ??emberAfOtaClientCustomVerifyCallback_1
+     97              return EMBER_AF_IMAGE_VERIFY_IN_PROGRESS;
+   \   0000001A   0x2002             MOVS     R0,#+2
+   \   0000001C   0xBD10             POP      {R4,PC}
+     98            } else if (pages == 0) {
+   \                     ??emberAfOtaClientCustomVerifyCallback_1: (+1)
+   \   0000001E   0xB908             CBNZ.N   R0,??emberAfOtaClientCustomVerifyCallback_2
+     99              otaPrintln("EBL failed verification.");
+    100              return EMBER_AF_IMAGE_BAD;
+   \   00000020   0x2001             MOVS     R0,#+1
+   \   00000022   0xBD10             POP      {R4,PC}
+    101            }
+    102            otaPrintln("EBL passed verification.");
+    103          #endif
+    104          
+    105            return EMBER_AF_IMAGE_GOOD;
+   \                     ??emberAfOtaClientCustomVerifyCallback_2: (+1)
+   \   00000024   0x2000             MOVS     R0,#+0
+   \   00000026   0xBD10             POP      {R4,PC}          ;; return
+    106          }
+    107          
+
+   \                                 In section .text, align 2, keep-with-next
+    108          boolean emberAfOtaClientDownloadCompleteCallback(EmberAfOtaDownloadResult result,
+    109                                                           const EmberAfOtaImageId* id)
+    110          {
+   \                     emberAfOtaClientDownloadCompleteCallback: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    111            // At this point the image has been completely downloaded and cryptographic 
+    112            // checks (if applicable) have been performed.
+    113            // Manufacturer verification callback has also been called and passed.
+    114          
+    115            if (result != EMBER_AF_OTA_DOWNLOAD_AND_VERIFY_SUCCESS) {
+   \   00000002   0x2800             CMP      R0,#+0
+   \   00000004   0xBF1C             ITT      NE 
+    116              emberAfOtaBootloadClusterPrintln("Download failed.");
+    117          
+    118          #if defined(EMBER_AF_PLUGIN_OTA_CLIENT_POLICY_DELETE_FAILED_DOWNLOADS)
+    119              if (result != EMBER_AF_OTA_ERASE_FAILED) {
+   \   00000006   0x2805             CMPNE    R0,#+5
+    120                EmberAfOtaStorageStatus status = emberAfOtaStorageClearTempDataCallback();
+   \   00000008   0x.... 0x....      BLNE     emberAfOtaStorageClearTempDataCallback
+    121                emberAfOtaBootloadClusterPrintln("Deleting failed download, status: 0x%X",
+    122                                                 status);
+    123              }
+    124          #endif
+    125          
+    126              return TRUE;   // return value is ignored
+    127            }
+    128          
+    129            // If the client wants to abort for some reason then it can do so here
+    130            // and return FALSE.  Otherwise it should give the "go ahead" by returning
+    131            // TRUE.
+    132            
+    133            return TRUE;
+   \   0000000C   0x2001             MOVS     R0,#+1
+   \   0000000E   0xBD02             POP      {R1,PC}          ;; return
+    134          }
+    135          
+
+   \                                 In section .text, align 2, keep-with-next
+    136          void emberAfOtaClientBootloadCallback(const EmberAfOtaImageId* id)
+    137          {
+   \                     emberAfOtaClientBootloadCallback: (+1)
+   \   00000000   0xB51C             PUSH     {R2-R4,LR}
+   \   00000002   0x4604             MOV      R4,R0
+    138            // OTA Server has told us to bootload.
+    139            // Any final preperation prior to the bootload should be done here.
+    140            // It is assumed that the device will reset in most all cases.
+    141          
+    142            int32u offset;
+    143            int32u endOffset;
+    144          
+    145            if (EMBER_AF_OTA_STORAGE_SUCCESS
+    146                != emAfOtaStorageGetTagOffsetAndSize(id,
+    147                                                     OTA_TAG_UPGRADE_IMAGE,
+    148                                                     &offset,
+    149                                                     &endOffset)) {
+   \   00000004   0xAB00             ADD      R3,SP,#+0
+   \   00000006   0xAA01             ADD      R2,SP,#+4
+   \   00000008   0x2100             MOVS     R1,#+0
+   \   0000000A   0x.... 0x....      BL       emAfOtaStorageGetTagOffsetAndSize
+   \   0000000E   0xB930             CBNZ.N   R0,??emberAfOtaClientBootloadCallback_0
+    150              emberAfCoreFlush();
+    151            otaPrintln("Image does not contain an Upgrade Image Tag (0x%2X).  Skipping upgrade.", 
+    152                       OTA_TAG_UPGRADE_IMAGE);
+    153            return;
+    154          }
+    155          
+    156          otaPrintln("Executing bootload callback.");
+    157          emberSerialWaitSend(APP_SERIAL);
+   \   00000010   0x2001             MOVS     R0,#+1
+   \   00000012   0x.... 0x....      BL       emberSerialWaitSend
+    158          
+    159            // This routine will NOT return unless we failed to launch the bootloader.
+    160          emberAfOtaBootloadCallback(id, OTA_TAG_UPGRADE_IMAGE);
+   \   00000016   0x2100             MOVS     R1,#+0
+   \   00000018   0x4620             MOV      R0,R4
+   \   0000001A   0x.... 0x....      BL       emberAfOtaBootloadCallback
+    161          }
+   \                     ??emberAfOtaClientBootloadCallback_0: (+1)
+   \   0000001E   0xBD13             POP      {R0,R1,R4,PC}    ;; return
+    162          
+    163          #endif // defined(ZCL_USING_OTA_BOOTLOAD_CLUSTER_CLIENT)
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      16   emberAfOtaClientBootloadCallback
+        16   -> emAfOtaStorageGetTagOffsetAndSize
+        16   -> emberAfOtaBootloadCallback
+        16   -> emberSerialWaitSend
+       8   emberAfOtaClientCustomVerifyCallback
+         8   -> emberAfEepromInitCallback
+         8   -> halAppBootloaderImageIsValid
+         8   -> halAppBootloaderImageIsValidReset
+       8   emberAfOtaClientDownloadCompleteCallback
+         8   -> emberAfOtaStorageClearTempDataCallback
+      16   emberAfOtaClientVersionInfoCallback
+        16   -> halCommonMemSet
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      32  emberAfOtaClientBootloadCallback
+      40  emberAfOtaClientCustomVerifyCallback
+      16  emberAfOtaClientDownloadCompleteCallback
+      38  emberAfOtaClientVersionInfoCallback
+
+ 
+ 126 bytes in section .text
+ 
+ 126 bytes of CODE memory
+
+Errors: none
+Warnings: none

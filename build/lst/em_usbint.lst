@@ -1,0 +1,365 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        09/Sep/2015  17:12:24
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\em_usbint.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\em_usbint.c -D
+#        NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"em_usbint.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\em_usbint.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\em_usbint.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\em_usbint.c
+      1          /**************************************************************************//**
+      2           * @file
+      3           * @brief USB protocol stack library, USB device peripheral interrupt handlers.
+      4           * @author Nathaniel Ting
+      5           * @version 3.20.3
+      6           * <!-- Copyright 2013 by Silicon Laboratories. All rights reserved.     *80*-->
+      7           *****************************************************************************/
+      8          
+      9          
+     10          #include PLATFORM_HEADER
+     11          #include "stack/include/ember.h"
+     12          #include "hal/hal.h"
+     13          
+     14          #if defined(CORTEXM3_EM35X_USB)
+     15          // Only define this ISR if USB is on and EnergyMicro USB is enabled. When this
+     16          // function is defined it will cause extra code to be pulled in even if the ISR
+     17          // will never fire.
+     18          
+     19          #include "em_usb.h"
+     20          #include "em_usbhal.h"
+     21          #include "em_usbtypes.h"
+     22          #include "em_usbd.h"
+     23          #include "app/util/serial/serial.h"
+     24           
+     25          /** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
+     26          
+     27          USBD_Ep_TypeDef *ep;
+     28          
+     29          void halUsbIsr(void)
+     30          {
+     31            #ifdef BOOTLOADER
+     32            VBUSMON_ISR();
+     33            #endif
+     34            
+     35            int32u status = INT_USBFLAG;
+     36            INT_USBFLAG = status;
+     37            
+     38            if ( status == 0 )
+     39            {
+     40              return;
+     41            }
+     42            //Ensure EP0 IN is not stalled.  Refer to receiving getQualifierDescriptor
+     43            //for more information.
+     44            USB_STALLIN &= ~USB_STALLINEP0;
+     45          
+     46            if(status & INT_USBWAKEUP & INT_USBCFG) { 
+     47              #ifdef USB_DEBUG_SUSPEND
+     48                DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"INT_USBWAKEUP\r\n");
+     49              #endif
+     50          
+     51              //The INT_USBWAKEUP interrupt triggers for a successful remote wakeup
+     52              //This is essentially a resume only intiated by the device instaed of host
+     53              //need INT_USBCFG mask to enable turning on/off remote wakeup interrupt
+     54          
+     55              #ifndef BOOTLOADER
+     56                USBD_SetUsbState( USBD_STATE_POWERED );
+     57                halResumeCallback();
+     58                #ifndef EMBER_NO_STACK
+     59                emberStackPowerUp();
+     60                #endif // EMBER_NO_STACK
+     61              #endif
+     62            }
+     63          
+     64            if(status & INT_USBRESUME) {
+     65              #ifdef USB_DEBUG_SUSPEND
+     66                DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"INT_USBRESUME\r\n");
+     67              #endif
+     68              //The INT_USBRESUME interrupt pulls us out of suspend while the USB
+     69              //core auto clears the USBSUSP_CLKSEL bit (used when entering suspend).
+     70          
+     71              #ifndef BOOTLOADER
+     72                USBD_SetUsbState( USBD_STATE_POWERED );
+     73                halResumeCallback();
+     74                #ifndef EMBER_NO_STACK
+     75                emberStackPowerUp();
+     76                #endif // EMBER_NO_STACK
+     77              #endif
+     78          
+     79            }
+     80            
+     81            if(status & INT_USBSUSPEND) {
+     82              #ifdef USB_DEBUG_SUSPEND
+     83                DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"INT_USBSUSPEND\r\n");
+     84              #endif
+     85              //If suspend if being supported, we now have 7ms to get down to
+     86              //suspend current.  Setting usb state to USBD_STATE_SUSPENDED will allow
+     87              //the usbSuspendDsr() function to place us in the appropriate low
+     88              //power clocking and idle mode.
+     89              //
+     90              //NOTE:  The stack and HAL should be shutdown like deep sleeping before
+     91              //       suspend is entered.  USB sleep involves slowing down peripheral
+     92              //       clocking, but it does not stop the clocks.  This means
+     93              //       peripherals will keep running if they're enabled.  Being at
+     94              //       a slower clock speed can severely disrupt application behavior
+     95              //       that depends on clean peripherial behavior at a desired clock
+     96              //       rate.  For example, problems with the UART would be very obvious.
+     97              
+     98          
+     99              #ifndef BOOTLOADER
+    100              USBD_SetUsbState( USBD_STATE_SUSPENDED );
+    101              #endif
+    102              //USBTODO- Software needs to remember when INT_USBSUSPEND fires so that
+    103              //  it can return to suspend if a non-USB event pulls us out of
+    104              //  the USB sleep mode.  Only INT_USBRESUME is allowed to keep us
+    105              //  out of suspend.
+    106            }
+    107            
+    108          
+    109            if(status & INT_USBRESET) {
+    110              #ifdef USB_DEBUG_INT
+    111                DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "\r\n\r\nINT_USBRESET\r\n");
+    112              #endif
+    113              //When a USB reset occurs it resets the core but not the DMA.  To ensure
+    114              //transactions after a reset are fresh all buffers (DMA) need to be
+    115              //cleared.
+    116              USB_BUFCLR = (USB_BUFCLRINEP6 |
+    117                            USB_BUFCLRINEP5 |
+    118                            USB_BUFCLRINEP4 |
+    119                            USB_BUFCLRINEP3 |
+    120                            USB_BUFCLRINEP2 |
+    121                            USB_BUFCLRINEP1 |
+    122                            USB_BUFCLRINEP0 );
+    123          
+    124          
+    125              /* Setup EP0 to receive SETUP packets */
+    126              USBDHAL_StartEp0Setup( dev );
+    127              USBD_Ep_TypeDef *ep;
+    128              ep = &dev->ep[ 0 ];
+    129              ep->state = D_EP_IDLE;
+    130              ep->remaining = 0;
+    131          
+    132              ep->in = true;
+    133              USBDHAL_UnStallEp( ep );              /* Stall Ep0 IN                 */
+    134              ep->in = false;                     /* OUT for next SETUP           */
+    135              USBDHAL_UnStallEp( ep );              /* Stall Ep0 OUT                */
+    136              
+    137              if ( dev->callbacks->usbReset )
+    138              {
+    139                dev->callbacks->usbReset();
+    140              }
+    141          
+    142              // USBD_SetUsbState( USBD_STATE_DEFAULT );
+    143              // USBDHAL_AbortAllTransfers( USB_STATUS_DEVICE_RESET );
+    144            }
+    145          
+    146            
+    147            if(USB_RXBUFSIZEEP0A == 0) {
+    148              USB_BUFCLR = USB_BUFCLRINEP0;
+    149              
+    150              USBDHAL_StartEp0Setup( dev );
+    151              USBD_Ep_TypeDef *ep;
+    152              ep = &dev->ep[ 0 ];
+    153              ep->state = D_EP_IDLE;
+    154              ep->remaining = 0;
+    155            }
+    156          
+    157            //==== RX functionality ====
+    158            if (status & INT_USBRXVALID)
+    159            {
+    160              int epnum;
+    161              uint16_t epmask;
+    162          
+    163              // sweep through eps to determine which EP the interrupt is on
+    164              for ( epnum = 0,                epmask = INT_USBRXVALIDEP0;
+    165                    epnum <= MAX_NUM_OUT_EPS;
+    166                    epnum++,                  epmask <<= 1 )
+    167              {
+    168                if (status & epmask)
+    169                {
+    170          
+    171                  // determine how many bytes were received
+    172                  volatile int32u *bufsize = EPOUTBUFSIZE[epnum];
+    173          
+    174                  #ifdef USB_DEBUG_INT
+    175                    #ifdef USB_DEBUG_VERBOSE
+    176                      DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"RX%d-->",epnum);
+    177                      int8u i;
+    178                      for(i=0;i<*bufsize;i++) {
+    179                        DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "%02X", EPOUTBUF[epnum][i]);
+    180                      }
+    181                      DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "  %d bytes\r\n", *bufsize);
+    182                    #else
+    183                      DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"RX%d-->%d bytes\r\n",epnum, *bufsize);
+    184                    #endif
+    185                  #endif
+    186          
+    187          
+    188                  // update endpoint state
+    189                  ep = USBD_GetEpFromAddr( epnum );
+    190                  ep->remaining -= EFM32_MIN(ep->remaining,*bufsize);
+    191                  ep->xferred += *bufsize;
+    192          
+    193                  // #ifdef USB_DEBUG_INT
+    194                  //   DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "  %d remaining, %d xferred\r\n", ep->remaining, ep->xferred);
+    195                  // #endif
+    196          
+    197                  // dispatch endpoint handler, erase buffer, reenable endpoint RX
+    198                  if (epnum ==0)
+    199                  {
+    200                    USBDEP_Ep0Handler( dev );
+    201                  }
+    202                  else
+    203                  {
+    204                    // copy buffer to endpoint specified buffer location before erasing
+    205                    if (ep->state == D_EP_RECEIVING)
+    206                    {
+    207                      MEMMOVE(ep->buf,EPOUTBUF[ep->num], *bufsize);
+    208                    }
+    209                    #if EM_SERIAL3_ENABLED
+    210                      halInternalUart3RxIsr(EPOUTBUF[ep->num], *bufsize);
+    211                    #endif //EM_SERIAL3_ENABLED
+    212          
+    213                    USBDEP_EpHandler(ep->addr);
+    214                  }
+    215                  
+    216                  MEMSET(EPOUTBUF[epnum], 0, *bufsize);
+    217                  USB_RXVALID = ((USB_RXVALIDEP0A<<epnum) | (USB_RXVALIDEP0B<<epnum));
+    218          
+    219                }
+    220              }
+    221            }
+    222          
+    223          
+    224            //==== TX functionality ====
+    225            //NOTE: INT_USBTXACTIVEEPx interrupts fire on USB_TXACTIVEEPxy falling edge.
+    226            if (status & INT_USBTXACTIVE)
+    227            {
+    228              int epnum;
+    229              uint16_t epmask;
+    230          
+    231              // sweep through eps to determine which EP the interrupt is on
+    232              for ( epnum = 0,                epmask = INT_USBTXACTIVEEP0;
+    233                    epnum <= MAX_NUM_OUT_EPS;
+    234                    epnum++,                  epmask <<= 1 )
+    235              {
+    236                if (status & epmask)
+    237                {
+    238                  #ifdef USB_DEBUG_INT
+    239                    DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"TX%d\r\n",epnum);
+    240                  #endif
+    241          
+    242                  // dispatch endpoint handler
+    243                  if (epnum == 0)
+    244                  {
+    245                    USBDEP_Ep0Handler( dev );
+    246                  }
+    247                  else
+    248                  {
+    249                    ep = USBD_GetEpFromAddr( USB_SETUP_DIR_MASK | epnum );
+    250                    USBDEP_EpHandler(ep->addr);
+    251                  }
+    252          
+    253                }
+    254              }
+    255            }
+    256          }
+    257          
+    258          #ifdef VBUSMON
+    259          void VBUSMON_ISR(void)
+    260          {
+    261            //VBUSMON is used for sensing VBUS indicating if USB is physically connected.
+    262            //An IRQ is used to monitor for any edge change on VBUSMON.
+    263            //For self-powered devices, VBUS monitoring is required for the EM358 device
+    264            //to function cleanly across physical connect/disconnects of the USB.
+    265            //The USB specification requires that the pull-up resistor for
+    266            //enumerating is disconnected if VBUS is not connected.
+    267            
+    268            //clear int before read to avoid potential of missing interrupt
+    269            INT_MISS = VBUSMON_MISS_BIT;     //clear missed interrupt flag
+    270            INT_GPIOFLAG = VBUSMON_FLAG_BIT; //clear top level interrupt flag
+    271            
+    272            //Because this ISR/IRQ triggers on both edges, usbVbusPresent is used
+    273            //to track the state of VBUS.
+    274            //Always directly read VBUSMON to ensure this ISR is changing to the correct,
+    275            //current state.
+    276            //Falling edge: VBUS removed - Must set ENUMCTRL to input-low.
+    277            //Rrising edge: VBUS applied - If usbConfigEnumerate() has been called and
+    278            //this device is ready to enumerate, set ENUMCTRL to output-high and
+    279            //perform enumeration.
+    280            usbVbusPresent = ((VBUSMON_IN & VBUSMON) == VBUSMON);
+    281            
+    282            if(usbVbusPresent) {
+    283              if (USBD_GetUsbState()==USBD_STATE_CONFIGURED)
+    284                return;
+    285              //Only attempt enumerate if usbConfigEnumerate has already been called.
+    286              //Set ENUMCTRL ouput-high to enumerate.
+    287              ENUMCTRL_SETCFG(GPIOCFG_OUT);
+    288              ENUMCTRL_SET();
+    289          
+    290              // halSetLed(BOARDLED0);
+    291              USBD_SetUsbState(USBD_STATE_DEFAULT);
+    292            } else {
+    293              //Configure ENUMCTRL as an input so the device de-enumurates and
+    294              //the pin does not put any load on the bus.  (The spec says the
+    295              //pull-up resistor used for enumeration should be tri-state.  On
+    296              //EM358 devices the input configuration is the best available choice
+    297              //since tri-state isn't possible.)
+    298              //Clear down ENUMCTRL to be ready for the next time enumerating.
+    299              ENUMCTRL_SETCFG(GPIOCFG_IN);
+    300              ENUMCTRL_CLR();
+    301              // halClearLed(BOARDLED0);
+    302              USBD_SetUsbState(USBD_STATE_NONE);
+    303            }
+    304          }
+    305          #endif // VBUSMON
+    306          
+    307          /** @endcond */
+    308          
+    309          #endif // CORTEXM3_EM35X_USB
+
+
+ 
+
+ 
+
+
+Errors: none
+Warnings: none

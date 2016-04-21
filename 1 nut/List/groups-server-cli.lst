@@ -1,0 +1,126 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        18/Apr/2016  13:01:30
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\groups-server\groups-server-cli.c
+#    Command line =  
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\groups-server\groups-server-cli.c"
+#        -D SWITCH_1_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"groups-server-cli.c\"" -lC "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\" --diag_suppress Pa050 -o "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\" --debug --endian=little --cpu=Cortex-M3
+#        --no_path_in_file_macros --separate_cluster_for_initialized_variables
+#        -e --fpu=None --dlib_config "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\groups-server\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\"
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\groups-server-cli.lst
+#    Object file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\groups-server-cli.o
+#
+###############################################################################
+
+D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\groups-server\groups-server-cli.c
+      1          // *******************************************************************
+      2          // * groups-server-cli.c
+      3          // *
+      4          // *
+      5          // * Copyright 2012 by Ember Corporation. All rights reserved.              *80*
+      6          // *******************************************************************
+      7          
+      8          #include "app/framework/include/af.h"
+      9          #include "app/util/serial/command-interpreter2.h"
+     10          
+     11          void emAfGroupsServerCliPrint(void);
+     12          
+     13          #if !defined(EMBER_AF_GENERATE_CLI)
+     14          EmberCommandEntry emberAfPluginGroupsServerCommands[] = {
+     15            emberCommandEntryAction("print",  emAfGroupsServerCliPrint, "", "Print the state of the groups table."),
+     16            emberCommandEntryTerminator(),
+     17          };
+     18          #endif // EMBER_AF_GENERATE_CLI
+     19          
+     20          // plugin groups-server print
+
+   \                                 In section .text, align 2, keep-with-next
+     21          void emAfGroupsServerCliPrint(void) 
+     22          {
+   \                     emAfGroupsServerCliPrint: (+1)
+   \   00000000   0xB51F             PUSH     {R0-R4,LR}
+     23            int8u i;
+     24            for (i = 0; i < EMBER_BINDING_TABLE_SIZE; i++) {
+   \   00000002   0x2400             MOVS     R4,#+0
+     25              EmberBindingTableEntry entry;
+     26              emberGetBinding(i, &entry);
+   \                     ??emAfGroupsServerCliPrint_0: (+1)
+   \   00000004   0xA900             ADD      R1,SP,#+0
+   \   00000006   0x4620             MOV      R0,R4
+   \   00000008   0x.... 0x....      BL       emberGetBinding
+     27              if (entry.type == EMBER_MULTICAST_BINDING) {
+     28                emberAfCorePrintln("ep[%x] id[%2x]", entry.local, 
+     29                                   HIGH_LOW_TO_INT(entry.identifier[1], entry.identifier[0]));
+     30              }
+     31            }
+   \   0000000C   0x1C64             ADDS     R4,R4,#+1
+   \   0000000E   0x2C0A             CMP      R4,#+10
+   \   00000010   0xDBF8             BLT.N    ??emAfGroupsServerCliPrint_0
+     32          }
+   \   00000012   0xBD1F             POP      {R0-R4,PC}       ;; return
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      24   emAfGroupsServerCliPrint
+        24   -> emberGetBinding
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      20  emAfGroupsServerCliPrint
+
+ 
+ 20 bytes in section .text
+ 
+ 20 bytes of CODE memory
+
+Errors: none
+Warnings: none

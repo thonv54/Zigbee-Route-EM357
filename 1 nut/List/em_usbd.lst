@@ -1,0 +1,1101 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        18/Apr/2016  13:01:25
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\em_usbd.c
+#    Command line =  
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\em_usbd.c"
+#        -D SWITCH_1_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"em_usbd.c\"" -lC "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\" --diag_suppress Pa050 -o "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\" --debug --endian=little --cpu=Cortex-M3
+#        --no_path_in_file_macros --separate_cluster_for_initialized_variables
+#        -e --fpu=None --dlib_config "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\"
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\em_usbd.lst
+#    Object file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\em_usbd.o
+#
+###############################################################################
+
+D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\em_usbd.c
+      1          /**************************************************************************//**
+      2           * @file hal/micro/cortexm3/usb/em_usbd.c
+      3           * @brief USB protocol stack library, device API.
+      4           * @author Nathaniel Ting
+      5           * @version 3.20.3
+      6           * <!-- Copyright 2013 by Silicon Laboratories. All rights reserved.     *80*-->
+      7           *****************************************************************************/
+      8          #include PLATFORM_HEADER
+      9          #include "stack/include/ember.h"
+     10          #include "hal/hal.h"
+     11          
+     12          #if CORTEXM3_EM35X_USB
+     13          #include "em_usb.h"
+     14          #include "em_usbhal.h"
+     15          
+     16          #include "em_usbtypes.h"
+     17          #include "em_usbd.h"
+     18          
+     19          #include "app/util/serial/serial.h"
+     20          
+     21          
+     22          
+     23          /** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
+     24          
+     25          static USBD_Device_TypeDef device;
+     26          USBD_Device_TypeDef *dev = &device;
+     27          
+     28          static const char *stateNames[] =
+     29          {
+     30            [ USBD_STATE_NONE       ] = "NONE      ",
+     31            [ USBD_STATE_ATTACHED   ] = "ATTACHED  ",
+     32            [ USBD_STATE_POWERED    ] = "POWERED   ",
+     33            [ USBD_STATE_DEFAULT    ] = "DEFAULT   ",
+     34            [ USBD_STATE_ADDRESSED  ] = "ADDRESSED ",
+     35            [ USBD_STATE_CONFIGURED ] = "CONFIGURED",
+     36            [ USBD_STATE_SUSPENDED  ] = "SUSPENDED ",
+     37            [ USBD_STATE_LASTMARKER ] = "UNDEFINED "
+     38          };
+     39          
+     40          /** @endcond */
+     41          
+     42          
+     43          /** @addtogroup USB_DEVICE
+     44           * @brief 
+     45           *
+     46           * See em_usbd.c for source code.
+     47           *  @{*/
+     48          /***************************************************************************//**
+     49           * @brief
+     50           *   Abort all pending transfers.
+     51           *
+     52           * @details
+     53           *   Aborts transfers for all endpoints currently in use. Pending
+     54           *   transfers on the default endpoint (EP0) are not aborted.
+     55           ******************************************************************************/
+     56          void USBD_AbortAllTransfers( void )
+     57          {
+     58            ATOMIC(
+     59            USBDHAL_AbortAllTransfers( USB_STATUS_EP_ABORTED );
+     60            )
+     61          }
+     62          
+     63          /***************************************************************************//**
+     64           * @brief
+     65           *   Abort a pending transfer on a specific endpoint.
+     66           *
+     67           * @param[in] epAddr
+     68           *   The address of the endpoint to abort.
+     69           ******************************************************************************/
+     70          int USBD_AbortTransfer( int epAddr )
+     71          {
+     72            USB_XferCompleteCb_TypeDef callback;
+     73            USBD_Ep_TypeDef *ep = USBD_GetEpFromAddr( epAddr );
+     74          
+     75          
+     76          
+     77            // nUSBD_AbortTransfer(), Illegal request
+     78            assert (ep!=NULL);
+     79          
+     80            // nUSBD_AbortTransfer(), Illegal endpoint
+     81            assert (ep->num!=0);
+     82          
+     83          
+     84            DECLARE_INTERRUPT_STATE;
+     85            DISABLE_INTERRUPTS();
+     86            if ( ep->state == D_EP_IDLE )
+     87            {
+     88              RESTORE_INTERRUPTS();
+     89              return USB_STATUS_OK;
+     90            }
+     91          
+     92            // USBD_AbortEp( ep );
+     93          
+     94            ep->state = D_EP_IDLE;
+     95            if ( ep->xferCompleteCb )
+     96            {
+     97              callback = ep->xferCompleteCb;
+     98              ep->xferCompleteCb = NULL;
+     99          
+    100              if ( ( dev->lastState == USBD_STATE_CONFIGURED ) &&
+    101                   ( dev->state     == USBD_STATE_ADDRESSED  )    )
+    102              {
+    103                USBDHAL_DeactivateEp( ep );
+    104              }
+    105          
+    106              // DEBUG_TRACE_ABORT( USB_STATUS_EP_ABORTED );
+    107              callback( USB_STATUS_EP_ABORTED, ep->xferred, ep->remaining );
+    108            }
+    109          
+    110            RESTORE_INTERRUPTS();
+    111            return USB_STATUS_OK;
+    112          }
+    113          
+    114          /***************************************************************************//**
+    115           * @brief
+    116           *   Start USB device operation.
+    117           *
+    118           * @details
+    119           *   Device operation is started by connecting a pullup resistor on the
+    120           *   appropriate USB data line.
+    121           ******************************************************************************/
+    122          void USBD_Connect( void )
+    123          {
+    124            ATOMIC(
+    125            USBDHAL_Connect();
+    126            )
+    127          }
+    128          
+    129          /***************************************************************************//**
+    130           * @brief
+    131           *   Stop USB device operation.
+    132           *
+    133           * @details
+    134           *   Device operation is stopped by disconnecting the pullup resistor from the
+    135           *   appropriate USB data line. Often referred to as a "soft" disconnect.
+    136           ******************************************************************************/
+    137          void USBD_Disconnect( void )
+    138          {
+    139            ATOMIC(
+    140            USBDHAL_Disconnect();
+    141            )
+    142          }
+    143          
+    144          /** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
+    145          void USBD_SetUsbState( USBD_State_TypeDef newState )
+    146          {
+    147            USBD_State_TypeDef currentState;
+    148          
+    149            currentState = dev->state;
+    150            if ( newState == USBD_STATE_SUSPENDED )
+    151            {
+    152              dev->savedState = currentState;
+    153            }
+    154          
+    155            dev->lastState = dev->state;
+    156            dev->state = newState;
+    157          
+    158            if ( ( dev->callbacks->usbStateChange ) &&
+    159                 ( currentState != newState       )    )
+    160            {
+    161              dev->callbacks->usbStateChange( currentState, newState );
+    162            }
+    163          }
+    164          /** @endcond */
+    165          
+    166          /***************************************************************************//**
+    167           * @brief
+    168           *   Get current USB device state.
+    169           *
+    170           * @return
+    171           *   Device USB state. See @ref USBD_State_TypeDef.
+    172           ******************************************************************************/
+    173          USBD_State_TypeDef USBD_GetUsbState( void )
+    174          {
+    175            return dev->state;
+    176          }
+    177          
+    178          /***************************************************************************//**
+    179           * @brief
+    180           *   Get a string naming a device USB state.
+    181           *
+    182           * @param[in] state
+    183           *   Device USB state. See @ref USBD_State_TypeDef.
+    184           *
+    185           * @return
+    186           *   State name string pointer.
+    187           ******************************************************************************/
+    188          const char *USBD_GetUsbStateName( USBD_State_TypeDef state )
+    189          {
+    190            if ( state > USBD_STATE_LASTMARKER )
+    191              state = USBD_STATE_LASTMARKER;
+    192          
+    193            return stateNames[ state ];
+    194          }
+    195          
+    196          
+    197          /***************************************************************************//**
+    198           * @brief
+    199           *   Check if an endpoint is busy doing a transfer.
+    200           *
+    201           * @param[in] epAddr
+    202           *   The address of the endpoint to check.
+    203           *
+    204           * @return
+    205           *   True if endpoint is busy, false otherwise.
+    206           ******************************************************************************/
+    207          bool USBD_EpIsBusy( int epAddr )
+    208          {
+    209            USBD_Ep_TypeDef *ep = USBD_GetEpFromAddr( epAddr );
+    210          
+    211            // USBD_EpIsBusy(), Illegal endpoint
+    212            assert (ep!=NULL);
+    213          
+    214            if ( ep->state == D_EP_IDLE )
+    215              return false;
+    216          
+    217            return true;
+    218          }
+    219          
+    220          /***************************************************************************//**
+    221           * @brief
+    222           *   Set an endpoint in the stalled (halted) state.
+    223           *
+    224           * @param[in] epAddr
+    225           *   The address of the endpoint to stall.
+    226           *
+    227           * @return
+    228           *   @ref USB_STATUS_OK on success, else an appropriate error code.
+    229           ******************************************************************************/
+    230          int USBD_StallEp( int epAddr )
+    231          {
+    232            USB_Status_TypeDef retVal;
+    233            USBD_Ep_TypeDef *ep = USBD_GetEpFromAddr( epAddr );
+    234          
+    235          
+    236            #ifdef USB_DEBUG_STALL
+    237              DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"Stalling EP%d",ep->num);
+    238              if (ep->in)
+    239                DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"in\r\n");
+    240              else 
+    241                DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"out\r\n");
+    242            #endif
+    243          
+    244            // USBD_StallEp(), Illegal request
+    245            assert (ep!=NULL);
+    246          
+    247            // USBD_StallEp(), Illegal endpoint
+    248            // assert (ep->num!=0);
+    249          
+    250            ATOMIC(
+    251              retVal = USBDHAL_StallEp( ep );
+    252            )
+    253          
+    254            if ( retVal != USB_STATUS_OK )
+    255            {
+    256              retVal = USB_STATUS_ILLEGAL;
+    257            }
+    258          
+    259            return retVal;
+    260          }
+    261          
+    262          
+    263          /***************************************************************************//**
+    264           * @brief
+    265           *   Reset stall state on a stalled (halted) endpoint.
+    266           *
+    267           * @param[in] epAddr
+    268           *   The address of the endpoint to un-stall.
+    269           *
+    270           * @return
+    271           *   @ref USB_STATUS_OK on success, else an appropriate error code.
+    272           ******************************************************************************/
+    273          int USBD_UnStallEp( int epAddr )
+    274          {
+    275            USB_Status_TypeDef retVal;
+    276            USBD_Ep_TypeDef *ep = USBD_GetEpFromAddr( epAddr );
+    277          
+    278          
+    279            #ifdef USB_DEBUG_STALL
+    280              DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"Unstalling EP%d",ep->num);
+    281              if (ep->in)
+    282                DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"in\r\n");
+    283              else 
+    284                DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"out\r\n");
+    285            #endif
+    286          
+    287          
+    288            // USBD_StallEp(), Illegal request
+    289            assert (ep!=NULL);
+    290            // USBD_StallEp(), Illegal endpoint
+    291            // assert (ep->num!=0);
+    292          
+    293            ATOMIC(
+    294              retVal = USBDHAL_UnStallEp( ep );
+    295            )
+    296          
+    297            if ( retVal != USB_STATUS_OK )
+    298            {
+    299              retVal = USB_STATUS_ILLEGAL;
+    300            }
+    301          
+    302            return retVal;
+    303          }
+    304          
+    305          /***************************************************************************//**
+    306           * @brief
+    307           *   Stop USB device stack operation.
+    308           *
+    309           * @details
+    310           *   The data-line pullup resistor is turned off, USB interrupts are disabled,
+    311           *   and finally the USB pins are disabled.
+    312           ******************************************************************************/
+    313          void USBD_Stop( void )
+    314          {
+    315            USBD_Disconnect();
+    316            USBHAL_DisableGlobalInt();
+    317            USBD_SetUsbState( USBD_STATE_NONE );
+    318          }
+    319          
+    320          
+    321          /***************************************************************************//**
+    322           * @brief
+    323           *   Initializes USB device hardware and internal protocol stack data structures,
+    324           *   then connects the data-line (D+ or D-) pullup resistor to signal host that
+    325           *   enumeration can begin.
+    326           *
+    327           * @note
+    328           *   You may later use @ref USBD_Disconnect() and @ref USBD_Connect() to force
+    329           *   reenumeration.
+    330           *
+    331           * @param[in] p
+    332           *   Pointer to device initialization struct. See @ref USBD_Init_TypeDef.
+    333           *
+    334           * @return
+    335           *   @ref USB_STATUS_OK on success, else an appropriate error code.
+    336           ******************************************************************************/
+    337          int USBD_Init( const USBD_Init_TypeDef *p )
+    338          {
+    339            
+    340            int numEps;
+    341            USBD_Ep_TypeDef *ep;
+    342            int8u txFifoNum;
+    343            int8u *conf, *confEnd;
+    344            USB_EndpointDescriptor_TypeDef *epd;
+    345            int32u totalRxFifoSize, totalTxFifoSize, numInEps, numOutEps;
+    346            
+    347            USBTIMER_Init();
+    348            
+    349            MEMSET( dev, 0, sizeof( USBD_Device_TypeDef ) );
+    350          
+    351            dev->setup                = dev->setupPkt;
+    352            dev->deviceDescriptor     = p->deviceDescriptor;
+    353            dev->configDescriptor     = (USB_ConfigurationDescriptor_TypeDef*)
+    354                                        p->configDescriptor;
+    355            dev->stringDescriptors    = p->stringDescriptors;
+    356            dev->numberOfStrings      = p->numberOfStrings;
+    357            dev->state                = USBD_STATE_LASTMARKER;
+    358            dev->savedState           = USBD_STATE_NONE;
+    359            dev->lastState            = USBD_STATE_NONE;
+    360            dev->callbacks            = p->callbacks;
+    361            #if USB_REMOTEWKUPEN_STATE
+    362            dev->remoteWakeupEnabled  = true;
+    363            #else
+    364            dev->remoteWakeupEnabled  = false;
+    365            #endif
+    366          
+    367          
+    368            /* Initialize EP0 */
+    369          
+    370            ep                 = &dev->ep[ 0 ];
+    371            ep->in             = false;
+    372            ep->buf            = NULL;
+    373            ep->num            = 0;
+    374            ep->mask           = 1;
+    375            ep->addr           = 0;
+    376            ep->type           = USB_EPTYPE_CTRL;
+    377            ep->txFifoNum      = 0;
+    378            ep->packetSize     = USB_EP0_SIZE;
+    379            ep->remaining      = 0;
+    380            ep->xferred        = 0;
+    381            ep->state          = D_EP_IDLE;
+    382            ep->xferCompleteCb = NULL;
+    383            ep->fifoSize       = USB_EP0_SIZE / 4;
+    384          
+    385            totalTxFifoSize = ep->fifoSize * p->bufferingMultiplier[ 0 ];
+    386            totalRxFifoSize = (ep->fifoSize + 1) * p->bufferingMultiplier[ 0 ];
+    387            
+    388            /* Parse configuration decriptor */
+    389            numEps = 0;
+    390            numInEps  = 0;
+    391            numOutEps = 0;
+    392            conf = (uint8_t*)dev->configDescriptor;
+    393            confEnd = conf + dev->configDescriptor->wTotalLength;
+    394          
+    395            txFifoNum = 1;
+    396          
+    397          
+    398            #ifdef USB_DEBUG
+    399            // DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"ep-->\tin\ttype\tpacketSize\r\n");
+    400            #endif
+    401            
+    402            while ( conf < confEnd )
+    403            {
+    404              // USBD_Init(), Illegal configuration descriptor
+    405              assert (*conf);
+    406          
+    407              if ( *(conf + 1) == USB_ENDPOINT_DESCRIPTOR )
+    408              {
+    409                numEps++;
+    410                epd = (USB_EndpointDescriptor_TypeDef*)conf;
+    411          
+    412                
+    413                ep                 = &dev->ep[ numEps ];
+    414                ep->in             = ( epd->bEndpointAddress & USB_SETUP_DIR_MASK ) != 0;
+    415                ep->buf            = NULL;
+    416                ep->addr           = epd->bEndpointAddress;
+    417                ep->num            = ep->addr & USB_EPNUM_MASK;
+    418                ep->mask           = 1 << ep->num;
+    419                ep->type           = epd->bmAttributes & CONFIG_DESC_BM_TRANSFERTYPE;
+    420                ep->packetSize     = epd->wMaxPacketSize;
+    421                ep->remaining      = 0;
+    422                ep->xferred        = 0;
+    423                ep->state          = D_EP_IDLE;
+    424                ep->xferCompleteCb = NULL;
+    425          
+    426          
+    427                if ( ep->in )
+    428                {
+    429                  numInEps++;
+    430                  ep->txFifoNum = txFifoNum++;
+    431                  ep->fifoSize = (ep->packetSize/4) * p->bufferingMultiplier[ numEps ];
+    432                  dev->inEpAddr2EpIndex[ ep->num ] = numEps;
+    433                  totalTxFifoSize += ep->fifoSize;
+    434          
+    435                  // USBD_Init(), Illegal IN EP address
+    436                  assert (ep->num < MAX_NUM_IN_EPS);
+    437          
+    438                }
+    439                else
+    440                {
+    441                  numOutEps++;
+    442                  ep->fifoSize = (ep->packetSize/4 + 1) * p->bufferingMultiplier[ numEps ];
+    443                  dev->outEpAddr2EpIndex[ ep->num ] = numEps;
+    444                  totalRxFifoSize += ep->fifoSize;
+    445                  
+    446                  // USBD_Init(), Illegal OUT EP address
+    447                  assert (ep->num < MAX_NUM_OUT_EPS);
+    448                }
+    449              }
+    450              conf += *conf;
+    451          
+    452            }
+    453          
+    454            /* Rx-FIFO size: SETUP packets : 4*n + 6    n=#CTRL EP's
+    455             *               GOTNAK        : 1
+    456             *               Status info   : 2*n        n=#OUT EP's (EP0 included) in HW
+    457             */
+    458            totalRxFifoSize += 10 + 1 + ( 2 * (MAX_NUM_OUT_EPS + 1) );
+    459          
+    460            // USBD_Init(), Illegal EP count
+    461            assert(numEps == NUM_EP_USED);
+    462          
+    463            // USBD_Init(), Illegal IN EP count
+    464            assert (numInEps < MAX_NUM_IN_EPS);
+    465          
+    466            // USBD_Init(), Illegal OUT EP count
+    467            assert (numOutEps < MAX_NUM_OUT_EPS);
+    468          
+    469            DECLARE_INTERRUPT_STATE;
+    470            DISABLE_INTERRUPTS();
+    471          
+    472            USBHAL_DisableGlobalInt();
+    473          
+    474            if ( USBDHAL_CoreInit( 1, 1 ) == USB_STATUS_OK )
+    475            {
+    476              USBDHAL_EnableUsbResetInt();
+    477              USBHAL_EnableGlobalInt();
+    478          
+    479              // NVIC_ClearPendingIRQ( USB_IRQn );
+    480              // NVIC_EnableIRQ( USB_IRQn );
+    481            }
+    482            else
+    483            {
+    484          
+    485              RESTORE_INTERRUPTS();
+    486            //   USBD_Init(), FIFO setup error
+    487              assert(0);
+    488              return USB_STATUS_ILLEGAL;
+    489            }
+    490          
+    491            /* Enable EPs */
+    492            int8u i;
+    493            for (i=1;i<=numEps;i++)
+    494            {
+    495          
+    496              #ifdef USB_DEBUG
+    497              // DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"EP%d\t%d\t%d\t%d\r\n",i,ep->in,ep->type,ep->packetSize);
+    498              #endif
+    499              ep = &dev->ep[ i ];
+    500              if (ep->in)
+    501              {
+    502                USB_ENABLEIN  |= USB_ENABLEINEP0 << ep->num;
+    503                INT_USBCFG    |= INT_USBTXACTIVEEP0 << ep->num;
+    504              }
+    505              else
+    506              {
+    507                USB_ENABLEOUT |= USB_ENABLEOUTEP0 << ep->num;
+    508                INT_USBCFG    |= INT_USBRXVALIDEP0 << ep->num;
+    509              }
+    510            }
+    511          
+    512            /* Connect USB */
+    513            USBDHAL_Connect();
+    514          
+    515            RESTORE_INTERRUPTS();
+    516            return USB_STATUS_OK;
+    517          }
+    518          
+    519          /***************************************************************************//**
+    520           * @brief
+    521           *   Start a write (IN) transfer on an endpoint.
+    522           *
+    523           * @param[in] epAddr
+    524           *   Endpoint address.
+    525           *
+    526           * @param[in] data
+    527           *   Pointer to transfer data buffer. This buffer must be WORD (4 byte) aligned.
+    528           *
+    529           * @param[in] byteCount
+    530           *   Transfer length.
+    531           *
+    532           * @param[in] callback
+    533           *   Function to be called on transfer completion. Supply NULL if no callback
+    534           *   is needed. See @ref USB_XferCompleteCb_TypeDef.
+    535           *
+    536           * @return
+    537           *   @ref USB_STATUS_OK on success, else an appropriate error code.
+    538           ******************************************************************************/
+    539          int USBD_Write( int epAddr, void *data, int byteCount,
+    540                          USB_XferCompleteCb_TypeDef callback )
+    541          {
+    542            #ifdef USB_DEBUG_WRITE
+    543            DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "USBD_Write:%d\r\n",byteCount);
+    544            #endif
+    545          
+    546            USBD_Ep_TypeDef *ep = USBD_GetEpFromAddr( epAddr );
+    547          
+    548            if ( ep == NULL )
+    549            {
+    550              #ifdef USB_DEBUG_WRITE
+    551              DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "USBD_Write(), Illegal endpoint\r\n");
+    552              #endif
+    553              // USBD_Write(), Illegal endpoint
+    554              assert( 0 );
+    555              return USB_STATUS_ILLEGAL;
+    556            }
+    557          
+    558            // USBD_Write(), Illegal transfer size
+    559            // assert ((byteCount < MAX_XFER_LEN) && ((byteCount / ep->packetSize) < MAX_PACKETS_PR_XFER));
+    560          
+    561            // USBD_Write(), Misaligned data buffer
+    562            if (data!=NULL)
+    563             assert(!((uint32_t)data & 3));
+    564          
+    565            DECLARE_INTERRUPT_STATE;
+    566            DISABLE_INTERRUPTS();
+    567          
+    568            if ( USBDHAL_EpIsStalled( ep ) )
+    569            {
+    570              // INT_Enable();
+    571              RESTORE_INTERRUPTS();
+    572              // USBD_Write(), Endpoint is halted
+    573              #ifdef USB_DEBUG_WRITE
+    574              DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "USBD_Write(), Endpoint is halted\r\n" );
+    575              #endif
+    576          
+    577              return USB_STATUS_EP_STALLED;
+    578            }
+    579          
+    580            if ( ep->state != D_EP_IDLE )
+    581            {
+    582              RESTORE_INTERRUPTS();
+    583              #ifdef USB_DEBUG_WRITE
+    584              DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "USBD_Write(), Endpoint is busy\r\n");
+    585              DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "ep->state = %d\r\n",ep->state);
+    586              #endif
+    587              return USB_STATUS_EP_BUSY;
+    588            }
+    589          
+    590            if ( ( ep->num > 0 ) && ( USBD_GetUsbState() != USBD_STATE_CONFIGURED ) )
+    591            {
+    592              #ifdef USB_DEBUG_WRITE
+    593              DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "USBD_Write(), Device not configured\r\n");
+    594              #endif
+    595              RESTORE_INTERRUPTS();
+    596              return USB_STATUS_DEVICE_UNCONFIGURED;
+    597            }
+    598          
+    599                
+    600            //if data is null, this is a zero length packet
+    601            if (data == NULL)
+    602            {
+    603              ep->buf = NULL;
+    604            }
+    605            else
+    606            {
+    607              ep->buf = (uint8_t*)data;
+    608            }
+    609          
+    610            ep->remaining = byteCount;
+    611            ep->xferred   = 0;
+    612          
+    613            
+    614            if ( ep->num == 0 )
+    615            {
+    616              ep->in = true;
+    617            }
+    618            // USBD_Write(), Illegal EP direction
+    619            assert (ep->in == TRUE);
+    620            
+    621            ep->state          = D_EP_TRANSMITTING;
+    622            ep->xferCompleteCb = callback;
+    623          
+    624            // kickoff USB transfer
+    625            USBD_ArmEp( ep );
+    626            RESTORE_INTERRUPTS();
+    627            
+    628            return USB_STATUS_OK;
+    629            
+    630          }
+    631          
+    632          /***************************************************************************//**
+    633           * @brief
+    634           *   Start a read (OUT) transfer on an endpoint.
+    635           *
+    636           * @note
+    637           *   The transfer buffer length must be a multiple of 4 bytes in length and
+    638           *   WORD (4 byte) aligned. When allocating the buffer, round buffer length up.
+    639           *   If it is possible that the host will send more data than your device
+    640           *   expects, round buffer size up to the next multiple of maxpacket size.
+    641           *
+    642           * @param[in] epAddr
+    643           *   Endpoint address.
+    644           *
+    645           * @param[in] data
+    646           *   Pointer to transfer data buffer.
+    647           *
+    648           * @param[in] byteCount
+    649           *   Transfer length.
+    650           *
+    651           * @param[in] callback
+    652           *   Function to be called on transfer completion. Supply NULL if no callback
+    653           *   is needed. See @ref USB_XferCompleteCb_TypeDef.
+    654           *
+    655           * @return
+    656           *   @ref USB_STATUS_OK on success, else an appropriate error code.
+    657           ******************************************************************************/
+    658          int USBD_Read( int epAddr, void *data, int byteCount,
+    659                         USB_XferCompleteCb_TypeDef callback )
+    660          {
+    661          
+    662            USBD_Ep_TypeDef *ep = USBD_GetEpFromAddr( epAddr );
+    663          
+    664            #ifdef USB_DEBUG_READ
+    665            DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "USBD_Read:%X - %d\r\nep->in=%d\r\n", epAddr, ep->num, ep->in);
+    666            #endif
+    667          
+    668            assert (ep!=NULL);
+    669          
+    670          
+    671            // assert ((byteCount < MAX_XFER_LEN) && ((byteCount/ep->packetSize) < MAX_PACKETS_PR_XFER));
+    672          
+    673          
+    674            if (data!=NULL)
+    675              assert (!((uint32_t)data & 3));
+    676          
+    677          
+    678            DECLARE_INTERRUPT_STATE;
+    679            DISABLE_INTERRUPTS();
+    680          
+    681            if ( USBDHAL_EpIsStalled( ep ) )
+    682            {
+    683              RESTORE_INTERRUPTS();
+    684              #ifdef USB_DEBUG_READ
+    685              DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "USBD_Read(), Endpoint is halted\r\n" );
+    686              #endif
+    687              return USB_STATUS_EP_STALLED;
+    688            }
+    689          
+    690            if ( ep->state == D_EP_TRANSMITTING )
+    691            {
+    692              RESTORE_INTERRUPTS();
+    693              #ifdef USB_DEBUG_READ
+    694              DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "USBD_Read(), Endpoint is busy\r\n" );
+    695              #endif
+    696              return USB_STATUS_EP_BUSY;
+    697            }
+    698          
+    699            if ( ( ep->num > 0 ) && ( USBD_GetUsbState() != USBD_STATE_CONFIGURED ) )
+    700            {
+    701              RESTORE_INTERRUPTS();
+    702              #ifdef USB_DEBUG_READ
+    703              DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "\nUSBD_Read(), Device not configured" );
+    704              #endif
+    705              return USB_STATUS_DEVICE_UNCONFIGURED;
+    706            }
+    707          
+    708            ep->buf       = (uint8_t*)data;
+    709            ep->remaining = byteCount;
+    710            ep->xferred   = 0;
+    711          
+    712          
+    713            if ( ep->num == 0 )
+    714            {
+    715              ep->in = false;
+    716            }
+    717          
+    718            // USBD_Read(), Illegal EP direction
+    719            assert(ep->in == FALSE);
+    720          
+    721            ep->state          = D_EP_RECEIVING;
+    722            ep->xferCompleteCb = callback;
+    723          
+    724            // kickoff USB transfer
+    725            USBD_ArmEp( ep );
+    726            RESTORE_INTERRUPTS();
+    727            return USB_STATUS_OK;
+    728          }
+    729          
+    730          
+    731          
+    732          /***************************************************************************//**
+    733           * @brief
+    734           *   USB suspend delayed service routine
+    735           *
+    736           * @details
+    737           *   This function keeps the device in a low power state in order to meet USB
+    738           *   specification during USB suspend state.
+    739           ******************************************************************************/
+    740          void usbSuspendDsr(void)
+    741          {
+    742            if(dev->state == USBD_STATE_SUSPENDED) {
+    743              
+    744              #ifndef EMBER_NO_STACK
+    745              emberStackPowerDown();
+    746              #endif // EMBER_NO_STACK
+    747              // halPowerDown();
+    748              halSuspendCallback();
+    749              //Turn idle sleep into USB sleep which divides down all the chip clocks,
+    750              //by 4, except system timer.
+    751              CPU_CLKSEL |= USBSUSP_CLKSEL_FIELD;
+    752              halSleep(SLEEPMODE_IDLE);
+    753            }
+    754          }
+    755          
+    756          
+    757          
+    758          /***************************************************************************//**
+    759           * @brief
+    760           *   Perform a remote wakeup signalling sequence.
+    761           *
+    762           * @note
+    763           *   It is the responsibility of the application to ensure that remote wakeup
+    764           *   is not attempted before the device has been suspended for at least 5
+    765           *   miliseconds. This function should not be called from within an interrupt
+    766           *   handler.
+    767           *
+    768           * @return
+    769           *   @ref USB_STATUS_OK on success, else an appropriate error code.
+    770           ******************************************************************************/
+    771          int USBD_RemoteWakeup( void )
+    772          {
+    773            #ifdef USB_DEBUG_SUSPEND
+    774              DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"RemoteWakeup...");
+    775            #endif
+    776          
+    777            if ( ( dev->state != USBD_STATE_SUSPENDED ) ||
+    778                 ( dev->remoteWakeupEnabled == FALSE  ) )
+    779            {
+    780              // Not suspend or remote wakeup not enabled
+    781              #ifdef USB_DEBUG_SUSPEND
+    782                DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"illegal\r\n");
+    783              #endif
+    784              return USB_STATUS_ILLEGAL;
+    785            }
+    786          
+    787            USBDHAL_SetRemoteWakeup();
+    788            int16u timeout = 4; // Set for 4 ms. Host should take over within 1 ms
+    789            //store start time, compare difference with current time with timeout period
+    790            int16u startTime = halCommonGetInt16uMillisecondTick();
+    791            int16u curTime = halCommonGetInt16uMillisecondTick();
+    792            while ((elapsedTimeInt16u(startTime, curTime) <= timeout)
+    793                   && (dev->state == USBD_STATE_SUSPENDED)) { //exit if USB resumes
+    794              curTime = halCommonGetInt16uMillisecondTick();
+    795            }
+    796          
+    797            if (dev->state == USBD_STATE_SUSPENDED) { //record failure if USB fails to resume
+    798              #ifdef USB_DEBUG_SUSPEND
+    799                DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"timed out\r\n");
+    800              #endif
+    801              return USB_STATUS_TIMEOUT;
+    802            }
+    803            #ifdef USB_DEBUG_SUSPEND
+    804              DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"succeeded\r\n");
+    805            #endif
+    806          
+    807            return USB_STATUS_OK;
+    808          }
+    809          
+    810          
+    811          // DEBUG buffer with printout function, note buffer has no overflow protection
+    812          #ifdef USB_DEBUG
+    813          static char debugbuffer[4000];
+    814          char *DEBUG_BUFFER = debugbuffer;
+    815          
+    816          void USBD_PrintDebug(void)
+    817          {
+    818            debugbuffer[3999] = '\0';
+    819            emberSerialGuaranteedPrintf(SER232,debugbuffer);
+    820            MEMSET(debugbuffer, 0, 4000);
+    821            DEBUG_BUFFER = debugbuffer;
+    822          }
+    823          #endif
+    824          
+    825          #if EM_SERIAL3_ENABLED
+    826          // interface with serial/uart queues. Enables emberserialprintf
+    827          int8u dequeueTxIntoBuffer(int8u *data)
+    828          {
+    829            EmSerialFifoQueue *q = (EmSerialFifoQueue *)emSerialTxQueues[3];
+    830            int8u txSize=0;
+    831            
+    832            //If there are bytes in the Q and txSize hasn't maxed out, pull more
+    833            //bytes off the Q into the DMA buffer
+    834            while((q->used > 0) && (txSize < EP5_SIZE)) {
+    835              *data = FIFO_DEQUEUE(q, emSerialTxQueueWraps[3]);
+    836              data++;
+    837              txSize++;
+    838            }
+    839            
+    840            return txSize;
+    841          }
+    842          
+    843          // interface with serial/uart queues. Enables emberSerialPrintf. 
+    844          // EP_IN must be defined. Assumes EP1 size, 8 bytes, which may be larger
+    845          // depending on endpoint.
+    846          void usbTxData ()
+    847          {
+    848            if (!USBD_EpIsBusy(EP_IN))
+    849            {
+    850              int8u data[EP5_SIZE];
+    851              int8u txSize = dequeueTxIntoBuffer(data);
+    852              if (txSize>0)
+    853              {
+    854                USBD_Write( EP_IN, data, txSize, NULL );
+    855              }
+    856            }
+    857          }
+    858          
+    859          // interface with serial/uart library. Enables emberSerialGuaranteedPrintf
+    860          void usbForceTxData (int8u *data, int8u length)
+    861          {
+    862            while (USBD_EpIsBusy(EP_IN)) {}
+    863            USBD_Write( EP_IN, data, length, NULL );
+    864            while (USBD_EpIsBusy(EP_IN)) {}
+    865          }
+    866          
+    867          #endif //EM_SERIAL3_ENABLED
+    868          
+    869          /** @} (end addtogroup USB_DEVICE) */
+    870          
+    871          /******** THE REST OF THE FILE IS DOCUMENTATION ONLY !**********************//**
+    872           * @addtogroup usb @{
+    873          
+    874            The source files for the USB device stack resides in the usb directory
+    875            and follows the naming convention: em_usbd<em>nnn</em>.c/h.
+    876          
+    877            @li @ref usb_device_intro
+    878            @li @ref usb_device_api
+    879            @li @ref usb_device_conf
+    880          
+    881          @n @section usb_device_intro Introduction
+    882          
+    883            The USB device protocol stack provides an API which makes it possible to
+    884            create USB devices with a minimum of effort. The device stack supports control,
+    885            bulk and interrupt transfers.
+    886          
+    887            The stack is highly configurable to suit various needs, it does also contain
+    888            useful debugging features together with several demonstration projects to
+    889            get you started fast.
+    890          
+    891            We recommend that you read through this documentation, then proceed to build
+    892            and test a few example projects before you start designing your own device.
+    893          
+    894          @n @section usb_device_api The device stack API
+    895          
+    896            This section contains brief descriptions of the functions in the API. You will
+    897            find detailed information on input and output parameters and return values by
+    898            clicking on the hyperlinked function names. It is also a good idea to study
+    899            the code in the USB demonstration projects.
+    900          
+    901            Your application code must include one header file: @em em_usb.h.
+    902          
+    903            All functions defined in the API can be called from within interrupt handlers.
+    904          
+    905            <b>Pitfalls:</b>@n
+    906              The USB peripheral will fill your receive buffers in quantities of WORD's
+    907              (4 bytes). Transmit and receive buffers must be WORD aligned, in
+    908              addition when allocating storage for receive buffers, round size up to
+    909              next WORD boundary. If it is possible that the host will send more data
+    910              than your device expects, round buffer size up to the next multiple of
+    911              maxpacket size for the relevant endpoint to avoid data corruption.
+    912          
+    913              Transmit buffers passed to @htmlonly USBD_Write() @endhtmlonly must be
+    914              statically allocated because @htmlonly USBD_Write() @endhtmlonly only
+    915              initiates the transfer. When the host decide to actually perform the
+    916              transfer, your data must be available.
+    917          
+    918            @n @ref USBD_Init() @n
+    919              This function is called to register your device and all its properties with
+    920              the device stack. The application must fill in a @ref USBD_Init_TypeDef
+    921              structure prior to calling. Refer to @ref DeviceInitCallbacks for the
+    922              optional callback functions defined within this structure. When this
+    923              function has been called your device is ready to be enumerated by the USB
+    924              host.
+    925          
+    926            @ref USBD_Read(), @ref USBD_Write() @n
+    927              These functions initiate data transfers.
+    928              @n @htmlonly USBD_Read() @endhtmlonly initiate a transfer of data @em
+    929              from host @em to device (an @em OUT transfer in USB terminology).
+    930              @n @htmlonly USBD_Write() @endhtmlonly initiate a transfer of data @em from
+    931              device @em to host (an @em IN transfer).
+    932          
+    933              When the USB host actually performs the transfer, your application will be
+    934              notified by means of a callback function which you provide (optionally).
+    935              Refer to @ref TransferCallback for details of the callback functionality.
+    936          
+    937            @ref USBD_AbortTransfer(), @ref USBD_AbortAllTransfers() @n
+    938              These functions terminate transfers that are initiated, but has not yet
+    939              taken place. If a transfer is initiated with @htmlonly USBD_Read()
+    940              or USBD_Write(), @endhtmlonly but the USB host never actually peform
+    941              the transfers, these functions will deactivate the transfer setup to make
+    942              the USB device endpoint hardware ready for new (and potentially) different
+    943              transfers.
+    944          
+    945            @ref USBD_Connect(), @ref USBD_Disconnect() @n
+    946              These functions turns the data-line (D+ or D-) pullup on or off. They can be
+    947              used to force reenumeration. It's good practice to delay at least one second
+    948              between @htmlonly USBD_Disconnect() and USBD_Connect() @endhtmlonly
+    949              to allow the USB host to unload the currently active device driver.
+    950          
+    951            @ref USBD_EpIsBusy() @n
+    952              Check if an endpoint is busy.
+    953          
+    954            @ref USBD_StallEp(), @ref USBD_UnStallEp() @n
+    955              These functions stalls or un-stalls an endpoint. This functionality may not
+    956              be needed by your application, but the USB device stack use them in response
+    957              to standard setup commands SET_FEATURE and CLEAR_FEATURE. They may be useful
+    958              when implementing some USB classes, e.g. a mass storage device use them
+    959              extensively.
+    960          
+    961            @ref USBD_RemoteWakeup() @n
+    962              Used in SUSPENDED state (see @ref USB_Status_TypeDef) to signal resume to
+    963              host. It's the applications responsibility to adhere to the USB standard
+    964              which states that a device can not signal resume before it has been
+    965              SUSPENDED for at least 5 ms. The function will also check the configuration
+    966              descriptor defined by the application to see if it is legal for the device
+    967              to signal resume.
+    968          
+    969            @ref USBD_GetUsbState() @n
+    970              Returns the device USB state (see @ref USBD_State_TypeDef). Refer to
+    971              Figure 9-1. "Device State Diagram" in the USB revision 2.0 specification.
+    972          
+    973            @ref USBD_GetUsbStateName() @n
+    974              Returns a text string naming a given USB device state.
+    975          
+    976            @n @anchor TransferCallback <b>The transfer complete callback function:</b> @n
+    977              @n USB_XferCompleteCb_TypeDef() is called when a transfer completes. It is
+    978              called with three parameters, the status of the transfer, the number of
+    979              bytes transferred and the number of bytes remaining. It may not always be
+    980              needed to have a callback on transfer completion, but you should keep in
+    981              mind that a transfer may be aborted when you least expect it. A transfer
+    982              will be aborted if host stalls the endpoint, if host resets your device, if
+    983              host unconfigures your device or if you unplug your device cable and the
+    984              device is selfpowered.
+    985              @htmlonly USB_XferCompleteCb_TypeDef() @endhtmlonly is also called if your
+    986              application use @htmlonly USBD_AbortTransfer() or USBD_AbortAllTransfers()
+    987              @endhtmlonly calls.
+    988              @note This callback is called from within an interrupt handler with
+    989                    interrupts disabled.
+    990          
+    991            @n @anchor DeviceInitCallbacks <b>Optional callbacks passed to the stack via
+    992              the @ref USBD_Init() function:</b> @n
+    993              @n These callbacks are all optional, and it is up to the application
+    994              programmer to decide if the application needs the functionality they
+    995              provide.
+    996              @note These callbacks are all called from within an interrupt handler
+    997                    with interrupts disabled.
+    998          
+    999            USBD_UsbResetCb_TypeDef() is called each time reset signalling is sensed on
+   1000              the USB wire.
+   1001          
+   1002            @n USBD_SofIntCb_TypeDef() is called with framenumber as a parameter on
+   1003              each SOF interrupt.
+   1004          
+   1005            @n USBD_DeviceStateChangeCb_TypeDef() is called whenever the device state
+   1006              change. Useful for detecting e.g. SUSPENDED state change in order to reduce
+   1007              current consumption of buspowered devices. The USB HID keyboard example
+   1008              project has a good example on how to use this callback.
+   1009          
+   1010            @n USBD_IsSelfPoweredCb_TypeDef() is called by the device stack when host
+   1011              queries the device with a standard setup GET_STATUS command to check if the
+   1012              device is currently selfpowered or buspowered. This feature is only
+   1013              applicable on selfpowered devices which also works when only buspower is
+   1014              available.
+   1015          
+   1016            @n USBD_SetupCmdCb_TypeDef() is called each time a setup command is
+   1017              received from host. Use this callback to override or extend the default
+   1018              handling of standard setup commands, and to implement class or vendor
+   1019              specific setup commands. The USB HID keyboard example project has a good
+   1020              example on how to use this callback.
+   1021          
+   1022          @n @section usb_device_conf Configuring the device stack
+   1023          
+   1024            Your application must provide a header file named @em usbconfig.h. This file
+   1025            must contain the following \#define:@n @n
+   1026            @verbatim
+   1027          #define NUM_EP_USED n    // Your application use 'n' endpoints in
+   1028                                   // addition to endpoint 0. @endverbatim
+   1029          
+   1030           * @}**************************************************************************/
+   1031          
+   1032          #endif //CORTEXM3_EM35X_USB
+   1033          
+
+
+ 
+
+ 
+
+
+Errors: none
+Warnings: none

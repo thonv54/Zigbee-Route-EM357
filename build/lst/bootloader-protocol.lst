@@ -1,0 +1,362 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        31/Aug/2015  14:17:52
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\standalone-bootloader-common\bootloader-protocol.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\standalone-bootloader-common\bootloader-protocol.c
+#        -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"bootloader-protocol.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\standalone-bootloader-common\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\bootloader-protocol.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\bootloader-protocol.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\standalone-bootloader-common\bootloader-protocol.c
+      1          // *****************************************************************************
+      2          // * bootloader-protocol.c
+      3          // *
+      4          // * This file defines the proprietary Ember standalone bootloader messages.
+      5          // * 
+      6          // * Copyright 2012 by Ember Corporation. All rights reserved.              *80*
+      7          // *****************************************************************************
+      8          
+      9          #include "app/framework/include/af.h"
+     10          #include "bootloader-protocol.h"
+     11          
+     12          //------------------------------------------------------------------------------
+     13          // Globals
+     14          
+     15          //------------------------------------------------------------------------------
+     16          // Functions
+     17          
+
+   \                                 In section .text, align 2, keep-with-next
+     18          boolean emberAfPluginStandaloneBootloaderCommonCheckIncomingMessage(int8u length,
+     19                                                                             int8u* message)
+     20          {
+   \                     emberAfPluginStandaloneBootloaderCommonCheckIncomingMessage: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     21            // This is assumed to be an Ember bootload message.  In other words,
+     22            // the MAC data payload.
+     23            if (length < BOOTLOAD_MESSAGE_OVERHEAD) {
+   \   00000002   0x2802             CMP      R0,#+2
+   \   00000004   0xDA06             BGE.N    ??emberAfPluginStandaloneBootloaderCommonCheckI_0
+     24              bootloadPrintln("Error: Got short bootload message, length: %d", length);
+   \   00000006   0x4602             MOV      R2,R0
+   \   00000008   0x.... 0x....      ADR.W    R1,`?<Constant "Error: Got short boot...">`
+   \   0000000C   0x2001             MOVS     R0,#+1
+   \   0000000E   0x.... 0x....      BL       emberAfPrintln
+     25              return FALSE;
+   \   00000012   0xE008             B.N      ??emberAfPluginStandaloneBootloaderCommonCheckI_1
+     26            }
+     27          
+     28            if (message[OFFSET_VERSION] != BOOTLOAD_PROTOCOL_VERSION) {
+   \                     ??emberAfPluginStandaloneBootloaderCommonCheckI_0: (+1)
+   \   00000014   0x780A             LDRB     R2,[R1, #+0]
+   \   00000016   0x2A01             CMP      R2,#+1
+   \   00000018   0xD007             BEQ.N    ??emberAfPluginStandaloneBootloaderCommonCheckI_2
+     29              bootloadPrintln("Error: Protocol version in bootload message (%d) does not match mine (%d).", 
+     30                              message[OFFSET_VERSION],
+     31                              BOOTLOAD_PROTOCOL_VERSION);
+   \   0000001A   0x2301             MOVS     R3,#+1
+   \   0000001C   0x.... 0x....      ADR.W    R1,`?<Constant "Error: Protocol versi...">`
+   \   00000020   0x2001             MOVS     R0,#+1
+   \   00000022   0x.... 0x....      BL       emberAfPrintln
+     32              return FALSE;
+   \                     ??emberAfPluginStandaloneBootloaderCommonCheckI_1: (+1)
+   \   00000026   0x2000             MOVS     R0,#+0
+   \   00000028   0xBD02             POP      {R1,PC}
+     33            }
+     34            
+     35            return TRUE;
+   \                     ??emberAfPluginStandaloneBootloaderCommonCheckI_2: (+1)
+   \   0000002A   0x2001             MOVS     R0,#+1
+   \   0000002C   0xBD02             POP      {R1,PC}          ;; return
+     36          }
+     37          
+
+   \                                 In section .text, align 2, keep-with-next
+     38          EmberStatus emberAfPluginStandaloneBootloaderCommonSendMessage(boolean isBroadcast,
+     39                                                                         EmberEUI64 targetEui,
+     40                                                                         int8u length,
+     41                                                                         int8u* message)
+     42          {
+   \                     emberAfPluginStandaloneBootloaderCommonSendMessage: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+   \   00000002   0x461C             MOV      R4,R3
+     43            EmberStatus status = emAfSendBootloadMessage(isBroadcast,
+     44                                                         targetEui,
+     45                                                         length,
+     46                                                         message);
+   \   00000004   0x.... 0x....      BL       emAfSendBootloadMessage
+   \   00000008   0x0005             MOVS     R5,R0
+     47            if (EMBER_SUCCESS != status) {
+   \   0000000A   0xD006             BEQ.N    ??emberAfPluginStandaloneBootloaderCommonSendMe_0
+     48              bootloadPrintln("Failed to send bootload message type: 0x%X, status: 0x%X", 
+     49                              message[1], 
+     50                              status);
+   \   0000000C   0x7862             LDRB     R2,[R4, #+1]
+   \   0000000E   0x.... 0x....      ADR.W    R1,`?<Constant "Failed to send bootlo...">`
+   \   00000012   0x462B             MOV      R3,R5
+   \   00000014   0x2001             MOVS     R0,#+1
+   \   00000016   0x.... 0x....      BL       emberAfPrintln
+     51            }
+     52            return status;
+   \                     ??emberAfPluginStandaloneBootloaderCommonSendMe_0: (+1)
+   \   0000001A   0x4628             MOV      R0,R5
+   \   0000001C   0xBD32             POP      {R1,R4,R5,PC}    ;; return
+     53          }
+     54          
+
+   \                                 In section .text, align 2, keep-with-next
+     55          int8u emberAfPluginStandaloneBootloaderCommonMakeHeader(int8u *message, int8u type)
+     56          {
+     57            //common header values
+     58            message[0] = BOOTLOAD_PROTOCOL_VERSION;
+   \                     emberAfPluginStandaloneBootloaderCommonMakeHeader: (+1)
+   \   00000000   0x2201             MOVS     R2,#+1
+   \   00000002   0x7002             STRB     R2,[R0, #+0]
+     59            message[1] = type;
+   \   00000004   0x7041             STRB     R1,[R0, #+1]
+     60          
+     61            // for XMODEM_QUERY and XMODEM_EOT messages, this represents the end of the
+     62            // header.  However, for XMODEM_QRESP, XMODEM_SOH, XMODEM_ACK, XMODEM_NAK
+     63            // messages, there are additional values that need to be added.
+     64            // Note that the application will not have to handle creation of 
+     65            // over the air XMODEM_ACK and XMODEM_NAK since these are all handled by 
+     66            // the bootloader on the target node.
+     67          
+     68            return 2;
+   \   00000006   0x2002             MOVS     R0,#+2
+   \   00000008   0x4770             BX       LR               ;; return
+     69          }
+     70          
+     71          // Make sure we have a NULL delemiter and ignore 0xFF characters
+
+   \                                 In section .text, align 2, keep-with-next
+     72          void emAfStandaloneBootloaderCommonPrintHardwareTag(int8u* text)
+     73          {
+   \                     emAfStandaloneBootloaderCommonPrintHardwareTag: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0xB086             SUB      SP,SP,#+24
+   \   00000004   0x4604             MOV      R4,R0
+     74            int8u hardwareTagString[EMBER_AF_STANDALONE_BOOTLOADER_HARDWARE_TAG_LENGTH + 1];
+     75            int8u i;
+     76            MEMSET(hardwareTagString, 0, EMBER_AF_STANDALONE_BOOTLOADER_HARDWARE_TAG_LENGTH + 1);
+   \   00000006   0x2211             MOVS     R2,#+17
+   \   00000008   0x2100             MOVS     R1,#+0
+   \   0000000A   0xA800             ADD      R0,SP,#+0
+   \   0000000C   0x.... 0x....      BL       halCommonMemSet
+     77            for (i = 0; i < EMBER_AF_STANDALONE_BOOTLOADER_HARDWARE_TAG_LENGTH; i++) {
+   \   00000010   0x2000             MOVS     R0,#+0
+   \   00000012   0xAA00             ADD      R2,SP,#+0
+     78              if (text[i] == 0xFF) {
+   \                     ??emAfStandaloneBootloaderCommonPrintHardwareTa_0: (+1)
+   \   00000014   0x5D01             LDRB     R1,[R0, R4]
+   \   00000016   0x29FF             CMP      R1,#+255
+   \   00000018   0xBF0C             ITE      EQ 
+     79                // Last
+     80                i = EMBER_AF_STANDALONE_BOOTLOADER_HARDWARE_TAG_LENGTH;
+   \   0000001A   0x2010             MOVEQ    R0,#+16
+     81              } else {
+     82                hardwareTagString[i] = text[i];
+   \   0000001C   0x5481             STRBNE   R1,[R0, R2]
+     83              }
+     84            }
+   \   0000001E   0x1C40             ADDS     R0,R0,#+1
+   \   00000020   0xB2C0             UXTB     R0,R0
+   \   00000022   0x2810             CMP      R0,#+16
+   \   00000024   0xDBF6             BLT.N    ??emAfStandaloneBootloaderCommonPrintHardwareTa_0
+     85            bootloadPrintln("%s", hardwareTagString);
+   \   00000026   0x....             ADR.N    R1,??DataTable4  ;; 0x25, 0x73, 0x00, 0x00
+   \   00000028   0x2001             MOVS     R0,#+1
+   \   0000002A   0x.... 0x....      BL       emberAfPrintln
+     86          }
+   \   0000002E   0xB006             ADD      SP,SP,#+24
+   \   00000030   0xBD10             POP      {R4,PC}          ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable4:
+   \   00000000   0x25 0x73          DC8      0x25, 0x73, 0x00, 0x00
+   \              0x00 0x00    
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "%s">`:
+   \   00000000   0x25 0x73          DC8 "%s"
+   \              0x00         
+   \   00000003   0x00               DC8 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Error: Got short boot...">`:
+   \   00000000   0x45 0x72          DC8 "Error: Got short bootload message, length: %d"
+   \              0x72 0x6F    
+   \              0x72 0x3A    
+   \              0x20 0x47    
+   \              0x6F 0x74    
+   \              0x20 0x73    
+   \              0x68 0x6F    
+   \              0x72 0x74    
+   \              0x20 0x62    
+   \              0x6F 0x6F    
+   \              0x74 0x6C    
+   \              0x6F 0x61    
+   \              0x64 0x20    
+   \              0x6D 0x65    
+   \              0x73 0x73    
+   \              0x61 0x67    
+   \              0x65 0x2C    
+   \              0x20 0x6C    
+   \              0x65 0x6E    
+   \              0x67 0x74    
+   \              0x68 0x3A    
+   \              0x20 0x25    
+   \              0x64 0x00    
+   \   0000002E   0x00 0x00          DC8 0, 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Error: Protocol versi...">`:
+   \   00000000   0x45 0x72          DC8 45H, 72H, 72H, 6FH, 72H, 3AH, 20H, 50H
+   \              0x72 0x6F    
+   \              0x72 0x3A    
+   \              0x20 0x50    
+   \   00000008   0x72 0x6F          DC8 72H, 6FH, 74H, 6FH, 63H, 6FH, 6CH, 20H
+   \              0x74 0x6F    
+   \              0x63 0x6F    
+   \              0x6C 0x20    
+   \   00000010   0x76 0x65          DC8 76H, 65H, 72H, 73H, 69H, 6FH, 6EH, 20H
+   \              0x72 0x73    
+   \              0x69 0x6F    
+   \              0x6E 0x20    
+   \   00000018   0x69 0x6E          DC8 69H, 6EH, 20H, 62H, 6FH, 6FH, 74H, 6CH
+   \              0x20 0x62    
+   \              0x6F 0x6F    
+   \              0x74 0x6C    
+   \   00000020   0x6F 0x61          DC8 6FH, 61H, 64H, 20H, 6DH, 65H, 73H, 73H
+   \              0x64 0x20    
+   \              0x6D 0x65    
+   \              0x73 0x73    
+   \   00000028   0x61 0x67          DC8 61H, 67H, 65H, 20H, 28H, 25H, 64H, 29H
+   \              0x65 0x20    
+   \              0x28 0x25    
+   \              0x64 0x29    
+   \   00000030   0x20 0x64          DC8 20H, 64H, 6FH, 65H, 73H, 20H, 6EH, 6FH
+   \              0x6F 0x65    
+   \              0x73 0x20    
+   \              0x6E 0x6F    
+   \   00000038   0x74 0x20          DC8 74H, 20H, 6DH, 61H, 74H, 63H, 68H, 20H
+   \              0x6D 0x61    
+   \              0x74 0x63    
+   \              0x68 0x20    
+   \   00000040   0x6D 0x69          DC8 6DH, 69H, 6EH, 65H, 20H, 28H, 25H, 64H
+   \              0x6E 0x65    
+   \              0x20 0x28    
+   \              0x25 0x64    
+   \   00000048   0x29 0x2E          DC8 29H, 2EH, 0
+   \              0x00         
+   \   0000004B   0x00               DC8 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Failed to send bootlo...">`:
+   \   00000000   0x46 0x61          DC8 46H, 61H, 69H, 6CH, 65H, 64H, 20H, 74H
+   \              0x69 0x6C    
+   \              0x65 0x64    
+   \              0x20 0x74    
+   \   00000008   0x6F 0x20          DC8 6FH, 20H, 73H, 65H, 6EH, 64H, 20H, 62H
+   \              0x73 0x65    
+   \              0x6E 0x64    
+   \              0x20 0x62    
+   \   00000010   0x6F 0x6F          DC8 6FH, 6FH, 74H, 6CH, 6FH, 61H, 64H, 20H
+   \              0x74 0x6C    
+   \              0x6F 0x61    
+   \              0x64 0x20    
+   \   00000018   0x6D 0x65          DC8 6DH, 65H, 73H, 73H, 61H, 67H, 65H, 20H
+   \              0x73 0x73    
+   \              0x61 0x67    
+   \              0x65 0x20    
+   \   00000020   0x74 0x79          DC8 74H, 79H, 70H, 65H, 3AH, 20H, 30H, 78H
+   \              0x70 0x65    
+   \              0x3A 0x20    
+   \              0x30 0x78    
+   \   00000028   0x25 0x58          DC8 25H, 58H, 2CH, 20H, 73H, 74H, 61H, 74H
+   \              0x2C 0x20    
+   \              0x73 0x74    
+   \              0x61 0x74    
+   \   00000030   0x75 0x73          DC8 75H, 73H, 3AH, 20H, 30H, 78H, 25H, 58H
+   \              0x3A 0x20    
+   \              0x30 0x78    
+   \              0x25 0x58    
+   \   00000038   0x00               DC8 0
+   \   00000039   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      32   emAfStandaloneBootloaderCommonPrintHardwareTag
+        32   -> emberAfPrintln
+        32   -> halCommonMemSet
+       8   emberAfPluginStandaloneBootloaderCommonCheckIncomingMessage
+         8   -> emberAfPrintln
+       0   emberAfPluginStandaloneBootloaderCommonMakeHeader
+      16   emberAfPluginStandaloneBootloaderCommonSendMessage
+        16   -> emAfSendBootloadMessage
+        16   -> emberAfPrintln
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ?<Constant "%s">
+      48  ?<Constant "Error: Got short boot...">
+      76  ?<Constant "Error: Protocol versi...">
+      60  ?<Constant "Failed to send bootlo...">
+       4  ??DataTable4
+      50  emAfStandaloneBootloaderCommonPrintHardwareTag
+      46  emberAfPluginStandaloneBootloaderCommonCheckIncomingMessage
+      10  emberAfPluginStandaloneBootloaderCommonMakeHeader
+      30  emberAfPluginStandaloneBootloaderCommonSendMessage
+
+ 
+   4 bytes in section .rodata
+ 324 bytes in section .text
+ 
+ 324 bytes of CODE  memory
+   4 bytes of CONST memory
+
+Errors: none
+Warnings: none

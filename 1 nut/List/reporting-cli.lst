@@ -1,0 +1,252 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        18/Apr/2016  13:01:45
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\reporting\reporting-cli.c
+#    Command line =  
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\reporting\reporting-cli.c"
+#        -D SWITCH_1_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"reporting-cli.c\"" -lC "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\" --diag_suppress Pa050 -o "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\" --debug --endian=little --cpu=Cortex-M3
+#        --no_path_in_file_macros --separate_cluster_for_initialized_variables
+#        -e --fpu=None --dlib_config "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\reporting\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\"
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\reporting-cli.lst
+#    Object file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\reporting-cli.o
+#
+###############################################################################
+
+D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\reporting\reporting-cli.c
+      1          // *******************************************************************
+      2          // * reporting-cli.c
+      3          // *
+      4          // *
+      5          // * Copyright 2011 by Ember Corporation. All rights reserved.              *80*
+      6          // *******************************************************************
+      7          
+      8          #include "app/framework/include/af.h"
+      9          #include "app/util/serial/command-interpreter2.h"
+     10          #include "reporting.h"
+     11          
+     12          void emAfPluginReportingCliPrint(void);
+     13          void emAfPluginReportingCliClear(void);
+     14          void emAfPluginReportingCliRemove(void); // "remov" to avoid a conflict with "remove" in stdio
+     15          void emAfPluginReportingCliAdd(void);
+     16          
+     17          #if !defined(EMBER_AF_GENERATE_CLI)
+     18          EmberCommandEntry emberAfPluginReportingCommands[] = {
+     19            emberCommandEntryAction("print",  emAfPluginReportingCliPrint, "",        "Print the reporting table"),
+     20            emberCommandEntryAction("clear",  emAfPluginReportingCliClear, "",        "Clear the reporting tabel"),
+     21            emberCommandEntryAction("remove", emAfPluginReportingCliRemove, "u",       "Remove an entry from the reporting table"),
+     22            emberCommandEntryAction("add",    emAfPluginReportingCliAdd,   "uvvuvvw", "Add an entry to the reporting table"),
+     23            emberCommandEntryTerminator(),
+     24          };
+     25          #endif // EMBER_AF_GENERATE_CLI
+     26          
+     27          // plugin reporting print
+
+   \                                 In section .text, align 2, keep-with-next
+     28          void emAfPluginReportingCliPrint(void)
+     29          {
+   \                     emAfPluginReportingCliPrint: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0xB086             SUB      SP,SP,#+24
+     30            int8u i;
+     31            for (i = 0; i < EMBER_AF_PLUGIN_REPORTING_TABLE_SIZE ; i++) {
+   \   00000004   0x2400             MOVS     R4,#+0
+     32              EmberAfPluginReportingEntry entry;
+     33              emAfPluginReportingGetEntry(i, &entry);
+   \                     ??emAfPluginReportingCliPrint_0: (+1)
+   \   00000006   0xA900             ADD      R1,SP,#+0
+   \   00000008   0x4620             MOV      R0,R4
+   \   0000000A   0x.... 0x....      BL       emAfPluginReportingGetEntry
+     34              emberAfReportingPrint("%x:", i);
+     35              if (entry.endpoint != EMBER_AF_PLUGIN_REPORTING_UNUSED_ENDPOINT_ID) {
+     36                emberAfReportingPrint("ep %x clus %2x attr %2x svr %c",
+     37                                      entry.endpoint,
+     38                                      entry.clusterId,
+     39                                      entry.attributeId,
+     40                                      (entry.mask == CLUSTER_MASK_SERVER ? 'y' : 'n'));
+     41                if (entry.manufacturerCode != EMBER_AF_NULL_MANUFACTURER_CODE) {
+     42                  emberAfReportingPrint(" mfg %x", entry.manufacturerCode);
+     43                }
+     44                if (entry.direction == EMBER_ZCL_REPORTING_DIRECTION_REPORTED) {
+     45                  emberAfReportingPrint(" report min %2x max %2x rpt-chg %4x",
+     46                                        entry.data.reported.minInterval,
+     47                                        entry.data.reported.maxInterval,
+     48                                        entry.data.reported.reportableChange);
+     49                  emberAfReportingFlush();
+     50                } else {
+     51                  emberAfReportingPrint(" receive from %2x ep %x timeout %2x",
+     52                                        entry.data.received.source,
+     53                                        entry.data.received.endpoint,
+     54                                        entry.data.received.timeout);
+     55                }
+     56              }
+     57              emberAfReportingPrintln("");
+     58              emberAfReportingFlush();
+     59            }
+   \   0000000E   0x1C64             ADDS     R4,R4,#+1
+   \   00000010   0x2C14             CMP      R4,#+20
+   \   00000012   0xDBF8             BLT.N    ??emAfPluginReportingCliPrint_0
+     60          }
+   \   00000014   0xB006             ADD      SP,SP,#+24
+   \   00000016   0xBD10             POP      {R4,PC}          ;; return
+     61          
+     62          // plugin reporting clear
+
+   \                                 In section .text, align 2, keep-with-next
+     63          void emAfPluginReportingCliClear(void)
+     64          {
+     65            EmberStatus status = emberAfClearReportTableCallback();
+   \                     emAfPluginReportingCliClear: (+1)
+   \   00000000   0x.... 0x....      B.W      emberAfClearReportTableCallback
+     66            emberAfReportingPrintln("%p 0x%x", "clear", status);
+     67          }
+     68          
+     69          // plugin reporting remove <index:1>
+
+   \                                 In section .text, align 2, keep-with-next
+     70          void emAfPluginReportingCliRemove(void)
+     71          {
+   \                     emAfPluginReportingCliRemove: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     72            EmberStatus status = emAfPluginReportingRemoveEntry((int8u)emberUnsignedCommandArgument(0));
+   \   00000002   0x2000             MOVS     R0,#+0
+   \   00000004   0x.... 0x....      BL       emberUnsignedCommandArgument
+   \   00000008   0xE8BD 0x4002      POP      {R1,LR}
+   \   0000000C   0xB2C0             UXTB     R0,R0
+   \   0000000E   0x.... 0x....      B.W      emAfPluginReportingRemoveEntry
+     73            emberAfReportingPrintln("%p 0x%x", "remove", status);
+     74          }
+     75          
+     76          // plugin reporting add <endpoint:1> <cluster id:2> <attribute id:2> ...
+     77          // ... <mask:1> <min interval:2> <max interval:2> <reportable change:4>
+
+   \                                 In section .text, align 2, keep-with-next
+     78          void emAfPluginReportingCliAdd(void)
+     79          {
+   \                     emAfPluginReportingCliAdd: (+1)
+   \   00000000   0xB500             PUSH     {LR}
+   \   00000002   0xB085             SUB      SP,SP,#+20
+     80            EmberAfStatus status = EMBER_ZCL_STATUS_SUCCESS;
+     81            EmberAfPluginReportingEntry entry;
+     82            entry.endpoint = (int8u)emberUnsignedCommandArgument(0);
+   \   00000004   0x2000             MOVS     R0,#+0
+   \   00000006   0x.... 0x....      BL       emberUnsignedCommandArgument
+   \   0000000A   0xF88D 0x0001      STRB     R0,[SP, #+1]
+     83            entry.clusterId = (EmberAfClusterId)emberUnsignedCommandArgument(1);
+   \   0000000E   0x2001             MOVS     R0,#+1
+   \   00000010   0x.... 0x....      BL       emberUnsignedCommandArgument
+   \   00000014   0xF8AD 0x0002      STRH     R0,[SP, #+2]
+     84            entry.attributeId = (EmberAfAttributeId)emberUnsignedCommandArgument(2);
+   \   00000018   0x2002             MOVS     R0,#+2
+   \   0000001A   0x.... 0x....      BL       emberUnsignedCommandArgument
+   \   0000001E   0xF8AD 0x0004      STRH     R0,[SP, #+4]
+     85            entry.mask = (int8u)(emberUnsignedCommandArgument(3) == 0
+     86                                 ? CLUSTER_MASK_CLIENT
+     87                                 : CLUSTER_MASK_SERVER);
+   \   00000022   0x2003             MOVS     R0,#+3
+   \   00000024   0x.... 0x....      BL       emberUnsignedCommandArgument
+   \   00000028   0x2800             CMP      R0,#+0
+   \   0000002A   0xBF0C             ITE      EQ 
+   \   0000002C   0x2080             MOVEQ    R0,#+128
+   \   0000002E   0x2040             MOVNE    R0,#+64
+   \   00000030   0xF88D 0x0006      STRB     R0,[SP, #+6]
+     88            entry.manufacturerCode = EMBER_AF_NULL_MANUFACTURER_CODE;
+   \   00000034   0x2000             MOVS     R0,#+0
+   \   00000036   0xF8AD 0x0008      STRH     R0,[SP, #+8]
+     89            entry.data.reported.minInterval = (int16u)emberUnsignedCommandArgument(4);
+   \   0000003A   0x2004             MOVS     R0,#+4
+   \   0000003C   0x.... 0x....      BL       emberUnsignedCommandArgument
+   \   00000040   0xF8AD 0x000C      STRH     R0,[SP, #+12]
+     90            entry.data.reported.maxInterval = (int16u)emberUnsignedCommandArgument(5);
+   \   00000044   0x2005             MOVS     R0,#+5
+   \   00000046   0x.... 0x....      BL       emberUnsignedCommandArgument
+   \   0000004A   0xF8AD 0x000E      STRH     R0,[SP, #+14]
+     91            entry.data.reported.reportableChange = emberUnsignedCommandArgument(6);
+   \   0000004E   0x2006             MOVS     R0,#+6
+   \   00000050   0x.... 0x....      BL       emberUnsignedCommandArgument
+   \   00000054   0x9004             STR      R0,[SP, #+16]
+     92            UNUSED_VAR(status);
+     93            status = emberAfPluginReportingConfigureReportedAttribute(&entry);
+   \   00000056   0xA800             ADD      R0,SP,#+0
+   \   00000058   0x.... 0x....      BL       emberAfPluginReportingConfigureReportedAttribute
+     94          
+     95            emberAfReportingPrintln("%p 0x%x", "add", status);
+     96          }
+   \   0000005C   0xB005             ADD      SP,SP,#+20
+   \   0000005E   0xBD00             POP      {PC}             ;; return
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      24   emAfPluginReportingCliAdd
+        24   -> emberAfPluginReportingConfigureReportedAttribute
+        24   -> emberUnsignedCommandArgument
+       0   emAfPluginReportingCliClear
+         0   -> emberAfClearReportTableCallback
+      32   emAfPluginReportingCliPrint
+        32   -> emAfPluginReportingGetEntry
+       8   emAfPluginReportingCliRemove
+         0   -> emAfPluginReportingRemoveEntry
+         8   -> emberUnsignedCommandArgument
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      96  emAfPluginReportingCliAdd
+       4  emAfPluginReportingCliClear
+      24  emAfPluginReportingCliPrint
+      18  emAfPluginReportingCliRemove
+
+ 
+ 142 bytes in section .text
+ 
+ 142 bytes of CODE memory
+
+Errors: none
+Warnings: none

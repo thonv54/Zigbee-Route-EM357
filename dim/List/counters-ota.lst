@@ -1,0 +1,166 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        22/Oct/2015  09:33:06
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\counters\counters-ota.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\counters\counters-ota.c
+#        -D DIMMER -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"counters-ota.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\counters\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\counters-ota.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\counters-ota.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\counters\counters-ota.c
+      1          // File: counters-ota.c
+      2          //
+      3          // Description: A library for retrieving Ember stack counters over the air.
+      4          // See counters-ota.h for documentation.
+      5          //
+      6          // Copyright 2008 by Ember Corporation.  All rights reserved.               *80*
+      7          
+      8          
+      9          
+     10          #include "app/framework/include/af.h"
+     11          #include "app/util/serial/command-interpreter2.h"
+     12          #include "app/util/common/common.h"
+     13          #include "counters.h"
+     14          #include "counters-ota.h"
+     15          
+     16          //Include counters-ota if enabled by the plugin
+     17          #if defined(EMBER_AF_PLUGIN_COUNTERS_OTA)
+     18          
+     19          static EmberStatus sendCluster(EmberNodeId destination, 
+     20                                         int16u clusterId,
+     21                                         EmberMessageBuffer payload)
+     22          {
+     23            EmberApsFrame apsFrame;
+     24            apsFrame.profileId = EMBER_PRIVATE_PROFILE_ID;
+     25            apsFrame.clusterId = clusterId;
+     26            apsFrame.sourceEndpoint = 0;
+     27            apsFrame.destinationEndpoint = 0;
+     28            apsFrame.options = (EMBER_APS_OPTION_RETRY 
+     29                                | EMBER_APS_OPTION_ENABLE_ROUTE_DISCOVERY);
+     30            return emberSendUnicast(EMBER_OUTGOING_DIRECT,
+     31                                    destination,
+     32                                    &apsFrame,
+     33                                    payload);
+     34          }
+     35          
+     36          EmberStatus emberAfPluginCountersSendRequest(EmberNodeId destination, 
+     37                                                       boolean clearCounters)
+     38          {
+     39            return sendCluster(destination,
+     40                               (clearCounters 
+     41                                ? EMBER_REPORT_AND_CLEAR_COUNTERS_REQUEST
+     42                                : EMBER_REPORT_COUNTERS_REQUEST),
+     43                               EMBER_NULL_MESSAGE_BUFFER);
+     44          }
+     45          
+     46          boolean emberAfPluginCountersIsIncomingRequest(EmberApsFrame *apsFrame, EmberNodeId sender)
+     47          {
+     48            EmberMessageBuffer reply = EMBER_NULL_MESSAGE_BUFFER;
+     49            int8u length = 0;
+     50            int8u i;
+     51            int8u temp[3];
+     52          
+     53            if (apsFrame->profileId != EMBER_PRIVATE_PROFILE_ID
+     54                || (apsFrame->clusterId != EMBER_REPORT_COUNTERS_REQUEST
+     55                    && apsFrame->clusterId != EMBER_REPORT_AND_CLEAR_COUNTERS_REQUEST)) {
+     56              return FALSE;
+     57            }
+     58          
+     59            for (i = 0; i < EMBER_COUNTER_TYPE_COUNT; i++) {
+     60              int16u val = emberCounters[i];
+     61              if (val != 0) {
+     62                temp[0] = i;
+     63                temp[1] = LOW_BYTE(val);
+     64                temp[2] = HIGH_BYTE(val);
+     65                if (reply == EMBER_NULL_MESSAGE_BUFFER) {
+     66                  reply = emberAllocateStackBuffer();
+     67                  if (reply == EMBER_NULL_MESSAGE_BUFFER) {
+     68                    return TRUE;
+     69                  }
+     70                }
+     71                if (emberAppendToLinkedBuffers(reply, temp, 3) != EMBER_SUCCESS) {
+     72                  emberReleaseMessageBuffer(reply);
+     73                  return TRUE;
+     74                }
+     75                length += 3;
+     76              }
+     77              if (length + 3 > MAX_PAYLOAD_LENGTH
+     78                  || (length && 
+     79                      (i + 1 == EMBER_COUNTER_TYPE_COUNT))) {
+     80                // The response cluster is the request id with the high bit set.
+     81                sendCluster(sender, apsFrame->clusterId | 0x8000, reply);      
+     82                emberReleaseMessageBuffer(reply);
+     83                reply = EMBER_NULL_MESSAGE_BUFFER;
+     84                length = 0;
+     85              }
+     86            }
+     87          
+     88            return TRUE;
+     89          }
+     90          
+     91          boolean emberAfPluginCountersIsIncomingResponse(EmberApsFrame *apsFrame)
+     92          {
+     93            return (apsFrame->profileId == EMBER_PRIVATE_PROFILE_ID
+     94                    && (apsFrame->clusterId == EMBER_REPORT_AND_CLEAR_COUNTERS_RESPONSE
+     95                        || apsFrame->clusterId == EMBER_REPORT_COUNTERS_RESPONSE));
+     96          }
+     97          
+     98          boolean emberAfPluginCountersIsOutgoingResponse(EmberApsFrame *apsFrame,
+     99                                                          EmberStatus status)
+    100          {
+    101            boolean isResponse = emberIsIncomingCountersResponse(apsFrame);
+    102            if (isResponse
+    103                && apsFrame->clusterId == EMBER_REPORT_AND_CLEAR_COUNTERS_RESPONSE
+    104                && status == EMBER_SUCCESS) {
+    105              emberClearCounters();
+    106            }
+    107            return isResponse;  
+    108          }
+    109          
+    110          #endif //EMBER_AF_PLUGIN_COUNTERS_COUNTERSOTA
+
+
+ 
+
+ 
+
+
+Errors: none
+Warnings: none

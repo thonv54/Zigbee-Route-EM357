@@ -1,0 +1,165 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        18/Apr/2016  12:59:47
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\util\service-discovery-soc.c
+#    Command line =  
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\util\service-discovery-soc.c"
+#        -D SWITCH_4_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"service-discovery-soc.c\"" -lC "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\List\" --diag_suppress Pa050 -o "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\Obj\" --debug --endian=little --cpu=Cortex-M3
+#        --no_path_in_file_macros --separate_cluster_for_initialized_variables
+#        -e --fpu=None --dlib_config "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        "D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\util\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\"
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\List\service-discovery-soc.lst
+#    Object file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\Obj\service-discovery-soc.o
+#
+###############################################################################
+
+D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\util\service-discovery-soc.c
+      1          // *****************************************************************************
+      2          // * service-discovery-soc.c
+      3          // *
+      4          // * SOC specific routines for performing service discovery.
+      5          // *
+      6          // * Copyright 2010 by Ember Corporation. All rights reserved.              *80*
+      7          // *****************************************************************************
+      8          
+      9          #include "app/framework/include/af.h"
+     10          #include "app/util/zigbee-framework/zigbee-device-library.h"
+     11          
+     12          //------------------------------------------------------------------------------
+     13          
+
+   \                                 In section .text, align 2, keep-with-next
+     14          EmberStatus emAfSendMatchDescriptor(EmberNodeId target,
+     15                                              EmberAfProfileId profileId,
+     16                                              EmberAfClusterId clusterId,
+     17                                              boolean serverCluster)
+     18          {
+   \                     emAfSendMatchDescriptor: (+1)
+   \   00000000   0xE92D 0x4FF8      PUSH     {R3-R11,LR}
+   \   00000004   0x4680             MOV      R8,R0
+   \   00000006   0x468A             MOV      R10,R1
+   \   00000008   0x4691             MOV      R9,R2
+   \   0000000A   0x461D             MOV      R5,R3
+     19            EmberMessageBuffer clusterList = emberAllocateLinkedBuffers(1);
+   \   0000000C   0x2001             MOVS     R0,#+1
+   \   0000000E   0x.... 0x....      BL       emberAllocateLinkedBuffers
+   \   00000012   0x4606             MOV      R6,R0
+     20            EmberMessageBuffer inClusters = EMBER_NULL_MESSAGE_BUFFER;
+   \   00000014   0x24FF             MOVS     R4,#+255
+     21            EmberMessageBuffer outClusters = EMBER_NULL_MESSAGE_BUFFER;
+     22            EmberStatus status = EMBER_NO_BUFFERS;
+   \   00000016   0x2718             MOVS     R7,#+24
+   \   00000018   0x46A3             MOV      R11,R4
+     23          
+     24            if (clusterList != EMBER_NULL_MESSAGE_BUFFER) {
+   \   0000001A   0x2EFF             CMP      R6,#+255
+   \   0000001C   0xD018             BEQ.N    ??emAfSendMatchDescriptor_0
+     25              emberSetMessageBufferLength(clusterList, 2);
+   \   0000001E   0x2102             MOVS     R1,#+2
+   \   00000020   0x.... 0x....      BL       emberSetMessageBufferLength
+     26              emberSetLinkedBuffersLowHighInt16u(clusterList, 0, clusterId);
+   \   00000024   0x464A             MOV      R2,R9
+   \   00000026   0x2100             MOVS     R1,#+0
+   \   00000028   0x4630             MOV      R0,R6
+   \   0000002A   0x.... 0x....      BL       emberSetLinkedBuffersLowHighInt16u
+     27          
+     28              if (serverCluster) {
+   \   0000002E   0x2D00             CMP      R5,#+0
+   \   00000030   0xBF14             ITE      NE 
+     29                inClusters = clusterList;
+   \   00000032   0x46B3             MOVNE    R11,R6
+     30              } else {
+     31                outClusters = clusterList;
+   \   00000034   0x4634             MOVEQ    R4,R6
+     32              }
+     33          
+     34              status = emberMatchDescriptorsRequest(target,
+     35                                                    profileId,
+     36                                                    inClusters,
+     37                                                    outClusters,
+     38                                                    EMBER_AF_DEFAULT_APS_OPTIONS);
+   \   00000036   0xF44F 0x5088      MOV      R0,#+4352
+   \   0000003A   0x9000             STR      R0,[SP, #+0]
+   \   0000003C   0x4623             MOV      R3,R4
+   \   0000003E   0x465A             MOV      R2,R11
+   \   00000040   0x4651             MOV      R1,R10
+   \   00000042   0x4640             MOV      R0,R8
+   \   00000044   0x.... 0x....      BL       emberMatchDescriptorsRequest
+   \   00000048   0x4607             MOV      R7,R0
+     39              emberReleaseMessageBuffer(clusterList);
+   \   0000004A   0x4630             MOV      R0,R6
+   \   0000004C   0x.... 0x....      BL       emReleaseMessageBuffer
+     40            }
+     41            return status;
+   \                     ??emAfSendMatchDescriptor_0: (+1)
+   \   00000050   0x4638             MOV      R0,R7
+   \   00000052   0xE8BD 0x8FF2      POP      {R1,R4-R11,PC}   ;; return
+     42          }
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      40   emAfSendMatchDescriptor
+        40   -> emReleaseMessageBuffer
+        40   -> emberAllocateLinkedBuffers
+        40   -> emberMatchDescriptorsRequest
+        40   -> emberSetLinkedBuffersLowHighInt16u
+        40   -> emberSetMessageBufferLength
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      86  emAfSendMatchDescriptor
+
+ 
+ 86 bytes in section .text
+ 
+ 86 bytes of CODE memory
+
+Errors: none
+Warnings: none

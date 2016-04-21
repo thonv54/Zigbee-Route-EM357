@@ -1,0 +1,225 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        22/Oct/2015  09:33:29
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\identify-feedback\identify-feedback.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\identify-feedback\identify-feedback.c
+#        -D DIMMER -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"identify-feedback.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\identify-feedback\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\identify-feedback.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\identify-feedback.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\identify-feedback\identify-feedback.c
+      1          // *******************************************************************
+      2          // * identify-feedback.c
+      3          // *
+      4          // *
+      5          // * Copyright 2012 by Ember Corporation. All rights reserved.              *80*
+      6          // *******************************************************************
+      7          
+      8          // this file contains all the common includes for clusters in the util
+      9          #include "app/framework/include/af.h"
+     10          
+     11          #include "app/framework/util/common.h"
+     12          #if !defined(EZSP_HOST)
+     13          #include "hal/hal.h"
+     14          #endif // !defined(EZSP_HOST)
+     15          #include "UART_task.h"
+     16          
+
+   \                                 In section .bss, align 4
+     17          static boolean identifyTable[EMBER_AF_IDENTIFY_CLUSTER_SERVER_ENDPOINT_COUNT];
+   \                     identifyTable:
+   \   00000000                      DS8 2
+   \   00000002                      DS8 2
+     18          
+     19          EmberEventControl emberAfPluginIdentifyFeedbackProvideFeedbackEventControl;
+   \                     emberAfPluginIdentifyFeedbackProvideFeedbackEventControl:
+   \   00000004                      DS8 8
+     20          
+     21          void emberAfPluginIdentifyFeedbackProvideFeedbackEventHandler(void);
+     22          
+
+   \                                 In section .text, align 2, keep-with-next
+     23          void emberAfPluginIdentifyFeedbackProvideFeedbackEventHandler(void)
+     24          {
+   \                     emberAfPluginIdentifyFeedbackProvideFeedbackEventHandler: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     25          #if !defined(EZSP_HOST)
+     26          #ifdef EMBER_AF_PLUGIN_IDENTIFY_FEEDBACK_LED_FEEDBACK
+     27            UartSendBlinkLed(0x0F,1);
+   \   00000002   0x2101             MOVS     R1,#+1
+   \   00000004   0x200F             MOVS     R0,#+15
+   \   00000006   0x.... 0x....      BL       UartSendBlinkLed
+     28          #endif // EMBER_AF_PLUGIN_IDENTIFY_FEEDBACK_LED_FEEDBACK
+     29          
+     30          #ifdef EMBER_AF_PLUGIN_IDENTIFY_FEEDBACK_BUZZER_FEEDBACK
+     31            halStackIndicatePresence();
+     32          #endif // EMBER_AF_PLUGIN_IDENTIFY_FEEDBACK_BUZZER_FEEDBACK
+     33          #endif
+     34          
+     35            emberEventControlSetDelayMS(emberAfPluginIdentifyFeedbackProvideFeedbackEventControl,
+     36                                        MILLISECOND_TICKS_PER_SECOND);
+   \   0000000A   0xE8BD 0x4004      POP      {R2,LR}
+   \   0000000E   0xF44F 0x6180      MOV      R1,#+1024
+   \   00000012   0x....             LDR.N    R0,??DataTable2
+   \   00000014   0x.... 0x....      B.W      emEventControlSetDelayMS
+     37          }
+     38          
+
+   \                                 In section .text, align 2, keep-with-next
+     39          void emberAfPluginIdentifyStartFeedbackCallback(int8u endpoint,
+     40                                                          int16u identifyTime)
+     41          {
+   \                     emberAfPluginIdentifyStartFeedbackCallback: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     42            int8u ep = emberAfFindClusterServerEndpointIndex(endpoint, ZCL_IDENTIFY_CLUSTER_ID);
+   \   00000002   0x2103             MOVS     R1,#+3
+   \   00000004   0x.... 0x....      BL       emberAfFindClusterServerEndpointIndex
+     43          
+     44            if(ep == 0xFF) {
+   \   00000008   0x28FF             CMP      R0,#+255
+   \   0000000A   0xD009             BEQ.N    ??emberAfPluginIdentifyStartFeedbackCallback_0
+     45              emberAfIdentifyClusterPrintln("ERR: invalid endpoint supplied for identification.");
+     46              return;
+     47            }
+     48          
+     49            emberAfIdentifyClusterPrintln("Starting identifying on endpoint 0x%x, identify time is %d sec",
+     50                                          endpoint,
+     51                                          identifyTime);
+     52          
+     53            identifyTable[ep] = TRUE;
+   \   0000000C   0x....             LDR.N    R2,??DataTable2_1
+   \   0000000E   0x2101             MOVS     R1,#+1
+   \   00000010   0x5481             STRB     R1,[R0, R2]
+     54            emberEventControlSetDelayMS(emberAfPluginIdentifyFeedbackProvideFeedbackEventControl,
+     55                                        MILLISECOND_TICKS_PER_SECOND);
+   \   00000012   0x1D10             ADDS     R0,R2,#+4
+   \   00000014   0xE8BD 0x4004      POP      {R2,LR}
+   \   00000018   0xF44F 0x6180      MOV      R1,#+1024
+   \   0000001C   0x.... 0x....      B.W      emEventControlSetDelayMS
+   \                     ??emberAfPluginIdentifyStartFeedbackCallback_0: (+1)
+   \   00000020   0xBD01             POP      {R0,PC}          ;; return
+     56          }
+     57          
+
+   \                                 In section .text, align 2, keep-with-next
+     58          void emberAfPluginIdentifyStopFeedbackCallback(int8u endpoint)
+     59          {
+   \                     emberAfPluginIdentifyStopFeedbackCallback: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     60            int8u ep = emberAfFindClusterServerEndpointIndex(endpoint, ZCL_IDENTIFY_CLUSTER_ID);
+   \   00000002   0x2103             MOVS     R1,#+3
+   \   00000004   0x.... 0x....      BL       emberAfFindClusterServerEndpointIndex
+     61            int8u i;
+     62          
+     63            if(ep == 0xFF) {
+   \   00000008   0x28FF             CMP      R0,#+255
+   \   0000000A   0xD008             BEQ.N    ??emberAfPluginIdentifyStopFeedbackCallback_0
+     64              emberAfIdentifyClusterPrintln("ERR: invalid endpoint supplied for identification.");
+     65              return;
+     66            }
+     67          
+     68            emberAfIdentifyClusterPrintln("Stopping identifying on endpoint 0x%x", endpoint);
+     69          
+     70            identifyTable[ep] = FALSE;
+   \   0000000C   0x....             LDR.N    R1,??DataTable2_1
+   \   0000000E   0x2200             MOVS     R2,#+0
+   \   00000010   0x5442             STRB     R2,[R0, R1]
+     71          
+     72            for(i = 0; i < EMBER_AF_IDENTIFY_CLUSTER_SERVER_ENDPOINT_COUNT; i++) {
+     73              if(identifyTable[i]) {
+   \   00000012   0x7808             LDRB     R0,[R1, #+0]
+   \   00000014   0x2800             CMP      R0,#+0
+   \   00000016   0xBF02             ITTT     EQ 
+     74                return;
+   \   00000018   0x7848             LDRBEQ   R0,[R1, #+1]
+   \   0000001A   0x2800             CMPEQ    R0,#+0
+     75              }
+     76            }
+     77          
+     78            emberAfIdentifyClusterPrintln("No endpoints identifying; stopping identification feedback.");
+     79            emberEventControlSetInactive(emberAfPluginIdentifyFeedbackProvideFeedbackEventControl);
+   \   0000001C   0x7108             STRBEQ   R0,[R1, #+4]
+     80          }
+   \                     ??emberAfPluginIdentifyStopFeedbackCallback_0: (+1)
+   \   0000001E   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2:
+   \   00000000   0x........         DC32     identifyTable+0x4
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2_1:
+   \   00000000   0x........         DC32     identifyTable
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   emberAfPluginIdentifyFeedbackProvideFeedbackEventHandler
+         8   -> UartSendBlinkLed
+         0   -> emEventControlSetDelayMS
+       8   emberAfPluginIdentifyStartFeedbackCallback
+         0   -> emEventControlSetDelayMS
+         8   -> emberAfFindClusterServerEndpointIndex
+       8   emberAfPluginIdentifyStopFeedbackCallback
+         8   -> emberAfFindClusterServerEndpointIndex
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable2
+       4  ??DataTable2_1
+      24  emberAfPluginIdentifyFeedbackProvideFeedbackEventHandler
+      34  emberAfPluginIdentifyStartFeedbackCallback
+      32  emberAfPluginIdentifyStopFeedbackCallback
+      12  identifyTable
+          emberAfPluginIdentifyFeedbackProvideFeedbackEventControl
+
+ 
+ 12 bytes in section .bss
+ 98 bytes in section .text
+ 
+ 98 bytes of CODE memory
+ 12 bytes of DATA memory
+
+Errors: none
+Warnings: none

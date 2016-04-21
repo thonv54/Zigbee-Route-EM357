@@ -1,0 +1,213 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        29/Aug/2015  10:33:46
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\bootloader-interface.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\bootloader-interface.c
+#        -D APP_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"bootloader-interface.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\bootloader-interface.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\bootloader-interface.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\bootloader-interface.c
+      1          /*
+      2           * File: bootloader-interface.c
+      3           * Description: EM3XX common bootloader HAL functions
+      4           *
+      5           * Copyright 2008-2009 by Ember Corporation. All rights reserved.           *80*
+      6           */
+      7          
+      8          #include PLATFORM_HEADER
+      9          #include "stack/include/ember-types.h"
+     10          #include "hal/micro/bootloader-interface.h"
+     11          #include "hal/micro/cortexm3/memmap.h"
+     12          #include "hal/micro/cortexm3/bootloader/bootloader-common.h"
+     13          
+     14          //////////////////////
+     15          // Generic bootloader functionality
+     16          ///////////
+     17          
+     18          /** @description Returns the bootloader type the application was
+     19           *  built for.
+     20           *
+     21           * @return BL_TYPE_NULL, BL_TYPE_STANDALONE or BL_TYPE_APPLICATION
+     22           */
+
+   \                                 In section .text, align 2, keep-with-next
+     23          BlBaseType halBootloaderGetType(void)
+     24          {
+     25            // Important distinction:
+     26            //   this returns what bootloader the app was built for
+     27            #ifdef NULL_BTL
+     28              BLDEBUG_PRINT("built for NULL bootloader\r\n");
+     29              return BL_TYPE_NULL;
+     30            #elif defined APP_BTL
+     31              // Deprecated
+     32              BLDEBUG_PRINT("built for APP bootloader\r\n");
+     33              return BL_TYPE_APPLICATION;
+   \                     halBootloaderGetType: (+1)
+   \   00000000   0x2002             MOVS     R0,#+2
+   \   00000002   0x4770             BX       LR               ;; return
+     34            #elif defined SERIAL_UART_BTL
+     35              // Deprecated
+     36              BLDEBUG_PRINT("built for SERIAL UART standalone bootloader\r\n");
+     37              return BL_TYPE_STANDALONE;
+     38            #elif defined SERIAL_USB_BTL
+     39              // Deprecated
+     40              BLDEBUG_PRINT("built for SERIAL USB standalone bootloader\r\n");
+     41              return BL_TYPE_STANDALONE;
+     42            #elif defined SERIAL_OTA_BTL
+     43              // Deprecated
+     44              BLDEBUG_PRINT("built for SERIAL OTA standalone bootloader\r\n");
+     45              return BL_TYPE_STANDALONE;
+     46            #else
+     47              BLDEBUG_PRINT("built for 8k bootloader\r\n");
+     48              return BL_TYPE_BOOTLOADER;
+     49            #endif
+     50          }
+     51          
+     52          
+     53          // Returns the extended type of 
+
+   \                                 In section .text, align 2, keep-with-next
+     54          BlExtendedType halBootloaderGetInstalledType(void)
+     55          {
+     56            // Important distinction:
+     57            //   this returns what bootloader is actually present on the chip
+     58            return halBootloaderAddressTable.bootloaderType;
+   \                     halBootloaderGetInstalledType: (+1)
+   \   00000000   0x....             LDR.N    R0,??DataTable2
+   \   00000002   0x8B00             LDRH     R0,[R0, #+24]
+   \   00000004   0x4770             BX       LR               ;; return
+     59          }
+     60          
+
+   \                                 In section .text, align 2, keep-with-next
+     61          int16u halGetBootloaderVersion(void)
+     62          {
+     63            return halBootloaderAddressTable.bootloaderVersion;
+   \                     halGetBootloaderVersion: (+1)
+   \   00000000   0x....             LDR.N    R0,??DataTable2
+   \   00000002   0x8B40             LDRH     R0,[R0, #+26]
+   \   00000004   0x4770             BX       LR               ;; return
+     64          }
+     65          
+
+   \                                 In section .text, align 2, keep-with-next
+     66          void halGetExtendedBootloaderVersion(int32u* getEmberVersion, int32u* customerVersion)
+     67          {
+   \                     halGetExtendedBootloaderVersion: (+1)
+   \   00000000   0xB5F0             PUSH     {R4-R7,LR}
+     68            int32u ember, customer = 0xFFFFFFFF;
+     69          
+     70            // check BAT version to figure out how to create the emberVersion
+     71            if(halBootloaderAddressTable.baseTable.version >= 0x0109) {
+   \   00000002   0x....             LDR.N    R3,??DataTable2
+   \   00000004   0x8A5F             LDRH     R7,[R3, #+18]
+   \   00000006   0xF203 0x0412      ADDW     R4,R3,#+18
+   \   0000000A   0xF04F 0x32FF      MOV      R2,#-1
+   \   0000000E   0x8925             LDRH     R5,[R4, #+8]
+   \   00000010   0x042E             LSLS     R6,R5,#+16
+   \   00000012   0xF5B7 0x7F84      CMP      R7,#+264
+   \   00000016   0xDD04             BLE.N    ??halGetExtendedBootloaderVersion_0
+     72              // Newer BATs have a bootloaderVersion and bootloaderBuild that need to be combined
+     73              ember = ((int32u)halBootloaderAddressTable.bootloaderVersion)<<16 | halBootloaderAddressTable.bootloaderBuild;
+   \   00000018   0x8F62             LDRH     R2,[R4, #+58]
+   \   0000001A   0xEA42 0x0406      ORR      R4,R2,R6
+     74              customer = halBootloaderAddressTable.customerBootloaderVersion;
+   \   0000001E   0x6D1A             LDR      R2,[R3, #+80]
+   \   00000020   0xE003             B.N      ??halGetExtendedBootloaderVersion_1
+     75            } else {
+     76              // Older BATs had these fields grouped together. Reformat them to be in the new format
+     77              ember  = (((int32u)halBootloaderAddressTable.bootloaderVersion)<<16) & 0xFF000000;
+     78              ember |= halBootloaderAddressTable.bootloaderVersion & 0x000000FF;
+   \                     ??halGetExtendedBootloaderVersion_0: (+1)
+   \   00000022   0xF006 0x437F      AND      R3,R6,#0xFF000000
+   \   00000026   0xB2EC             UXTB     R4,R5
+   \   00000028   0x431C             ORRS     R4,R4,R3
+     79            }
+     80          
+     81            // If the pointers aren't NULL copy the results over
+     82            if(getEmberVersion != NULL) {
+   \                     ??halGetExtendedBootloaderVersion_1: (+1)
+   \   0000002A   0xB100             CBZ.N    R0,??halGetExtendedBootloaderVersion_2
+     83              *getEmberVersion = ember;
+   \   0000002C   0x6004             STR      R4,[R0, #+0]
+     84            }
+     85            if(customerVersion != NULL) {
+   \                     ??halGetExtendedBootloaderVersion_2: (+1)
+   \   0000002E   0xB101             CBZ.N    R1,??halGetExtendedBootloaderVersion_3
+     86              *customerVersion = customer;
+   \   00000030   0x600A             STR      R2,[R1, #+0]
+     87            }
+     88          }
+   \                     ??halGetExtendedBootloaderVersion_3: (+1)
+   \   00000032   0xBDF0             POP      {R4-R7,PC}       ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2:
+   \   00000000   0x........         DC32     halBootloaderAddressTable
+     89          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   halBootloaderGetInstalledType
+       0   halBootloaderGetType
+       0   halGetBootloaderVersion
+      20   halGetExtendedBootloaderVersion
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable2
+       6  halBootloaderGetInstalledType
+       4  halBootloaderGetType
+       6  halGetBootloaderVersion
+      52  halGetExtendedBootloaderVersion
+
+ 
+ 72 bytes in section .text
+ 
+ 72 bytes of CODE memory
+
+Errors: none
+Warnings: none

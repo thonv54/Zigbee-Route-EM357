@@ -1,0 +1,186 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        09/Sep/2015  17:11:31
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\address-table\address-table-cli.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\address-table\address-table-cli.c
+#        -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"address-table-cli.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\address-table\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\address-table-cli.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\address-table-cli.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\address-table\address-table-cli.c
+      1          // *****************************************************************************
+      2          // * address-table-cli.c
+      3          // *
+      4          // * This code provides support for managing the address table.
+      5          // *
+      6          // * Copyright 2012 by Ember Corporation. All rights reserved.              *80*
+      7          // *****************************************************************************
+      8          
+      9          #include "app/framework/include/af.h"
+     10          #include "app/util/serial/command-interpreter2.h"
+     11          
+     12          #include "address-table-management.h"
+     13          
+     14          void emberAfPluginAddressTableAddCommand(void);
+     15          void emberAfPluginAddressTableRemoveCommand(void);
+     16          void emberAfPluginAddressTableLookupCommand(void);
+     17          
+     18          #if !defined(EMBER_AF_GENERATE_CLI)
+     19          EmberCommandEntry emberAfPluginAddressTableCommands[] = {
+     20            emberCommandEntryAction("add", emberAfPluginAddressTableAddCommand,  "b", "Add an entry to the address table."),
+     21            emberCommandEntryAction("remove", emberAfPluginAddressTableRemoveCommand,  "b", "Remove an entry from the address table."),
+     22            emberCommandEntryAction("lookup", emberAfPluginAddressTableLookupCommand,  "b", "Search for an entry in the address table."),
+     23            emberCommandEntryTerminator(),
+     24          };
+     25          #endif // EMBER_AF_GENERATE_CLI
+     26          
+
+   \                                 In section .text, align 2, keep-with-next
+     27          void emberAfPluginAddressTableAddCommand(void)
+     28          {
+   \                     emberAfPluginAddressTableAddCommand: (+1)
+   \   00000000   0xB500             PUSH     {LR}
+   \   00000002   0xB083             SUB      SP,SP,#+12
+     29            int8u index;
+     30            EmberEUI64 entry;
+     31            emberCopyEui64Argument(0, entry);
+   \   00000004   0x.... 0x....      BL       ?Subroutine0
+     32          
+     33            index = emberAfPluginAddressTableAddEntry(entry);
+   \                     ??CrossCallReturnLabel_2: (+1)
+   \   00000008   0xA800             ADD      R0,SP,#+0
+   \   0000000A   0x.... 0x....      BL       emberAfPluginAddressTableAddEntry
+     34          
+     35            if (index == EMBER_NULL_ADDRESS_TABLE_INDEX) {
+     36              emberAfCorePrintln("Table full, entry not added");
+     37            } else {
+     38              emberAfCorePrintln("Entry added at position 0x%x", index);
+     39            }
+     40          }
+   \   0000000E   0xBD07             POP      {R0-R2,PC}       ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine0: (+1)
+   \   00000000   0x2301             MOVS     R3,#+1
+   \   00000002   0x2208             MOVS     R2,#+8
+   \   00000004   0xA900             ADD      R1,SP,#+0
+   \   00000006   0x2000             MOVS     R0,#+0
+   \   00000008   0x.... 0x....      B.W      emberCopyStringArgument
+     41          
+
+   \                                 In section .text, align 2, keep-with-next
+     42          void emberAfPluginAddressTableRemoveCommand(void)
+     43          {
+   \                     emberAfPluginAddressTableRemoveCommand: (+1)
+   \   00000000   0xB500             PUSH     {LR}
+   \   00000002   0xB083             SUB      SP,SP,#+12
+     44            EmberStatus status;
+     45            EmberEUI64 entry;
+     46            emberCopyEui64Argument(0, entry);
+   \   00000004   0x.... 0x....      BL       ?Subroutine0
+     47          
+     48            status = emberAfPluginAddressTableRemoveEntry(entry);
+   \                     ??CrossCallReturnLabel_1: (+1)
+   \   00000008   0xA800             ADD      R0,SP,#+0
+   \   0000000A   0x.... 0x....      BL       emberAfPluginAddressTableRemoveEntry
+     49          
+     50            if (status == EMBER_SUCCESS) {
+     51              emberAfCorePrintln("Entry removed");
+     52            } else {
+     53              emberAfCorePrintln("Entry removal failed");
+     54            }
+     55          }
+   \   0000000E   0xBD07             POP      {R0-R2,PC}       ;; return
+     56          
+
+   \                                 In section .text, align 2, keep-with-next
+     57          void emberAfPluginAddressTableLookupCommand(void)
+     58          {
+   \                     emberAfPluginAddressTableLookupCommand: (+1)
+   \   00000000   0xB500             PUSH     {LR}
+   \   00000002   0xB083             SUB      SP,SP,#+12
+     59            int8u index;
+     60            EmberEUI64 entry;
+     61            emberCopyEui64Argument(0, entry);
+   \   00000004   0x.... 0x....      BL       ?Subroutine0
+     62            index = emberAfPluginAddressTableLookupByEui64(entry);
+   \                     ??CrossCallReturnLabel_0: (+1)
+   \   00000008   0xA800             ADD      R0,SP,#+0
+   \   0000000A   0x.... 0x....      BL       emberAfPluginAddressTableLookupByEui64
+     63          
+     64            if (index == EMBER_NULL_ADDRESS_TABLE_INDEX)
+     65              emberAfCorePrintln("Entry not found");
+     66            else
+     67              emberAfCorePrintln("Found entry at position 0x%x", index);
+     68          }
+   \   0000000E   0xBD07             POP      {R0-R2,PC}       ;; return
+     69          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      16   emberAfPluginAddressTableAddCommand
+        16   -> emberAfPluginAddressTableAddEntry
+        16   -> emberCopyStringArgument
+      16   emberAfPluginAddressTableLookupCommand
+        16   -> emberAfPluginAddressTableLookupByEui64
+        16   -> emberCopyStringArgument
+      16   emberAfPluginAddressTableRemoveCommand
+        16   -> emberAfPluginAddressTableRemoveEntry
+        16   -> emberCopyStringArgument
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      12  ?Subroutine0
+      16  emberAfPluginAddressTableAddCommand
+      16  emberAfPluginAddressTableLookupCommand
+      16  emberAfPluginAddressTableRemoveCommand
+
+ 
+ 60 bytes in section .text
+ 
+ 60 bytes of CODE memory
+
+Errors: none
+Warnings: none

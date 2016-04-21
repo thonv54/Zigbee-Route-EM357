@@ -1,0 +1,152 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        31/Aug/2015  14:04:32
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-bootload\ota-bootload-cli.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-bootload\ota-bootload-cli.c
+#        -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"ota-bootload-cli.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-bootload\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\ota-bootload-cli.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ota-bootload-cli.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-bootload\ota-bootload-cli.c
+      1          // *******************************************************************
+      2          // * ota-bootload-cli.c
+      3          // *
+      4          // * Bootload specific commands
+      5          // * 
+      6          // * Copyright 2009 by Ember Corporation. All rights reserved.              *80*
+      7          // *******************************************************************
+      8          
+      9          #include "app/framework/include/af.h"
+     10          #include "app/util/serial/command-interpreter2.h"
+     11          #include "app/framework/plugin/ota-common/ota.h"
+     12          
+     13          #include "hal/micro/bootloader-interface.h"
+     14          
+     15          //------------------------------------------------------------------------------
+     16          // Forward Declarations
+     17          
+     18          void printBootloaderInfoCommand(void);
+     19          
+     20          #ifndef EMBER_AF_GENERATE_CLI
+     21          EmberCommandEntry emberAfPluginOtaBootloadCommands[] = {
+     22            emberCommandEntryAction("info", printBootloaderInfoCommand, "", 
+     23                                    "Print information about the installed bootloader."),
+     24            emberCommandEntryTerminator(),
+     25          };
+     26          #endif // EMBER_AF_GENERATE_CLI
+     27          
+     28          //------------------------------------------------------------------------------
+     29          
+     30          
+
+   \                                 In section .text, align 4, keep-with-next
+     31          void printBootloaderInfoCommand(void)
+     32          {
+   \                     printBootloaderInfoCommand: (+1)
+   \   00000000   0xB500             PUSH     {LR}
+   \   00000002   0xB087             SUB      SP,SP,#+28
+     33          #if !defined(EZSP_HOST)
+     34            BlExtendedType blExtendedType = halBootloaderGetInstalledType();
+   \   00000004   0x.... 0x....      BL       halBootloaderGetInstalledType
+     35            int32u emberVersion;
+     36            int32u customVersion;
+     37            int8u keyData[EMBER_ENCRYPTION_KEY_SIZE];
+     38            halGetExtendedBootloaderVersion(&emberVersion, &customVersion);
+   \   00000008   0xA900             ADD      R1,SP,#+0
+   \   0000000A   0xA801             ADD      R0,SP,#+4
+   \   0000000C   0x.... 0x....      BL       halGetExtendedBootloaderVersion
+     39            otaPrintln("Installed Type (Base):      0x%X",  halBootloaderGetType());
+     40            otaPrintln("Installed Type (Extended):  0x%2X", blExtendedType);
+     41            otaPrintln("Bootloader Version:         0x%2X", halGetBootloaderVersion());
+     42            otaPrintln("Bootloader Version, Ember:  0x%4X", emberVersion);
+     43            otaPrintln("Bootloader Version, Custom: 0x%4X", customVersion);
+     44          
+     45          #if defined(EMBER_TEST)
+     46            MEMSET(keyData, 0xFF, EMBER_ENCRYPTION_KEY_SIZE);
+     47          #else
+     48            halCommonGetToken(keyData, TOKEN_MFG_SECURE_BOOTLOADER_KEY);
+   \   00000010   0x4805             LDR.N    R0,??printBootloaderInfoCommand_0
+   \   00000012   0x8801             LDRH     R1,[R0, #+0]
+   \   00000014   0x2310             MOVS     R3,#+16
+   \   00000016   0x227F             MOVS     R2,#+127
+   \   00000018   0xA802             ADD      R0,SP,#+8
+   \   0000001A   0x.... 0x....      BL       halInternalGetTokenData
+     49          #endif
+     50          
+     51            otaPrint  ("Secure Bootloader Key:      ");
+     52            emberAfPrintZigbeeKey(keyData);
+   \   0000001E   0xA802             ADD      R0,SP,#+8
+   \   00000020   0x.... 0x....      BL       printZigbeeKey
+     53            otaPrintln("");
+     54          
+     55          #else
+     56            otaPrintln("Unsupported on EZSP Host");
+     57          #endif
+     58          
+     59          }
+   \   00000024   0xB007             ADD      SP,SP,#+28
+   \   00000026   0xBD00             POP      {PC}             ;; return
+   \                     ??printBootloaderInfoCommand_0:
+   \   00000028   0x........         DC32     TOKEN_MFG_SECURE_BOOTLOADER_KEY
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      32   printBootloaderInfoCommand
+        32   -> halBootloaderGetInstalledType
+        32   -> halGetExtendedBootloaderVersion
+        32   -> halInternalGetTokenData
+        32   -> printZigbeeKey
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      44  printBootloaderInfoCommand
+
+ 
+ 44 bytes in section .text
+ 
+ 44 bytes of CODE memory
+
+Errors: none
+Warnings: none

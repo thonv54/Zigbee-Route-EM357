@@ -1,0 +1,199 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        22/Oct/2015  09:33:53
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\util\process-cluster-message.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\util\process-cluster-message.c
+#        -D DIMMER -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"process-cluster-message.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\util\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\process-cluster-message.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\process-cluster-message.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\util\process-cluster-message.c
+      1          // *******************************************************************
+      2          // * process-cluster-message.c
+      3          // *
+      4          // * This file contains a function that processes cluster-specific
+      5          // * ZCL message.
+      6          // *
+      7          // * Copyright 2007 by Ember Corporation. All rights reserved.              *80*
+      8          // *******************************************************************
+      9          
+     10          
+     11          // this file contains all the common includes for clusters in the zcl-util
+     12          #include "common.h"
+     13          
+     14          // for pulling in defines dealing with EITHER server or client
+     15          #include "af-main.h"
+     16          
+     17          // the EM260 host needs to include the config file
+     18          #ifdef EZSP_HOST
+     19            #include "config.h"
+     20          #endif
+     21          
+     22          //------------------------------------------------------------------------------
+     23          // Forward Declarations
+     24          
+     25          static boolean parseOtaServerIncomingMessage(EmberAfClusterCommand* cmd);
+     26          static boolean parseOtaClientIncomingMessage(EmberAfClusterCommand* cmd);
+     27          EmberAfStatus emberAfClusterSpecificCommandParse(EmberAfClusterCommand *cmd);
+     28          
+     29          //------------------------------------------------------------------------------
+     30          
+
+   \                                 In section .text, align 2, keep-with-next
+     31          boolean emAfProcessClusterSpecificCommand(EmberAfClusterCommand *cmd)
+     32          {
+   \                     emAfProcessClusterSpecificCommand: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0x4604             MOV      R4,R0
+     33            EmberAfStatus status;
+     34          
+     35            // if we are disabled then we can only respond to read or write commands
+     36            // or identify cluster (see device enabled attr of basic cluster)
+     37            if (!emberAfIsDeviceEnabled(cmd->apsFrame->destinationEndpoint)
+     38                && cmd->apsFrame->clusterId != ZCL_IDENTIFY_CLUSTER_ID) {
+   \   00000004   0x6820             LDR      R0,[R4, #+0]
+   \   00000006   0x7940             LDRB     R0,[R0, #+5]
+   \   00000008   0x.... 0x....      BL       emberAfIsDeviceEnabled
+   \   0000000C   0xB928             CBNZ.N   R0,??emAfProcessClusterSpecificCommand_0
+   \   0000000E   0x6820             LDR      R0,[R4, #+0]
+   \   00000010   0x8840             LDRH     R0,[R0, #+2]
+   \   00000012   0x2803             CMP      R0,#+3
+   \   00000014   0xD001             BEQ.N    ??emAfProcessClusterSpecificCommand_0
+     39              emberAfCorePrintln("%pd, dropping ep 0x%x clus 0x%2x cmd 0x%x",
+     40                                 "disable",
+     41                                 cmd->apsFrame->destinationEndpoint,
+     42                                 cmd->apsFrame->clusterId,
+     43                                 cmd->commandId);
+     44              emberAfSendDefaultResponse(cmd, EMBER_ZCL_STATUS_FAILURE);
+   \   00000016   0x2101             MOVS     R1,#+1
+   \   00000018   0xE004             B.N      ??emAfProcessClusterSpecificCommand_1
+     45              return TRUE;
+     46            }
+     47          
+     48          #ifdef ZCL_USING_KEY_ESTABLISHMENT_CLUSTER_CLIENT
+     49            if (cmd->apsFrame->clusterId == ZCL_KEY_ESTABLISHMENT_CLUSTER_ID
+     50                && cmd->direction == ZCL_DIRECTION_SERVER_TO_CLIENT
+     51                && emberAfKeyEstablishmentClusterClientCommandReceivedCallback(cmd)) {
+     52              return TRUE;
+     53            }
+     54          #endif
+     55          #ifdef ZCL_USING_KEY_ESTABLISHMENT_CLUSTER_SERVER
+     56            if (cmd->apsFrame->clusterId == ZCL_KEY_ESTABLISHMENT_CLUSTER_ID
+     57                && cmd->direction == ZCL_DIRECTION_CLIENT_TO_SERVER
+     58                && emberAfKeyEstablishmentClusterServerCommandReceivedCallback(cmd)) {
+     59              return TRUE;
+     60            }
+     61          #endif
+     62          
+     63            if (parseOtaServerIncomingMessage(cmd)) {
+     64              return TRUE;
+     65            } else if (parseOtaClientIncomingMessage(cmd)) {
+     66              return TRUE;
+     67            }
+     68          
+     69            // Pass the command to the generated command parser for processing
+     70            status = emberAfClusterSpecificCommandParse(cmd);
+   \                     ??emAfProcessClusterSpecificCommand_0: (+1)
+   \   0000001A   0x4620             MOV      R0,R4
+   \   0000001C   0x.... 0x....      BL       emberAfClusterSpecificCommandParse
+     71            if (status != EMBER_ZCL_STATUS_SUCCESS) {
+   \   00000020   0xB118             CBZ.N    R0,??emAfProcessClusterSpecificCommand_2
+     72              emberAfSendDefaultResponse(cmd, status);
+   \   00000022   0x4601             MOV      R1,R0
+   \                     ??emAfProcessClusterSpecificCommand_1: (+1)
+   \   00000024   0x4620             MOV      R0,R4
+   \   00000026   0x.... 0x....      BL       emberAfSendDefaultResponse
+     73            }
+     74          
+     75            return TRUE;
+   \                     ??emAfProcessClusterSpecificCommand_2: (+1)
+   \   0000002A   0x2001             MOVS     R0,#+1
+   \   0000002C   0xBD10             POP      {R4,PC}          ;; return
+     76          }
+     77          
+     78          static boolean parseOtaServerIncomingMessage(EmberAfClusterCommand* cmd)
+     79          {
+     80          #if defined(EMBER_CALLBACK_OTA_SERVER_INCOMING_MESSAGE_RAW)
+     81            if (cmd->apsFrame->clusterId == ZCL_OTA_BOOTLOAD_CLUSTER_ID
+     82                && cmd->direction == ZCL_DIRECTION_CLIENT_TO_SERVER) {
+     83              emberAfOtaServerIncomingMessageRawCallback(cmd);
+     84              return TRUE;
+     85            }
+     86          #endif
+     87          
+     88            return FALSE;
+     89          }
+     90          
+     91          static boolean parseOtaClientIncomingMessage(EmberAfClusterCommand* cmd)
+     92          {
+     93          #if defined(EMBER_CALLBACK_OTA_CLIENT_INCOMING_MESSAGE_RAW)
+     94            if (cmd->apsFrame->clusterId == ZCL_OTA_BOOTLOAD_CLUSTER_ID
+     95                && cmd->direction == ZCL_DIRECTION_SERVER_TO_CLIENT) {
+     96              emberAfOtaClientIncomingMessageRawCallback(cmd);
+     97              return TRUE;
+     98            }
+     99          #endif
+    100          
+    101            return FALSE;
+    102          }
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   emAfProcessClusterSpecificCommand
+         8   -> emberAfClusterSpecificCommandParse
+         8   -> emberAfIsDeviceEnabled
+         8   -> emberAfSendDefaultResponse
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      46  emAfProcessClusterSpecificCommand
+
+ 
+ 46 bytes in section .text
+ 
+ 46 bytes of CODE memory
+
+Errors: none
+Warnings: none

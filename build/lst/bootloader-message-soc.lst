@@ -1,0 +1,308 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        31/Aug/2015  14:17:51
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\standalone-bootloader-common\bootloader-message-soc.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\standalone-bootloader-common\bootloader-message-soc.c
+#        -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"bootloader-message-soc.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\standalone-bootloader-common\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\bootloader-message-soc.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\bootloader-message-soc.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\standalone-bootloader-common\bootloader-message-soc.c
+      1          // *****************************************************************************
+      2          // * bootloader-message-host.c
+      3          // *
+      4          // * This file defines the interface to the host to send Ember proprietary 
+      5          // * bootloader messages.
+      6          // * 
+      7          // * Copyright 2012 Silicon Laboratories, Inc.                              *80*
+      8          // *****************************************************************************
+      9          
+     10          #include "app/framework/include/af.h"
+     11          #include "bootloader-protocol.h"
+     12          
+     13          //------------------------------------------------------------------------------
+     14          // External Declarations
+     15          
+     16          void emAesEncrypt(int8u *block, int8u *key);
+     17          
+     18          //------------------------------------------------------------------------------
+     19          // Globals
+     20          
+     21          //------------------------------------------------------------------------------
+     22          // Functions
+     23          
+     24          
+     25          
+
+   \                                 In section .text, align 2, keep-with-next
+     26          EmberStatus emAfSendBootloadMessage(boolean isBroadcast,
+     27                                              EmberEUI64 destEui64,
+     28                                              int8u length,
+     29                                              int8u* message)
+     30          {
+   \                     emAfSendBootloadMessage: (+1)
+   \   00000000   0xB570             PUSH     {R4-R6,LR}
+   \   00000002   0x4604             MOV      R4,R0
+   \   00000004   0x460D             MOV      R5,R1
+   \   00000006   0x4611             MOV      R1,R2
+   \   00000008   0x4618             MOV      R0,R3
+     31            EmberStatus status;
+     32            EmberMessageBuffer buffer = emberFillLinkedBuffers(message,
+     33                                                               length);
+   \   0000000A   0x.... 0x....      BL       emberFillLinkedBuffers
+   \   0000000E   0x4606             MOV      R6,R0
+     34            if (buffer == EMBER_NULL_MESSAGE_BUFFER) {
+   \   00000010   0x2EFF             CMP      R6,#+255
+   \   00000012   0xD101             BNE.N    ??emAfSendBootloadMessage_0
+     35              return EMBER_NO_BUFFERS;
+   \   00000014   0x2018             MOVS     R0,#+24
+   \   00000016   0xBD70             POP      {R4-R6,PC}
+     36            }
+     37          
+     38            status = emberSendBootloadMessage(isBroadcast, destEui64, buffer);
+   \                     ??emAfSendBootloadMessage_0: (+1)
+   \   00000018   0x4632             MOV      R2,R6
+   \   0000001A   0x4629             MOV      R1,R5
+   \   0000001C   0x4620             MOV      R0,R4
+   \   0000001E   0x.... 0x....      BL       emberSendBootloadMessage
+   \   00000022   0x4604             MOV      R4,R0
+     39            emberReleaseMessageBuffer(buffer);
+   \   00000024   0x4630             MOV      R0,R6
+   \   00000026   0x.... 0x....      BL       emReleaseMessageBuffer
+     40            return status;
+   \   0000002A   0x4620             MOV      R0,R4
+   \   0000002C   0xBD70             POP      {R4-R6,PC}       ;; return
+     41          }
+     42          
+     43          
+
+   \                                 In section .text, align 2, keep-with-next
+     44          void emberIncomingBootloadMessageHandler(EmberEUI64 longId, 
+     45                                                   EmberMessageBuffer message)
+     46          {
+   \                     emberIncomingBootloadMessageHandler: (+1)
+   \   00000000   0xB530             PUSH     {R4,R5,LR}
+   \   00000002   0x4604             MOV      R4,R0
+     47            int8u incomingBlock[MAX_BOOTLOAD_MESSAGE_SIZE];
+     48            int8u length = emberMessageBufferLength(message);
+   \   00000004   0x....             LDR.N    R0,??DataTable3
+   \   00000006   0x6800             LDR      R0,[R0, #+0]
+   \   00000008   0xB093             SUB      SP,SP,#+76
+   \   0000000A   0x5C0D             LDRB     R5,[R1, R0]
+     49            if (length > MAX_BOOTLOAD_MESSAGE_SIZE) {
+   \   0000000C   0x2D47             CMP      R5,#+71
+   \   0000000E   0xDB07             BLT.N    ??emberIncomingBootloadMessageHandler_0
+     50              bootloadPrintln("Bootload message too long (%d > %d), dropping!", 
+     51                              length, 
+     52                              MAX_BOOTLOAD_MESSAGE_SIZE);
+   \   00000010   0x2346             MOVS     R3,#+70
+   \   00000012   0x462A             MOV      R2,R5
+   \   00000014   0x.... 0x....      ADR.W    R1,`?<Constant "Bootload message too ...">`
+   \   00000018   0x2001             MOVS     R0,#+1
+   \   0000001A   0x.... 0x....      BL       emberAfPrintln
+     53              return;
+   \   0000001E   0xE00B             B.N      ??emberIncomingBootloadMessageHandler_1
+     54            }
+     55            emberCopyFromLinkedBuffers(message, 
+     56                                       0,       // start index
+     57                                       incomingBlock, 
+     58                                       length);
+   \                     ??emberIncomingBootloadMessageHandler_0: (+1)
+   \   00000020   0x2000             MOVS     R0,#+0
+   \   00000022   0x9000             STR      R0,[SP, #+0]
+   \   00000024   0x462B             MOV      R3,R5
+   \   00000026   0x2200             MOVS     R2,#+0
+   \   00000028   0xA801             ADD      R0,SP,#+4
+   \   0000002A   0x.... 0x....      BL       emReallyCopyToLinkedBuffers
+     59          
+     60            emberAfPluginStandaloneBootloaderCommonIncomingMessageCallback(longId,
+     61                                                                           length,
+     62                                                                           incomingBlock);
+   \   0000002E   0xAA01             ADD      R2,SP,#+4
+   \   00000030   0x4629             MOV      R1,R5
+   \   00000032   0x4620             MOV      R0,R4
+   \   00000034   0x.... 0x....      BL       emberAfPluginStandaloneBootloaderCommonIncomingMessageCallback
+     63          }
+   \                     ??emberIncomingBootloadMessageHandler_1: (+1)
+   \   00000038   0xB013             ADD      SP,SP,#+76
+   \   0000003A   0xBD30             POP      {R4,R5,PC}       ;; return
+     64          
+     65          
+
+   \                                 In section .text, align 2, keep-with-next
+     66          void emberBootloadTransmitCompleteHandler(EmberMessageBuffer message,
+     67                                                    EmberStatus status)
+     68          {
+   \                     emberBootloadTransmitCompleteHandler: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0x000C             MOVS     R4,R1
+     69            if (status != EMBER_SUCCESS) {
+   \   00000004   0xD011             BEQ.N    ??emberBootloadTransmitCompleteHandler_0
+     70              int8u commandId = 0xFF;
+     71              if (emberMessageBufferLength(message) >= 2) {
+   \   00000006   0x....             LDR.N    R1,??DataTable3
+   \   00000008   0x6809             LDR      R1,[R1, #+0]
+   \   0000000A   0x5C41             LDRB     R1,[R0, R1]
+   \   0000000C   0x22FF             MOVS     R2,#+255
+   \   0000000E   0x2902             CMP      R1,#+2
+   \   00000010   0xDB03             BLT.N    ??emberBootloadTransmitCompleteHandler_1
+     72                commandId = emberGetLinkedBuffersByte(message, 1);
+   \   00000012   0x2101             MOVS     R1,#+1
+   \   00000014   0x.... 0x....      BL       emberGetLinkedBuffersByte
+   \   00000018   0x4602             MOV      R2,R0
+     73              }
+     74              bootloadPrintln("Bootload message (0x%X) send failed: 0x%X", 
+     75                              commandId,
+     76                              status);
+   \                     ??emberBootloadTransmitCompleteHandler_1: (+1)
+   \   0000001A   0x4623             MOV      R3,R4
+   \   0000001C   0xE8BD 0x4010      POP      {R4,LR}
+   \   00000020   0x.... 0x....      ADR.W    R1,`?<Constant "Bootload message (0x%...">`
+   \   00000024   0x2001             MOVS     R0,#+1
+   \   00000026   0x.... 0x....      B.W      emberAfPrintln
+     77            }
+     78          }
+   \                     ??emberBootloadTransmitCompleteHandler_0: (+1)
+   \   0000002A   0xBD10             POP      {R4,PC}          ;; return
+     79          
+
+   \                                 In section .text, align 2, keep-with-next
+     80          void emAfStandaloneBootloaderClientEncrypt(int8u* block, int8u* key)
+     81          {
+     82            emAesEncrypt(block, key);
+   \                     emAfStandaloneBootloaderClientEncrypt: (+1)
+   \   00000000   0x.... 0x....      B.W      emAesEncrypt
+     83          }
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable3:
+   \   00000000   0x........         DC32     emMessageBufferLengths
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Bootload message too ...">`:
+   \   00000000   0x42 0x6F          DC8 "Bootload message too long (%d > %d), dropping!"
+   \              0x6F 0x74    
+   \              0x6C 0x6F    
+   \              0x61 0x64    
+   \              0x20 0x6D    
+   \              0x65 0x73    
+   \              0x73 0x61    
+   \              0x67 0x65    
+   \              0x20 0x74    
+   \              0x6F 0x6F    
+   \              0x20 0x6C    
+   \              0x6F 0x6E    
+   \              0x67 0x20    
+   \              0x28 0x25    
+   \              0x64 0x20    
+   \              0x3E 0x20    
+   \              0x25 0x64    
+   \              0x29 0x2C    
+   \              0x20 0x64    
+   \              0x72 0x6F    
+   \              0x70 0x70    
+   \              0x69 0x6E    
+   \              0x67 0x21    
+   \              0x00         
+   \   0000002F   0x00               DC8 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Bootload message (0x%...">`:
+   \   00000000   0x42 0x6F          DC8 "Bootload message (0x%X) send failed: 0x%X"
+   \              0x6F 0x74    
+   \              0x6C 0x6F    
+   \              0x61 0x64    
+   \              0x20 0x6D    
+   \              0x65 0x73    
+   \              0x73 0x61    
+   \              0x67 0x65    
+   \              0x20 0x28    
+   \              0x30 0x78    
+   \              0x25 0x58    
+   \              0x29 0x20    
+   \              0x73 0x65    
+   \              0x6E 0x64    
+   \              0x20 0x66    
+   \              0x61 0x69    
+   \              0x6C 0x65    
+   \              0x64 0x3A    
+   \              0x20 0x30    
+   \              0x78 0x25    
+   \              0x58 0x00    
+   \   0000002A   0x00 0x00          DC8 0, 0
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      16   emAfSendBootloadMessage
+        16   -> emReleaseMessageBuffer
+        16   -> emberFillLinkedBuffers
+        16   -> emberSendBootloadMessage
+       0   emAfStandaloneBootloaderClientEncrypt
+         0   -> emAesEncrypt
+       8   emberBootloadTransmitCompleteHandler
+         0   -> emberAfPrintln
+         8   -> emberGetLinkedBuffersByte
+      88   emberIncomingBootloadMessageHandler
+        88   -> emReallyCopyToLinkedBuffers
+        88   -> emberAfPluginStandaloneBootloaderCommonIncomingMessageCallback
+        88   -> emberAfPrintln
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      44  ?<Constant "Bootload message (0x%...">
+      48  ?<Constant "Bootload message too ...">
+       4  ??DataTable3
+      46  emAfSendBootloadMessage
+       4  emAfStandaloneBootloaderClientEncrypt
+      44  emberBootloadTransmitCompleteHandler
+      60  emberIncomingBootloadMessageHandler
+
+ 
+ 250 bytes in section .text
+ 
+ 250 bytes of CODE memory
+
+Errors: none
+Warnings: none

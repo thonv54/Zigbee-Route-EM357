@@ -1,0 +1,171 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        18/Apr/2016  12:59:25
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\form-and-join\form-and-join-afv2.c
+#    Command line =  
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\form-and-join\form-and-join-afv2.c"
+#        -D SWITCH_4_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"form-and-join-afv2.c\"" -lC "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\List\" --diag_suppress Pa050 -o "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\Obj\" --debug --endian=little --cpu=Cortex-M3
+#        --no_path_in_file_macros --separate_cluster_for_initialized_variables
+#        -e --fpu=None --dlib_config "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\form-and-join\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\"
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\List\form-and-join-afv2.lst
+#    Object file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\Obj\form-and-join-afv2.o
+#
+###############################################################################
+
+D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\form-and-join\form-and-join-afv2.c
+      1          // ****************************************************************************
+      2          // * form-and-join-afv2.c
+      3          // *
+      4          // * This provides a compatibility layer between the legacy form and join code
+      5          // * and the App Framework v2 code.  The legacy form and join code is agnostic
+      6          // * of the Application Framework and thus we cannot put lots of App Framework
+      7          // * specific code in there.
+      8          // * More specifically, the sensor/sink app doesn't use the framework and thus
+      9          // * cannot compile form-and-join code with Afv2 references in it.
+     10          // *
+     11          // * Copyright 2014 Silicon Laboratories, Inc.                             *80*
+     12          // ****************************************************************************
+     13          
+     14          #include "app/framework/include/af.h"
+     15          #include "app/util/common/form-and-join.h"
+     16          
+     17          // ****************************************************************************
+     18          // Globals
+     19          
+
+   \                                 In section .bss, align 4
+     20          EmberEventControl emberAfPluginFormAndJoinCleanupEventControl;
+   \                     emberAfPluginFormAndJoinCleanupEventControl:
+   \   00000000                      DS8 8
+     21          
+     22          // ****************************************************************************
+     23          // Forward Declarations
+     24          
+     25          // ****************************************************************************
+     26          
+
+   \                                 In section .text, align 2, keep-with-next
+     27          void emberUnusedPanIdFoundHandler(EmberPanId panId, int8u channel)
+     28          {
+     29            // It is not necessary to wrap these in push/pop calls because they 
+     30            // are executing in the context of a stack callback, which already has done 
+     31            // a push.
+     32            emberAfPluginFormAndJoinUnusedPanIdFoundCallback(panId, channel);
+   \                     emberUnusedPanIdFoundHandler: (+1)
+   \   00000000   0x.... 0x....      B.W      emberAfPluginFormAndJoinUnusedPanIdFoundCallback
+     33          }
+     34          
+
+   \                                 In section .text, align 2, keep-with-next
+     35          void emberJoinableNetworkFoundHandler(EmberZigbeeNetwork *networkFound,
+     36                                                int8u lqi,
+     37                                                int8s rssi)
+     38          {
+     39            emberAfPluginFormAndJoinNetworkFoundCallback(networkFound, lqi, rssi);
+   \                     emberJoinableNetworkFoundHandler: (+1)
+   \   00000000   0x.... 0x....      B.W      emberAfPluginFormAndJoinNetworkFoundCallback
+     40          }
+     41          
+
+   \                                 In section .text, align 2, keep-with-next
+     42          void emberAfPluginFormAndJoinCleanupEventHandler(void)
+     43          {
+     44            // This takes a bit of explaining.
+     45            // Prior to this release the form-and-join library was not a plugin and was
+     46            // hardcoded in the project templates, thus there was no way to turn it off.
+     47            // We needed to be able to enable/disable it and so we made it into a plugin.
+     48          
+     49            // The Network Find was another plugin layered on top of the form-and-join library.
+     50            // Any application that used form-and-join without the network-find plugin
+     51            // would need to properly cleanup the form-and-join code.  On the SOC this
+     52            // was done automatically by a timer that fired after 30 seconds, assuming
+     53            // you called emberFormAndJoinTick() regularly.  On the host, there was nno
+     54            // timer and thus an explicit call to emberFormAndJoinCleanup() was required.
+     55          
+     56            // Now if the network-find plugin was enabled it had its own cleanup 
+     57            // (that also called emberFormAndJoinCleanup()), therefore it was
+     58            // unnecessary to schedule an event.  
+     59          
+     60            // To maintain backwards compatibility we will run the cleanup code
+     61            // only on SOC when it is not disabled by another piece of code 
+     62            // (e.g. network-find plugin)
+     63          #if !defined(EMBER_AF_DISABLE_FORM_AND_JOIN_TICK) && !defined(EZSP_HOST)
+     64            emberFormAndJoinCleanup(EMBER_SUCCESS);
+     65          #endif
+     66          }
+   \                     emberAfPluginFormAndJoinCleanupEventHandler: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   emberAfPluginFormAndJoinCleanupEventHandler
+       0   emberJoinableNetworkFoundHandler
+         0   -> emberAfPluginFormAndJoinNetworkFoundCallback
+       0   emberUnusedPanIdFoundHandler
+         0   -> emberAfPluginFormAndJoinUnusedPanIdFoundCallback
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       8  emberAfPluginFormAndJoinCleanupEventControl
+       2  emberAfPluginFormAndJoinCleanupEventHandler
+       4  emberJoinableNetworkFoundHandler
+       4  emberUnusedPanIdFoundHandler
+
+ 
+  8 bytes in section .bss
+ 10 bytes in section .text
+ 
+ 10 bytes of CODE memory
+  8 bytes of DATA memory
+
+Errors: none
+Warnings: none

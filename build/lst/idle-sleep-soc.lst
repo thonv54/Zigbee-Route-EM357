@@ -1,0 +1,201 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        10/Sep/2015  09:00:15
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin-soc\idle-sleep\idle-sleep-soc.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin-soc\idle-sleep\idle-sleep-soc.c
+#        -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"idle-sleep-soc.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin-soc\idle-sleep\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\idle-sleep-soc.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\idle-sleep-soc.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin-soc\idle-sleep\idle-sleep-soc.c
+      1          // Copyright 2013 Silicon Laboratories, Inc.
+      2          
+      3          #include "app/framework/include/af.h"
+      4          #include "app/framework/util/af-event.h"
+      5          #include "idle-sleep.h"
+      6          
+      7          #if defined(EMBER_AF_HAS_RX_ON_WHEN_IDLE_NETWORK) && defined(EMBER_NO_IDLE_SUPPORT)
+      8            #warning Idling and sleeping is not available on SoCs with RX-on-when-idle networks that do not support idling.
+      9          #else
+     10            #define IDLE_AND_SLEEP_SUPPORTED
+     11          #endif
+     12          
+     13          #ifdef IDLE_AND_SLEEP_SUPPORTED
+     14          
+
+   \                                 In section .text, align 4, keep-with-next
+     15          void emberAfPluginIdleSleepTickCallback(void)
+     16          {
+   \                     emberAfPluginIdleSleepTickCallback: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+     17            // Turn interrupts off so that we can safely determine whether we can sleep
+     18            // or idle.  Both halSleepForMilliseconds and emberMarkTaskIdle forcibly
+     19            // enable interrupts.  We can call neither function or exactly one of them
+     20            // without risking a race condition.  Note that if we don't call either, we
+     21            // have to enable interrupts ourselves.
+     22            INTERRUPTS_OFF();
+   \   00000002   0x.... 0x....      BL       _disableBasePri
+     23          
+     24            // We can idle or sleep if some basic conditions are satisfied.  If not, we
+     25            // stay awake and active.  Otherwise, we try to sleep or idle, in that order.
+     26            if (emAfOkToIdleOrSleep()) {
+   \   00000006   0x.... 0x....      BL       emAfOkToIdleOrSleep
+   \   0000000A   0xB178             CBZ.N    R0,??emberAfPluginIdleSleepTickCallback_0
+     27          
+     28          #ifndef EMBER_AF_HAS_RX_ON_WHEN_IDLE_NETWORK
+     29              // If the stack says we can nap, it means that we may sleep for some amount
+     30              // of time.  Otherwise, we can't sleep at all, although we can try to idle.
+     31              if (emberOkToNap()) {
+     32                // If the stack says we can hiberate, it means we can sleep as long as we
+     33                // want.  Otherwise, we cannot sleep longer than the duration to its next
+     34                // event.  In either case, we will never sleep longer than the duration
+     35                // to our next event.
+     36                int32u durationMs = (emberOkToHibernate()
+     37                                     ? MAX_INT32U_VALUE
+     38                                     : emberMsToNextStackEvent());
+     39                durationMs = emberMsToNextEvent(emAfEvents, durationMs);
+     40          
+     41                // If the sleep duration is below our minimum threshold, we don't bother
+     42                // sleeping.  It takes time to shut everything down and bring everything
+     43                // back up and, at some point, it becomes useless to sleep.  We also give
+     44                // the application one last chance to stay awake if it wants.  If the
+     45                // duration is long enough and the application says okay, we will sleep.
+     46                // Otherwise, we will try to idle instead.
+     47                if (EMBER_AF_PLUGIN_IDLE_SLEEP_MINIMUM_SLEEP_DURATION_MS <= durationMs
+     48                    && emberAfPluginIdleSleepOkToSleepCallback(durationMs)) {
+     49                  int32u attemptedDurationMs = durationMs; 
+     50                  emberAfEepromShutdownCallback();
+     51                  emberStackPowerDown();
+     52                  halPowerDown();
+     53                  // WARNING: The following function enables interrupts, so we will cease
+     54                  // to be atomic by the time it returns.
+     55                  halSleepForMilliseconds(&durationMs);
+     56                  halPowerUp();
+     57                  emberStackPowerUp();
+     58                  emberAfEepromNoteInitializedStateCallback(FALSE);
+     59                  emberAfPluginIdleSleepWakeUpCallback(attemptedDurationMs - durationMs);
+     60                  emberAfDebugPrintln("slept for %l ms", (attemptedDurationMs - durationMs));
+     61                  return;
+     62                }
+     63              }
+     64          #endif // !EMBER_AF_HAS_RX_ON_WHEN_IDLE_NETWORK
+     65          
+     66          #ifndef EMBER_NO_IDLE_SUPPORT
+     67              // If we are here, it means we could not sleep, so we will try to idle
+     68              // instead.  We give the application one last chance to stay active if it
+     69              // wants.  Note that interrupts are still disabled at this point.
+     70              if (emberAfPluginIdleSleepOkToIdleCallback()) {
+   \   0000000C   0x.... 0x....      BL       emberAfPluginIdleSleepOkToIdleCallback
+   \   00000010   0xB160             CBZ.N    R0,??emberAfPluginIdleSleepTickCallback_0
+     71                // We are going to try to idle.  Setting our task to idle will trigger a
+     72                // check of every other task.  If the others are also idle, the device
+     73                // will idle.  If not, it won't.  In either case, we set our task back to
+     74                // active again.  This ensures that we are in control of idling and will
+     75                // prevent the device from idling without our knowledge.
+     76                // WARNING: The following function enables interrupts, so we will cease
+     77                // to be atomic by the time it returns.
+     78                boolean idled = emberMarkTaskIdle(emAfTaskId);
+   \   00000012   0x4C09             LDR.N    R4,??emberAfPluginIdleSleepTickCallback_1
+   \   00000014   0x7820             LDRB     R0,[R4, #+0]
+   \   00000016   0x.... 0x....      BL       emberMarkTaskIdle
+   \   0000001A   0x4605             MOV      R5,R0
+     79                emberMarkTaskActive(emAfTaskId);
+   \   0000001C   0x7820             LDRB     R0,[R4, #+0]
+   \   0000001E   0x.... 0x....      BL       emMarkTaskActive
+     80                if (idled) {
+   \   00000022   0xB13D             CBZ.N    R5,??emberAfPluginIdleSleepTickCallback_2
+     81                  emberAfPluginIdleSleepActiveCallback();
+   \   00000024   0xE8BD 0x4031      POP      {R0,R4,R5,LR}
+   \   00000028   0x.... 0x....      B.W      emberAfPluginIdleSleepActiveCallback
+     82                }
+     83                return;
+     84              }
+     85          #endif // !EMBER_NO_IDLE_SUPPORT
+     86          
+     87            } // emAfOkToIdleOrSleep
+     88          
+     89            // If we are here, it means we did not sleep or idle.  Interrupts are still
+     90            // disabled at this point, so we have to enable them again.
+     91            INTERRUPTS_ON();
+   \                     ??emberAfPluginIdleSleepTickCallback_0: (+1)
+   \   0000002C   0xE8BD 0x4031      POP      {R0,R4,R5,LR}
+   \   00000030   0x.... 0x....      B.W      _enableBasePri
+   \                     ??emberAfPluginIdleSleepTickCallback_2: (+1)
+   \   00000034   0xBD31             POP      {R0,R4,R5,PC}    ;; return
+   \   00000036   0xBF00             Nop      
+   \                     ??emberAfPluginIdleSleepTickCallback_1:
+   \   00000038   0x........         DC32     emAfTaskId
+     92          }
+     93          
+     94          #else // !IDLE_AND_SLEEP_SUPPORTED
+     95          
+     96          void emberAfPluginIdleSleepTickCallback(void)
+     97          {
+     98          }
+     99          
+    100          #endif // IDLE_AND_SLEEP_SUPPORTED
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      16   emberAfPluginIdleSleepTickCallback
+        16   -> _disableBasePri
+         0   -> _enableBasePri
+        16   -> emAfOkToIdleOrSleep
+        16   -> emMarkTaskActive
+         0   -> emberAfPluginIdleSleepActiveCallback
+        16   -> emberAfPluginIdleSleepOkToIdleCallback
+        16   -> emberMarkTaskIdle
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      60  emberAfPluginIdleSleepTickCallback
+
+ 
+ 60 bytes in section .text
+ 
+ 60 bytes of CODE memory
+
+Errors: none
+Warnings: none

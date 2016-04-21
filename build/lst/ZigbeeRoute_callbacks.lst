@@ -1,0 +1,303 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        09/Sep/2015  17:13:34
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ZigbeeRoute_callbacks.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ZigbeeRoute_callbacks.c
+#        -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"ZigbeeRoute_callbacks.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\ZigbeeRoute_callbacks.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ZigbeeRoute_callbacks.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ZigbeeRoute_callbacks.c
+      1          //
+      2          
+      3          // This callback file is created for your convenience. You may add application
+      4          // code to this file. If you regenerate this file over a previous version, the
+      5          // previous version will be overwritten and any code you have added will be
+      6          // lost.
+      7          
+      8          #include "app/framework/include/af.h"
+      9          #include "task.h"
+     10          #include "ButtonExe.h"
+     11          #include "UART_task.h"
+     12          
+     13          
+     14          
+     15          
+     16          
+     17          
+     18          //------------------Khai bao bien--------------------//
+     19          
+     20          
+     21          
+     22          
+     23          
+     24          
+     25          //-----------------Xu li ham con----------------------//
+     26          
+     27          
+     28          
+     29          
+     30          
+     31          
+     32          
+     33          
+     34          
+     35          
+     36          
+     37          
+     38           //---------------------Call Back Funtion------------------------------//
+     39          
+     40           //---------------------Call Back Funtion------------------------------//
+     41          /** @brief Pre Command Received
+     42           *
+     43           * This callback is the second in the Application Framework's message processing
+     44           * chain. At this point in the processing of incoming over-the-air messages, the
+     45           * application has determined that the incoming message is a ZCL command. It
+     46           * parses enough of the message to populate an EmberAfClusterCommand struct. The
+     47           * Application Framework defines this struct value in a local scope to the
+     48           * command processing but also makes it available through a global pointer
+     49           * called emberAfCurrentCommand, in app/framework/util/util.c. When command
+     50           * processing is complete, this pointer is cleared.
+     51           *
+     52           * @param cmd   Ver.: always
+     53           */
+
+   \                                 In section .text, align 2, keep-with-next
+     54          boolean emberAfPreCommandReceivedCallback(EmberAfClusterCommand* cmd)
+     55          {
+     56            return FALSE;
+   \                     emberAfPreCommandReceivedCallback: (+1)
+   \   00000000   0x2000             MOVS     R0,#+0
+   \   00000002   0x4770             BX       LR               ;; return
+     57          }
+     58          //----------------------Pre ZDO Message Received-----------------------//
+     59          
+     60          /** @brief Pre ZDO Message Received
+     61           *
+     62           * This function passes the application an incoming ZDO message and gives the
+     63           * appictation the opportunity to handle it. By default, this callback returns
+     64           * FALSE indicating that the incoming ZDO message has not been handled and
+     65           * should be handled by the Application Framework.
+     66           *
+     67           * @param emberNodeId   Ver.: always
+     68           * @param apsFrame   Ver.: always
+     69           * @param message   Ver.: always
+     70           * @param length   Ver.: always
+     71           */
+
+   \                                 In section .text, align 2, keep-with-next
+     72          boolean emberAfPreZDOMessageReceivedCallback(EmberNodeId emberNodeId,
+     73                                                       EmberApsFrame* apsFrame,
+     74                                                       int8u* message,
+     75          											 int16u length){
+     76          //	//----------------IF ED Bind Response---------------//
+     77          //	//Clear blink LED and Restore default---------------//
+     78          //	if (apsFrame->clusterId == END_DEVICE_BIND_RESPONSE) {
+     79          //		// Get button Bind
+     80          //		int8u ButtonBind;
+     81          //		ButtonBind = apsFrame->destinationEndpoint;
+     82          //		// Change led to default
+     83          //		UartSendBlinkLed(1<<(apsFrame->destinationEndpoint-1),2);
+     84          //        UartSendRefreshLedNumber(ButtonBind);
+     85          //
+     86          //	}
+     87          //	//----------------End Bind Response-----------------//
+     88          	return FALSE;
+   \                     emberAfPreZDOMessageReceivedCallback: (+1)
+   \   00000000   0x2000             MOVS     R0,#+0
+   \   00000002   0x4770             BX       LR               ;; return
+     89          }
+     90          //------------------------end Pre ZDO Message Received------------------//
+     91          
+     92          
+     93          
+     94          //-------------------On/off Cluster Server Attribute Changed------------//
+     95          
+     96          /** @brief On/off Cluster Server Attribute Changed
+     97           *
+     98           * Server Attribute Changed
+     99           *
+    100           * @param endpoint Endpoint that is being initialized  Ver.: always
+    101           * @param attributeId Attribute that changed  Ver.: always
+    102           */
+
+   \                                 In section .text, align 2, keep-with-next
+    103          void emberAfOnOffClusterServerAttributeChangedCallback(int8u endpoint,
+    104          	EmberAfAttributeId attributeId) {
+   \                     emberAfOnOffClusterServerAttributeChangedCallback: (+1)
+   \   00000000   0xB51C             PUSH     {R2-R4,LR}
+   \   00000002   0x4604             MOV      R4,R0
+    105          	// If attribute is On/Off state, then toggle LED according to attribute
+    106          
+    107          			switch (attributeId) {
+   \   00000004   0xB979             CBNZ.N   R1,??emberAfOnOffClusterServerAttributeChangedCall_0
+    108          				case ZCL_ON_OFF_ATTRIBUTE_ID:
+    109          				{
+    110                                  int8u ison = 0;
+   \   00000006   0x2000             MOVS     R0,#+0
+   \   00000008   0xF88D 0x0004      STRB     R0,[SP, #+4]
+    111          					// Handle LED according to attribute
+    112          					EmberAfStatus readStatus;
+                 					              ^
+Warning[Pe550]: variable "readStatus" was set but never used
+    113          					readStatus = emberAfReadServerAttribute(endpoint,
+    114          									ZCL_ON_OFF_CLUSTER_ID, attributeId, &ison, sizeof(ison));
+   \   0000000C   0xAB01             ADD      R3,SP,#+4
+   \   0000000E   0x2001             MOVS     R0,#+1
+   \   00000010   0x9000             STR      R0,[SP, #+0]
+   \   00000012   0x2200             MOVS     R2,#+0
+   \   00000014   0x2106             MOVS     R1,#+6
+   \   00000016   0x4620             MOV      R0,R4
+   \   00000018   0x.... 0x....      BL       emberAfReadServerAttribute
+    115          					CallTaskOnOffAttributeChange(endpoint,ison);
+   \   0000001C   0xF89D 0x1004      LDRB     R1,[SP, #+4]
+   \   00000020   0x4620             MOV      R0,R4
+   \   00000022   0x.... 0x....      BL       CallTaskOnOffAttributeChange
+    116          					break;
+    117          				}
+    118          				default:
+    119          					break;
+    120          			} // switch
+    121          
+    122          }
+   \                     ??emberAfOnOffClusterServerAttributeChangedCall_0: (+1)
+   \   00000026   0xBD13             POP      {R0,R1,R4,PC}    ;; return
+    123          //-----------------End On/off Cluster Server Attribute Changed-----------------//
+    124          
+    125          /** @brief Main Init
+    126           *
+    127           * This function is called from the application's main function. It gives the
+    128           * application a chance to do any initialization required at system startup. Any
+    129           * code that you would normally put into the top of the application's main()
+    130           * routine should be put into this function.
+    131                  Note: No callback in the
+    132           * Application Framework is associated with resource cleanup. If you are
+    133           * implementing your application on a Unix host where resource cleanup is a
+    134           * consideration, we expect that you will use the standard Posix system calls,
+    135           * including the use of atexit() and handlers for signals such as SIGTERM,
+    136           * SIGINT, SIGCHLD, SIGPIPE and so on. If you use the signal() function to
+    137           * register your signal handler, please mind the returned value which may be an
+    138           * Application Framework function. If the return value is non-null, please make
+    139           * sure that you call the returned function from your handler to avoid negating
+    140           * the resource cleanup of the Application Framework itself.
+    141           *
+    142           */
+    143          
+
+   \                                 In section .text, align 2, keep-with-next
+    144          void emberAfMainInitCallback(void)
+    145          {
+   \                     emberAfMainInitCallback: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    146          
+    147          
+    148          	CallButtonDetectTask();
+   \   00000002   0x.... 0x....      BL       CallButtonDetectTask
+    149          	//always send and check MC ready after reset
+    150          	UartSendCheckMcReady();
+   \   00000006   0xE8BD 0x4001      POP      {R0,LR}
+   \   0000000A   0x.... 0x....      B.W      UartSendCheckMcReady
+    151          
+    152          }
+    153          
+    154          
+    155          
+    156          
+    157          
+    158          /** @brief Main Tick
+    159           *
+    160           * Whenever main application tick is called, this callback will be called at the
+    161           * end of the main tick execution.
+    162           *
+    163           */
+    164          
+    165          
+    166          
+
+   \                                 In section .text, align 2, keep-with-next
+    167          void emberAfMainTickCallback(void)
+    168          {
+   \                     emberAfMainTickCallback: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    169          		UartScanCommand();
+   \   00000002   0x.... 0x....      BL       UartScanCommand
+    170          		UartSendCommand();
+   \   00000006   0x.... 0x....      BL       UartSendCommand
+    171          		TaskRun();
+   \   0000000A   0xE8BD 0x4001      POP      {R0,LR}
+   \   0000000E   0x.... 0x....      B.W      TaskRun
+    172          
+    173          }
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   emberAfMainInitCallback
+         8   -> CallButtonDetectTask
+         0   -> UartSendCheckMcReady
+       8   emberAfMainTickCallback
+         0   -> TaskRun
+         8   -> UartScanCommand
+         8   -> UartSendCommand
+      16   emberAfOnOffClusterServerAttributeChangedCallback
+        16   -> CallTaskOnOffAttributeChange
+        16   -> emberAfReadServerAttribute
+       0   emberAfPreCommandReceivedCallback
+       0   emberAfPreZDOMessageReceivedCallback
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      14  emberAfMainInitCallback
+      18  emberAfMainTickCallback
+      40  emberAfOnOffClusterServerAttributeChangedCallback
+       4  emberAfPreCommandReceivedCallback
+       4  emberAfPreZDOMessageReceivedCallback
+
+ 
+ 80 bytes in section .text
+ 
+ 80 bytes of CODE memory
+
+Errors: none
+Warnings: 1

@@ -1,0 +1,161 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        10/Sep/2015  09:00:11
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\security\crypto-state.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\security\crypto-state.c -D
+#        NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"crypto-state.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\security\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\crypto-state.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\crypto-state.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\security\crypto-state.c
+      1          // *****************************************************************************
+      2          // * crypto-state.c
+      3          // *
+      4          // * This file records the state of crypto operations so that the application
+      5          // * can defer processing until after crypto operations have completed.
+      6          // *
+      7          // * Copyright 2010 by Ember Corporation. All rights reserved.              *80*
+      8          // *****************************************************************************
+      9          
+     10          
+     11          #include "app/framework/util/common.h"
+     12          #include "crypto-state.h"
+     13          
+     14          //------------------------------------------------------------------------------
+     15          
+
+   \                                 In section .bss, align 1
+     16          static EmAfCryptoStatus cryptoStatus = EM_AF_NO_CRYPTO_OPERATION;
+   \                     cryptoStatus:
+   \   00000000                      DS8 1
+     17          #if defined(EMBER_AF_PRINT_ENABLE) && defined(EMBER_AF_PRINT_SECURITY)
+     18          static PGM_P cryptoStatusText[] = EM_AF_CRYPTO_STATUS_TEXT;
+     19          #endif //defined(EMBER_AF_PRINT_ENABLE) && defined(EMBER_AF_PRINT_SECURITY)
+     20          
+     21          
+     22          // If we are on a host micro, there is the possibility that a crypto
+     23          // operation ends on the NCP and we fail to hear about it, in this case
+     24          // we need a timeout to safeguard against this flag getting locked
+     25          #if defined(EZSP_HOST)
+     26          EmberEventControl emAfCryptoOperationTimeoutEventControl;
+     27          void emAfCryptoOperationTimeoutEvent(void) {
+     28            if (cryptoStatus == EM_AF_CRYPTO_OPERATION_IN_PROGRESS)
+     29              emAfSetCryptoStatus(EM_AF_NO_CRYPTO_OPERATION);
+     30          }
+     31          EmberEventData emAfCryptoEvents[] = {
+     32            {&emAfCryptoOperationTimeoutEventControl, emAfCryptoOperationTimeoutEvent},
+     33            {NULL, NULL}
+     34          };
+     35          #endif //EZSP_HOST
+     36          
+     37          
+     38          
+     39          
+     40          //------------------------------------------------------------------------------
+     41          
+
+   \                                 In section .text, align 2, keep-with-next
+     42          EmAfCryptoStatus emAfGetCryptoStatus(void)
+     43          {
+     44          #if defined(EZSP_HOST)
+     45            // Everytime someone asks for the crypto state, we check our
+     46            // crypto timeout
+     47            emberRunEvents(emAfCryptoEvents);
+     48          #endif //EZSP_HOST
+     49          
+     50            return cryptoStatus;
+   \                     emAfGetCryptoStatus: (+1)
+   \   00000000   0x....             LDR.N    R0,??DataTable1
+   \   00000002   0x7800             LDRB     R0,[R0, #+0]
+   \   00000004   0x4770             BX       LR               ;; return
+     51          }
+     52          
+
+   \                                 In section .text, align 2, keep-with-next
+     53          void emAfSetCryptoStatus(EmAfCryptoStatus newStatus)
+     54          {
+     55            cryptoStatus = newStatus;
+   \                     emAfSetCryptoStatus: (+1)
+   \   00000000   0x....             LDR.N    R1,??DataTable1
+   \   00000002   0x7008             STRB     R0,[R1, #+0]
+     56            emberAfSecurityPrintln("Crypto state: %p", cryptoStatusText[cryptoStatus]);
+     57          
+     58          #if defined(EZSP_HOST)
+     59            // If crypto is starting, we set the timeout, otherwise we cancel it.
+     60            if (cryptoStatus == EM_AF_CRYPTO_OPERATION_IN_PROGRESS)
+     61              emberEventControlSetDelayMS(emAfCryptoOperationTimeoutEventControl, 
+     62          				CRYPTO_OPERATION_TIMEOUT_MS);
+     63            else
+     64              emberEventControlSetInactive(emAfCryptoOperationTimeoutEventControl);
+     65          #endif //EZSP_HOST
+     66          
+     67          }
+   \   00000004   0x4770             BX       LR               ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable1:
+   \   00000000   0x........         DC32     cryptoStatus
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   emAfGetCryptoStatus
+       0   emAfSetCryptoStatus
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable1
+       1  cryptoStatus
+       6  emAfGetCryptoStatus
+       6  emAfSetCryptoStatus
+
+ 
+  1 byte  in section .bss
+ 16 bytes in section .text
+ 
+ 16 bytes of CODE memory
+  1 byte  of DATA memory
+
+Errors: none
+Warnings: none

@@ -1,0 +1,2563 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        22/Oct/2015  09:33:10
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\diagnostic.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\diagnostic.c -D DIMMER
+#        -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"diagnostic.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\diagnostic.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\diagnostic.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\diagnostic.c
+      1          /*
+      2           * File: hal/micro/cortexm3/diagnostic.c
+      3           * Description: EM3XX-specific diagnostic HAL functions
+      4           *
+      5           * Author(s): 
+      6           *
+      7           * Copyright 2009 by Ember Corporation. All rights reserved.                *80*
+      8           */
+      9          
+     10          #include PLATFORM_HEADER
+     11          #include "stack/include/ember.h"
+     12          #include "hal/hal.h"
+     13          #include "app/util/serial/serial.h"
+     14          #include "diagnostic.h"
+     15          #include "hal/micro/cortexm3/mpu.h"
+     16          
+     17          #ifdef RTOS
+     18            #include "rtos/rtos.h"
+     19            #define freeRTOS 1
+     20          #else  // RTOS
+     21            #define freeRTOS 0
+     22            // extern int32u* xTaskGetCurrentTaskStackTop(void);
+     23            // extern int32u* xTaskGetCurrentTaskStackBottom(void); 
+     24          #endif // RTOS
+     25          
+     26          //------------------------------------------------------------------------------
+     27          // Preprocessor definitions
+     28          
+     29          // Reserved instruction executed after a failed assert to cause a usage fault
+     30          #define ASSERT_USAGE_OPCODE 0xDE42
+     31          
+     32          // Codes for DMA channels in DMA_PROT_CH
+     33          #define DMA_PROT_CH_SC1_RX    1
+     34          #define DMA_PROT_CH_GP_ADC    3
+     35          #define DMA_PROT_CH_MAC       4
+     36          #define DMA_PROT_CH_SC2_RX    5
+     37          
+     38          
+     39          //------------------------------------------------------------------------------
+     40          // Local Variables
+     41          
+
+   \                                 In section .text, align 4, keep-with-next
+     42          static PGM_P PGM cfsrBits[] =
+   \                     cfsrBits:
+   \   00000000   0x........         DC32 `?<Constant "IACCVIOL: attempted i...">`
+   \   00000004   0x........         DC32 `?<Constant "DACCVIOL: attempted l...">`, `?<Constant "">`
+   \              0x........   
+   \   0000000C   0x........         DC32 `?<Constant "MUNSTKERR: unstack fr...">`
+   \   00000010   0x........         DC32 `?<Constant "MSTKERR: stacking fro...">`, `?<Constant "">`
+   \              0x........   
+   \   00000018   0x........         DC32 `?<Constant "">`, `?<Constant "MMARVALID: MMAR conta...">`
+   \              0x........   
+   \   00000020   0x........         DC32 `?<Constant "IBUSERR: instruction ...">`
+   \   00000024   0x........         DC32 `?<Constant "PRECISERR: precise da...">`
+   \   00000028   0x........         DC32 `?<Constant "IMPRECISERR: imprecis...">`
+   \   0000002C   0x........         DC32 `?<Constant "UNSTKERR: unstacking ...">`
+   \   00000030   0x........         DC32 `?<Constant "STKERR: stacking on e...">`, `?<Constant "">`
+   \              0x........   
+   \   00000038   0x........         DC32 `?<Constant "">`, `?<Constant "BFARVALID: BFAR conta...">`
+   \              0x........   
+   \   00000040   0x........         DC32 `?<Constant "UNDEFINSTR: tried to ...">`
+   \   00000044   0x........         DC32 `?<Constant "INVSTATE: invalid EPS...">`
+   \   00000048   0x........         DC32 `?<Constant "INVPC: exception retu...">`
+   \   0000004C   0x........         DC32 `?<Constant "NOCP: attempted to ex...">`, `?<Constant "">`
+   \              0x........   
+   \   00000054   0x........         DC32 `?<Constant "">`, `?<Constant "">`, `?<Constant "">`
+   \              0x........   
+   \              0x........   
+   \   00000060   0x........         DC32 `?<Constant "UNALIGNED: attempted ...">`
+   \   00000064   0x........         DC32 `?<Constant "DIVBYZERO: attempted ...">`
+     43          {
+     44          
+     45            // Memory management (MPU) faults 
+     46            "IACCVIOL: attempted instruction fetch from a no-execute address",  // B0 
+     47            "DACCVIOL: attempted load or store at an illegal address",          // B1
+     48            "",                                                                 // B2
+     49            "MUNSTKERR: unstack from exception return caused access violation", // B3
+     50            "MSTKERR: stacking from exception caused access violation",         // B4
+     51            "",                                                                 // B5
+     52            "",                                                                 // B6
+     53            "MMARVALID: MMAR contains valid fault address",                     // B7
+     54          
+     55            // Bus faults
+     56            "IBUSERR: instruction prefetch caused bus fault",                   // B8
+     57            "PRECISERR: precise data bus fault",                                // B9
+     58            "IMPRECISERR: imprecise data bus fault",                            // B10
+     59            "UNSTKERR: unstacking on exception return caused data bus fault",   // B11
+     60            "STKERR: stacking on exception entry caused data bus fault",        // B12
+     61            "",                                                                 // B13
+     62            "",                                                                 // B14
+     63            "BFARVALID: BFAR contains valid fault address",                     // B15
+     64          
+     65            // Usage faults
+     66            "UNDEFINSTR: tried to execute an undefined instruction",            // B16
+     67            "INVSTATE: invalid EPSR - e.g., tried to switch to ARM mode",       // B17
+     68            "INVPC: exception return integrity checks failed",                  // B18
+     69            "NOCP: attempted to execute a coprocessor instruction",             // B19
+     70            "",                                                                 // B20
+     71            "",                                                                 // B21
+     72            "",                                                                 // B22
+     73            "",                                                                 // B23
+     74            "UNALIGNED: attempted an unaligned memory access",                  // B24
+     75            "DIVBYZERO: attempted to execute SDIV or UDIV with divisor of 0"    // B25
+     76          };
+     77          
+
+   \                                 In section .text, align 4, keep-with-next
+     78          static PGM_P PGM afsrBits[] =
+   \                     afsrBits:
+   \   00000000   0x........         DC32 `?<Constant "">`, `?<Constant "RESERVED: attempted a...">`
+   \              0x........   
+   \   00000008   0x........         DC32 `?<Constant "PROTECTED: attempted ...">`
+   \   0000000C   0x........         DC32 `?<Constant "WRONGSIZE: attempted ...">`
+     79          {
+     80            "",                                                                 // B0
+     81            "RESERVED: attempted access past last peripheral register address", // B1
+     82            "PROTECTED: attempted user mode write to privileged peripheral",    // B2
+     83            "WRONGSIZE: attempted 8/16-bit access to peripheral register"       // B3
+     84          };
+     85          
+
+   \                                 In section .text, align 4, keep-with-next
+     86          static PGM_P PGM intActiveBits[] =
+   \                     intActiveBits:
+   \   00000000   0x........         DC32 `?<Constant "Timer1">`, `?<Constant "Timer2">`
+   \              0x........   
+   \   00000008   0x........         DC32 `?<Constant "Management">`, `?<Constant "Baseband">`
+   \              0x........   
+   \   00000010   0x........         DC32 `?<Constant "Sleep_Timer">`, `?<Constant "SC1">`
+   \              0x........   
+   \   00000018   0x........         DC32 `?<Constant "SC2">`, `?<Constant "Security">`
+   \              0x........   
+   \   00000020   0x........         DC32 `?<Constant "MAC_Timer">`, `?<Constant "MAC_TX">`
+   \              0x........   
+   \   00000028   0x........         DC32 `?<Constant "MAC_RX">`, `?<Constant "ADC">`, `?<Constant "IRQ_A">`
+   \              0x........   
+   \              0x........   
+   \   00000034   0x........         DC32 `?<Constant "IRQ_B">`, `?<Constant "IRQ_C">`
+   \              0x........   
+   \   0000003C   0x........         DC32 `?<Constant "IRQ_D">`, `?<Constant "Debug">`
+   \              0x........   
+     87          {
+     88            "Timer1",       // B0
+     89            "Timer2",       // B1
+     90            "Management",   // B2
+     91            "Baseband",     // B3
+     92            "Sleep_Timer",  // B4
+     93            "SC1",          // B5
+     94            "SC2",          // B6
+     95            "Security",     // B7
+     96            "MAC_Timer",    // B8
+     97            "MAC_TX",       // B9
+     98            "MAC_RX",       // B10
+     99            "ADC",          // B11
+    100            "IRQ_A",        // B12
+    101            "IRQ_B",        // B13
+    102            "IRQ_C",        // B14
+    103            "IRQ_D",        // B15
+    104            "Debug"         // B16
+    105          };
+    106          
+    107          // Names of raw crash data items - each name is null terminated, and the
+    108          // end of the array is flagged by two null bytes in a row.
+    109          // NOTE: the order of these names must match HalCrashInfoType members.
+
+   \                                 In section .text, align 4, keep-with-next
+    110          static const char nameStrings[] = "R0\0R1\0R2\0R3\0"
+   \                     nameStrings:
+   \   00000000   0x52 0x30          DC8 52H, 30H, 0, 52H, 31H, 0, 52H, 32H
+   \              0x00 0x52    
+   \              0x31 0x00    
+   \              0x52 0x32    
+   \   00000008   0x00 0x52          DC8 0, 52H, 33H, 0, 52H, 34H, 0, 52H
+   \              0x33 0x00    
+   \              0x52 0x34    
+   \              0x00 0x52    
+   \   00000010   0x35 0x00          DC8 35H, 0, 52H, 36H, 0, 52H, 37H, 0
+   \              0x52 0x36    
+   \              0x00 0x52    
+   \              0x37 0x00    
+   \   00000018   0x52 0x38          DC8 52H, 38H, 0, 52H, 39H, 0, 52H, 31H
+   \              0x00 0x52    
+   \              0x39 0x00    
+   \              0x52 0x31    
+   \   00000020   0x30 0x00          DC8 30H, 0, 52H, 31H, 31H, 0, 52H, 31H
+   \              0x52 0x31    
+   \              0x31 0x00    
+   \              0x52 0x31    
+   \   00000028   0x32 0x00          DC8 32H, 0, 52H, 31H, 33H, 28H, 4CH, 52H
+   \              0x52 0x31    
+   \              0x33 0x28    
+   \              0x4C 0x52    
+   \   00000030   0x29 0x00          DC8 29H, 0, 4DH, 53H, 50H, 0, 50H, 53H
+   \              0x4D 0x53    
+   \              0x50 0x00    
+   \              0x50 0x53    
+   \   00000038   0x50 0x00          DC8 50H, 0, 50H, 43H, 0, 78H, 50H, 53H
+   \              0x50 0x43    
+   \              0x00 0x78    
+   \              0x50 0x53    
+   \   00000040   0x52 0x00          DC8 52H, 0, 4DH, 53H, 50H, 20H, 75H, 73H
+   \              0x4D 0x53    
+   \              0x50 0x20    
+   \              0x75 0x73    
+   \   00000048   0x65 0x64          DC8 65H, 64H, 0, 50H, 53H, 50H, 20H, 75H
+   \              0x00 0x50    
+   \              0x53 0x50    
+   \              0x20 0x75    
+   \   00000050   0x73 0x65          DC8 73H, 65H, 64H, 0, 43H, 53H, 54H, 41H
+   \              0x64 0x00    
+   \              0x43 0x53    
+   \              0x54 0x41    
+   \   00000058   0x43 0x4B          DC8 43H, 4BH, 20H, 62H, 6FH, 74H, 74H, 6FH
+   \              0x20 0x62    
+   \              0x6F 0x74    
+   \              0x74 0x6F    
+   \   00000060   0x6D 0x00          DC8 6DH, 0, 49H, 43H, 53H, 52H, 0, 53H
+   \              0x49 0x43    
+   \              0x53 0x52    
+   \              0x00 0x53    
+   \   00000068   0x48 0x43          DC8 48H, 43H, 53H, 52H, 0, 49H, 4EH, 54H
+   \              0x53 0x52    
+   \              0x00 0x49    
+   \              0x4E 0x54    
+   \   00000070   0x5F 0x41          DC8 5FH, 41H, 43H, 54H, 49H, 56H, 45H, 0
+   \              0x43 0x54    
+   \              0x49 0x56    
+   \              0x45 0x00    
+   \   00000078   0x43 0x46          DC8 43H, 46H, 53H, 52H, 0, 48H, 46H, 53H
+   \              0x53 0x52    
+   \              0x00 0x48    
+   \              0x46 0x53    
+   \   00000080   0x52 0x00          DC8 52H, 0, 44H, 46H, 53H, 52H, 0, 4DH
+   \              0x44 0x46    
+   \              0x53 0x52    
+   \              0x00 0x4D    
+   \   00000088   0x4D 0x41          DC8 4DH, 41H, 52H, 2FH, 42H, 46H, 41H, 52H
+   \              0x52 0x2F    
+   \              0x42 0x46    
+   \              0x41 0x52    
+   \   00000090   0x00 0x41          DC8 0, 41H, 46H, 53H, 52H, 0, 52H, 65H
+   \              0x46 0x53    
+   \              0x52 0x00    
+   \              0x52 0x65    
+   \   00000098   0x74 0x30          DC8 74H, 30H, 0, 52H, 65H, 74H, 31H, 0
+   \              0x00 0x52    
+   \              0x65 0x74    
+   \              0x31 0x00    
+   \   000000A0   0x52 0x65          DC8 52H, 65H, 74H, 32H, 0, 52H, 65H, 74H
+   \              0x74 0x32    
+   \              0x00 0x52    
+   \              0x65 0x74    
+   \   000000A8   0x33 0x00          DC8 33H, 0, 52H, 65H, 74H, 34H, 0, 52H
+   \              0x52 0x65    
+   \              0x74 0x34    
+   \              0x00 0x52    
+   \   000000B0   0x65 0x74          DC8 65H, 74H, 35H, 0, 44H, 61H, 74H, 30H
+   \              0x35 0x00    
+   \              0x44 0x61    
+   \              0x74 0x30    
+   \   000000B8   0x00 0x44          DC8 0, 44H, 61H, 74H, 31H, 0, 0
+   \              0x61 0x74    
+   \              0x31 0x00    
+   \              0x00         
+   \   000000BF   0x00               DC8 0
+    111                                            "R4\0R5\0R6\0R7\0"
+    112                                            "R8\0R9\0R10\0R11\0"
+    113                                            "R12\0R13(LR)\0MSP\0PSP\0"
+    114                                            "PC\0xPSR\0MSP used\0PSP used\0"
+    115                                            "CSTACK bottom\0ICSR\0SHCSR\0INT_ACTIVE\0"
+    116                                            "CFSR\0HFSR\0DFSR\0MMAR/BFAR\0AFSR\0"
+    117                                            "Ret0\0Ret1\0Ret2\0Ret3\0"
+    118                                            "Ret4\0Ret5\0Dat0\0Dat1\0";
+    119          
+    120          //------------------------------------------------------------------------------
+    121          // Forward Declarations
+    122          
+    123          //------------------------------------------------------------------------------
+    124          // Functions
+    125          
+
+   \                                 In section .text, align 2, keep-with-next
+    126          void halPrintCrashSummary(int8u port)
+    127          {
+   \                     halPrintCrashSummary: (+1)
+   \   00000000   0xE92D 0x4FF0      PUSH     {R4-R11,LR}
+    128            HalCrashInfoType *c = &halResetInfo.crash;
+    129            int32u sp, stackBegin, stackEnd, size, used;
+    130            int16u pct;
+    131            int8u *mode;
+    132            const char *stack;
+    133            int8u bit;
+    134          
+    135            if (c->LR & 4) {
+   \   00000004   0x.... 0x....      LDR.W    R5,??DataTable81_5
+   \   00000008   0x4680             MOV      R8,R0
+   \   0000000A   0x6BA8             LDR      R0,[R5, #+56]
+   \   0000000C   0xB085             SUB      SP,SP,#+20
+   \   0000000E   0x0741             LSLS     R1,R0,#+29
+   \   00000010   0xD507             BPL.N    ??halPrintCrashSummary_0
+    136              stack = "process";
+    137              sp = c->processSP;
+   \   00000012   0x6C29             LDR      R1,[R5, #+64]
+    138              used = c->processSPUsed;
+   \   00000014   0x6D2F             LDR      R7,[R5, #+80]
+   \   00000016   0x.... 0x....      ADR.W    R6,`?<Constant "process">`
+   \   0000001A   0x9103             STR      R1,[SP, #+12]
+    139              stackBegin = 0;
+   \   0000001C   0x2400             MOVS     R4,#+0
+    140              stackEnd = 0;
+   \   0000001E   0x46A1             MOV      R9,R4
+   \   00000020   0xE007             B.N      ??halPrintCrashSummary_1
+    141            } else {
+    142              stack = "main";
+    143              sp = c->mainSP;
+   \                     ??halPrintCrashSummary_0: (+1)
+   \   00000022   0x6BE9             LDR      R1,[R5, #+60]
+   \   00000024   0x.... 0x....      ADR.W    R6,`?<Constant "main">`
+    144              used = c->mainSPUsed;
+   \   00000028   0x6CEF             LDR      R7,[R5, #+76]
+    145              stackBegin = (int32u)c->mainStackBottom;
+    146              stackEnd = (int32u)STACK_SEGMENT_END;
+   \   0000002A   0x.... 0x....      LDR.W    R9,??DataTable81_6
+   \   0000002E   0x9103             STR      R1,[SP, #+12]
+   \   00000030   0x6D6C             LDR      R4,[R5, #+84]
+    147            }
+    148          
+    149            mode = (int8u *)((c->LR & 8) ? "Thread" : "Handler");
+   \                     ??halPrintCrashSummary_1: (+1)
+   \   00000032   0x0700             LSLS     R0,R0,#+28
+   \   00000034   0xBF4C             ITE      MI 
+   \   00000036   0x.... 0x....      ADRMI.W  R2,`?<Constant "Thread">`
+   \   0000003A   0x.... 0x....      ADRPL.W  R2,`?<Constant "Handler">`
+    150            size = stackEnd - stackBegin;
+   \   0000003E   0xEBB9 0x0A04      SUBS     R10,R9,R4
+    151            pct = size ? (int16u)( ((100 * used) + (size / 2)) / size) : 0;
+   \   00000042   0xD007             BEQ.N    ??halPrintCrashSummary_2
+   \   00000044   0x2064             MOVS     R0,#+100
+   \   00000046   0xEA4F 0x015A      LSR      R1,R10,#+1
+   \   0000004A   0xFB00 0x1007      MLA      R0,R0,R7,R1
+   \   0000004E   0xFBB0 0xFBFA      UDIV     R11,R0,R10
+   \   00000052   0xE001             B.N      ??halPrintCrashSummary_3
+   \                     ??halPrintCrashSummary_2: (+1)
+   \   00000054   0xF04F 0x0B00      MOV      R11,#+0
+    152            emberSerialPrintfLine(port, "%p mode using %p stack (%4x to %4x), SP = %4x",
+    153                                  mode, stack, stackBegin, stackEnd, sp);
+   \                     ??halPrintCrashSummary_3: (+1)
+   \   00000058   0x9803             LDR      R0,[SP, #+12]
+   \   0000005A   0x.... 0x....      ADR.W    R1,`?<Constant "%p mode using %p stac...">`
+   \   0000005E   0x9002             STR      R0,[SP, #+8]
+   \   00000060   0xF8CD 0x9004      STR      R9,[SP, #+4]
+   \   00000064   0x9400             STR      R4,[SP, #+0]
+   \   00000066   0x4633             MOV      R3,R6
+   \   00000068   0x4640             MOV      R0,R8
+   \   0000006A   0x.... 0x....      BL       emberSerialPrintfLine
+    154            emberSerialPrintfLine(port, "%u bytes used (%u%%) in %p stack"
+    155                                  " (out of %u bytes total)", 
+    156                                  (int16u)used, pct, stack, (int16u)size);
+   \   0000006E   0xFA1F 0xF08A      UXTH     R0,R10
+   \   00000072   0x9001             STR      R0,[SP, #+4]
+   \   00000074   0x9600             STR      R6,[SP, #+0]
+   \   00000076   0xFA1F 0xF38B      UXTH     R3,R11
+   \   0000007A   0xB2BA             UXTH     R2,R7
+   \   0000007C   0x.... 0x....      ADR.W    R1,`?<Constant "%u bytes used (%u%%) ...">`
+   \   00000080   0x4640             MOV      R0,R8
+   \   00000082   0x.... 0x....      BL       emberSerialPrintfLine
+    157            if ( !(c->LR & 4) && (used == size - 4*RESETINFO_WORDS)
+    158                 && (c->mainStackBottom < (int32u) RESETINFO_SEGMENT_END) ) {
+   \   00000086   0xF895 0x0038      LDRB     R0,[R5, #+56]
+   \   0000008A   0x0740             LSLS     R0,R0,#+29
+   \   0000008C   0xD40C             BMI.N    ??halPrintCrashSummary_4
+   \   0000008E   0xF1AA 0x0098      SUB      R0,R10,#+152
+   \   00000092   0x4287             CMP      R7,R0
+   \   00000094   0xD108             BNE.N    ??halPrintCrashSummary_4
+   \   00000096   0x6D68             LDR      R0,[R5, #+84]
+   \   00000098   0x....             LDR.N    R1,??DataTable81_7
+   \   0000009A   0x4288             CMP      R0,R1
+   \   0000009C   0xD204             BCS.N    ??halPrintCrashSummary_4
+    159              // Here the stack overlaps the RESETINFO region and when we checked
+    160              // stack usage we avoided checking that region because we'd already
+    161              // started using it -- so if we found the stack almost full to that
+    162              // point, warn that it might actually have been completely full.
+    163              emberSerialPrintfLine(port, "Stack _may_ have used up to 100%% of total.");
+   \   0000009E   0x.... 0x....      ADR.W    R1,`?<Constant "Stack _may_ have used...">`
+   \   000000A2   0x4640             MOV      R0,R8
+   \   000000A4   0x.... 0x....      BL       emberSerialPrintfLine
+    164            }
+    165            // Valid SP range is [stackBegin, stackEnd] inclusive, but contents
+    166            // of stack only go into [stackBegin, stackend).
+    167            if ((sp > stackEnd) || (sp < stackBegin)) {
+   \                     ??halPrintCrashSummary_4: (+1)
+   \   000000A8   0x9803             LDR      R0,[SP, #+12]
+   \   000000AA   0x4581             CMP      R9,R0
+   \   000000AC   0xBF28             IT       CS 
+   \   000000AE   0x42A0             CMPCS    R0,R4
+   \   000000B0   0xD205             BCS.N    ??halPrintCrashSummary_5
+    168              emberSerialPrintfLine(port, "SP is outside %p stack range!", stack);
+   \   000000B2   0x4632             MOV      R2,R6
+   \   000000B4   0x.... 0x....      ADR.W    R1,`?<Constant "SP is outside %p stac...">`
+   \   000000B8   0x4640             MOV      R0,R8
+   \   000000BA   0x.... 0x....      BL       emberSerialPrintfLine
+    169            } 
+    170            emberSerialWaitSend(port);
+   \                     ??halPrintCrashSummary_5: (+1)
+   \   000000BE   0x4640             MOV      R0,R8
+   \   000000C0   0x.... 0x....      BL       emberSerialWaitSend
+    171            if (c->intActive.word) {
+   \   000000C4   0x6E28             LDR      R0,[R5, #+96]
+   \   000000C6   0xB1E8             CBZ.N    R0,??halPrintCrashSummary_6
+    172              emberSerialPrintf(port, "Interrupts active (or pre-empted and stacked):");
+   \   000000C8   0x.... 0x....      ADR.W    R1,`?<Constant "Interrupts active (or...">`
+   \   000000CC   0x4640             MOV      R0,R8
+   \   000000CE   0x.... 0x....      BL       emberSerialPrintf
+    173              for (bit = INT_TIM1_BIT; bit <= INT_DEBUG_BIT; bit++) {
+   \   000000D2   0x2600             MOVS     R6,#+0
+   \   000000D4   0x....             ADR.N    R7,??DataTable81  ;; " %p"
+   \   000000D6   0x.... 0x....      ADR.W    R4,intActiveBits
+    174                if ( (c->intActive.word & (1 << bit)) && *intActiveBits[bit] ) {
+   \                     ??halPrintCrashSummary_7: (+1)
+   \   000000DA   0x6E28             LDR      R0,[R5, #+96]
+   \   000000DC   0x40F0             LSRS     R0,R0,R6
+   \   000000DE   0x07C0             LSLS     R0,R0,#+31
+   \   000000E0   0xD507             BPL.N    ??halPrintCrashSummary_8
+   \   000000E2   0xF854 0x2026      LDR      R2,[R4, R6, LSL #+2]
+   \   000000E6   0x7810             LDRB     R0,[R2, #+0]
+   \   000000E8   0xB118             CBZ.N    R0,??halPrintCrashSummary_8
+    175                  emberSerialPrintf(port, " %p", intActiveBits[bit]);
+   \   000000EA   0x4639             MOV      R1,R7
+   \   000000EC   0x4640             MOV      R0,R8
+   \   000000EE   0x.... 0x....      BL       emberSerialPrintf
+    176                }
+    177              }
+   \                     ??halPrintCrashSummary_8: (+1)
+   \   000000F2   0x1C76             ADDS     R6,R6,#+1
+   \   000000F4   0x2E11             CMP      R6,#+17
+   \   000000F6   0xDBF0             BLT.N    ??halPrintCrashSummary_7
+    178              emberSerialPrintCarriageReturn(port);
+   \   000000F8   0x4640             MOV      R0,R8
+   \   000000FA   0xB005             ADD      SP,SP,#+20
+   \   000000FC   0xE8BD 0x4FF0      POP      {R4-R11,LR}
+   \   00000100   0x.... 0x....      B.W      emberSerialPrintCarriageReturn
+    179            } else {
+    180              emberSerialPrintfLine(port, "No interrupts active");
+   \                     ??halPrintCrashSummary_6: (+1)
+   \   00000104   0x4640             MOV      R0,R8
+   \   00000106   0xB005             ADD      SP,SP,#+20
+   \   00000108   0xE8BD 0x4FF0      POP      {R4-R11,LR}
+   \   0000010C   0x.... 0x....      ADR.W    R1,`?<Constant "No interrupts active">`
+   \   00000110   0x.... 0x....      B.W      emberSerialPrintfLine
+    181            }
+    182          }
+    183          
+
+   \                                 In section .text, align 2, keep-with-next
+    184          void halPrintCrashDetails(int8u port)
+    185          {
+   \                     halPrintCrashDetails: (+1)
+   \   00000000   0xE92D 0x47F0      PUSH     {R4-R10,LR}
+    186            HalCrashInfoType *c = &halResetInfo.crash;
+    187            int16u reason = halGetExtendedResetInfo();
+    188            int8u bit;
+    189            const char *chan;
+    190          
+    191            switch (reason) {
+   \   00000004   0x....             LDR.N    R7,??DataTable81_5
+   \   00000006   0x.... 0x....      ADR.W    R9,`?<Constant "Illegal access addres...">`
+   \   0000000A   0x.... 0x....      ADR.W    R6,`?<Constant "CFSR.%p">`
+   \   0000000E   0x.... 0x....      ADR.W    R8,cfsrBits
+   \   00000012   0x.... 0x....      ADR.W    R10,`?<Constant "Instruction address: %4x">`
+   \   00000016   0x4604             MOV      R4,R0
+   \   00000018   0xF107 0x0544      ADD      R5,R7,#+68
+   \   0000001C   0x.... 0x....      BL       halGetExtendedResetInfo
+   \   00000020   0xF240 0x5101      MOVW     R1,#+1281
+   \   00000024   0x1A40             SUBS     R0,R0,R1
+   \   00000026   0xD016             BEQ.N    ??halPrintCrashDetails_0
+   \   00000028   0x1E40             SUBS     R0,R0,#+1
+   \   0000002A   0xD017             BEQ.N    ??halPrintCrashDetails_1
+   \   0000002C   0xF240 0x11FF      MOVW     R1,#+511
+   \   00000030   0x1A40             SUBS     R0,R0,R1
+   \   00000032   0xD035             BEQ.N    ??halPrintCrashDetails_2
+   \   00000034   0xF44F 0x7140      MOV      R1,#+768
+   \   00000038   0x1A40             SUBS     R0,R0,R1
+   \   0000003A   0xD039             BEQ.N    ??halPrintCrashDetails_3
+   \   0000003C   0x1E40             SUBS     R0,R0,#+1
+   \   0000003E   0xD053             BEQ.N    ??halPrintCrashDetails_4
+   \   00000040   0x1E40             SUBS     R0,R0,#+1
+   \   00000042   0xD073             BEQ.N    ??halPrintCrashDetails_5
+   \   00000044   0x1E40             SUBS     R0,R0,#+1
+   \   00000046   0xF000 0x80B0      BEQ.W    ??halPrintCrashDetails_6
+   \   0000004A   0x1E40             SUBS     R0,R0,#+1
+   \   0000004C   0xF000 0x80C8      BEQ.W    ??halPrintCrashDetails_7
+   \   00000050   0x1E40             SUBS     R0,R0,#+1
+   \   00000052   0xD006             BEQ.N    ??halPrintCrashDetails_8
+   \   00000054   0xE0C2             B.N      ??halPrintCrashDetails_9
+    192          
+    193            case RESET_WATCHDOG_EXPIRED:
+    194              emberSerialPrintfLine(port, "Reset cause: Watchdog expired, no reliable extra information");
+   \                     ??halPrintCrashDetails_0: (+1)
+   \   00000056   0x.... 0x....      ADR.W    R1,`?<Constant "Reset cause: Watchdog...">`
+   \   0000005A   0xE042             B.N      ??halPrintCrashDetails_10
+    195              emberSerialWaitSend(port);
+    196              break;
+    197            case RESET_WATCHDOG_CAUGHT:
+    198              emberSerialPrintfLine(port, "Reset cause: Watchdog caught with enhanced info");
+   \                     ??halPrintCrashDetails_1: (+1)
+   \   0000005C   0x.... 0x....      ADR.W    R1,`?<Constant "Reset cause: Watchdog...">_1`
+   \   00000060   0xE0C0             B.N      ??halPrintCrashDetails_11
+    199              emberSerialPrintfLine(port, "Instruction address: %4x", c->PC);
+    200              emberSerialWaitSend(port);
+    201              break;
+    202          
+    203            case RESET_FAULT_PROTDMA:
+    204              switch (c->data.dmaProt.channel){
+   \                     ??halPrintCrashDetails_8: (+1)
+   \   00000062   0x6CE8             LDR      R0,[R5, #+76]
+   \   00000064   0x2801             CMP      R0,#+1
+   \   00000066   0xD006             BEQ.N    ??halPrintCrashDetails_12
+   \   00000068   0x2803             CMP      R0,#+3
+   \   0000006A   0xD007             BEQ.N    ??halPrintCrashDetails_13
+   \   0000006C   0x2804             CMP      R0,#+4
+   \   0000006E   0xD007             BEQ.N    ??halPrintCrashDetails_14
+   \   00000070   0x2805             CMP      R0,#+5
+   \   00000072   0xD008             BEQ.N    ??halPrintCrashDetails_15
+   \   00000074   0xE00A             B.N      ??halPrintCrashDetails_16
+    205              case DMA_PROT_CH_SC1_RX:
+    206                chan = "SC1 Rx";
+   \                     ??halPrintCrashDetails_12: (+1)
+   \   00000076   0x.... 0x....      ADR.W    R6,`?<Constant "SC1 Rx">`
+    207                break;
+   \   0000007A   0xE008             B.N      ??halPrintCrashDetails_17
+    208              case DMA_PROT_CH_GP_ADC:
+    209                chan = "ADC";
+   \                     ??halPrintCrashDetails_13: (+1)
+   \   0000007C   0x....             ADR.N    R6,??DataTable81_1  ;; "ADC"
+    210                break;
+   \   0000007E   0xE006             B.N      ??halPrintCrashDetails_17
+    211              case DMA_PROT_CH_MAC:
+    212                chan = "MAC Rx";
+   \                     ??halPrintCrashDetails_14: (+1)
+   \   00000080   0x.... 0x....      ADR.W    R6,`?<Constant "MAC Rx">`
+    213                break;
+   \   00000084   0xE003             B.N      ??halPrintCrashDetails_17
+    214              case DMA_PROT_CH_SC2_RX:
+    215                chan = "SC2 Rx";
+   \                     ??halPrintCrashDetails_15: (+1)
+   \   00000086   0x.... 0x....      ADR.W    R6,`?<Constant "SC2 Rx">`
+    216                break;
+   \   0000008A   0xE000             B.N      ??halPrintCrashDetails_17
+    217              default:
+    218                chan = "??";
+   \                     ??halPrintCrashDetails_16: (+1)
+   \   0000008C   0x....             ADR.N    R6,??DataTable81_2  ;; 0x3F, 0x3F, 0x00, 0x00
+    219                break;
+    220              }
+    221              emberSerialPrintfLine(port, "Reset cause: DMA protection violation");
+   \                     ??halPrintCrashDetails_17: (+1)
+   \   0000008E   0x.... 0x....      ADR.W    R1,`?<Constant "Reset cause: DMA prot...">`
+   \   00000092   0x.... 0x....      BL       ?Subroutine1
+    222              emberSerialPrintfLine(port, "DMA: %p, address: %4x", 
+    223                                    chan, c->data.dmaProt.address);
+   \                     ??CrossCallReturnLabel_20: (+1)
+   \   00000096   0x6D2B             LDR      R3,[R5, #+80]
+   \   00000098   0x.... 0x....      ADR.W    R1,`?<Constant "DMA: %p, address: %4x">`
+   \   0000009C   0x4632             MOV      R2,R6
+   \   0000009E   0xE003             B.N      ??halPrintCrashDetails_18
+    224              emberSerialWaitSend(port);
+    225              break;
+    226          
+    227            case RESET_CRASH_ASSERT:
+    228              emberSerialPrintfLine(port, "Reset cause: Assert %p:%d",
+    229                    c->data.assertInfo.file, c->data.assertInfo.line);
+   \                     ??halPrintCrashDetails_2: (+1)
+   \   000000A0   0x6D2B             LDR      R3,[R5, #+80]
+   \   000000A2   0x6CEA             LDR      R2,[R5, #+76]
+   \   000000A4   0x.... 0x....      ADR.W    R1,`?<Constant "Reset cause: Assert %...">`
+   \                     ??halPrintCrashDetails_18: (+1)
+   \   000000A8   0x4620             MOV      R0,R4
+   \   000000AA   0x.... 0x....      BL       emberSerialPrintfLine
+   \   000000AE   0xE090             B.N      ??halPrintCrashDetails_19
+    230              emberSerialWaitSend(port);
+    231              break;
+    232          
+    233            case RESET_FAULT_HARD:
+    234              emberSerialPrintfLine(port, "Reset cause: Hard Fault");
+   \                     ??halPrintCrashDetails_3: (+1)
+   \   000000B0   0x.... 0x....      ADR.W    R1,`?<Constant "Reset cause: Hard Fault">`
+   \   000000B4   0x.... 0x....      BL       ?Subroutine1
+    235              if (c->hfsr.bits.VECTTBL) {
+   \                     ??CrossCallReturnLabel_19: (+1)
+   \   000000B8   0x6A68             LDR      R0,[R5, #+36]
+   \   000000BA   0xF3C0 0x0040      UBFX     R0,R0,#+1,#+1
+   \   000000BE   0xB118             CBZ.N    R0,??CrossCallReturnLabel_18
+    236                emberSerialPrintfLine(port, 
+    237                        "HFSR.VECTTBL: error reading vector table for an exception");
+   \   000000C0   0x.... 0x....      ADR.W    R1,`?<Constant "HFSR.VECTTBL: error r...">`
+   \   000000C4   0x.... 0x....      BL       ?Subroutine1
+    238              }
+    239              if (c->hfsr.bits.FORCED) {
+   \                     ??CrossCallReturnLabel_18: (+1)
+   \   000000C8   0x6A68             LDR      R0,[R5, #+36]
+   \   000000CA   0xF3C0 0x7080      UBFX     R0,R0,#+30,#+1
+   \   000000CE   0xB118             CBZ.N    R0,??CrossCallReturnLabel_17
+    240                emberSerialPrintfLine(port, 
+    241                        "HFSR.FORCED: configurable fault could not activate");
+   \   000000D0   0x.... 0x....      ADR.W    R1,`?<Constant "HFSR.FORCED: configur...">`
+   \   000000D4   0x.... 0x....      BL       ?Subroutine1
+    242              }
+    243              if (c->hfsr.bits.DEBUGEVT) {
+   \                     ??CrossCallReturnLabel_17: (+1)
+   \   000000D8   0x6A68             LDR      R0,[R5, #+36]
+   \   000000DA   0x0FC0             LSRS     R0,R0,#+31
+   \   000000DC   0xD079             BEQ.N    ??halPrintCrashDetails_19
+    244                emberSerialPrintfLine(port, 
+    245                        "HFSR.DEBUGEVT: fault related to debug - e.g., executed BKPT");
+   \   000000DE   0x.... 0x....      ADR.W    R1,`?<Constant "HFSR.DEBUGEVT: fault ...">`
+    246              }
+   \                     ??halPrintCrashDetails_10: (+1)
+   \   000000E2   0x.... 0x....      BL       ?Subroutine1
+   \                     ??CrossCallReturnLabel_16: (+1)
+   \   000000E6   0xE074             B.N      ??halPrintCrashDetails_19
+    247              emberSerialWaitSend(port);
+    248              break;
+    249          
+    250            case RESET_FAULT_MEM:
+    251              emberSerialPrintfLine(port, "Reset cause: Memory Management Fault");
+   \                     ??halPrintCrashDetails_4: (+1)
+   \   000000E8   0x.... 0x....      ADR.W    R1,`?<Constant "Reset cause: Memory M...">`
+   \   000000EC   0x.... 0x....      BL       ?Subroutine1
+    252              if (c->cfsr.word & (SCS_CFSR_DACCVIOL_MASK | SCS_CFSR_IACCVIOL) ) {
+   \                     ??CrossCallReturnLabel_15: (+1)
+   \   000000F0   0xF895 0x0020      LDRB     R0,[R5, #+32]
+   \   000000F4   0xF010 0x0F03      TST      R0,#0x3
+   \   000000F8   0xD001             BEQ.N    ??CrossCallReturnLabel_9
+    253                emberSerialPrintfLine(port, "Instruction address: %4x", c->PC);
+   \   000000FA   0x.... 0x....      BL       ?Subroutine0
+    254              }
+    255              if (c->cfsr.bits.MMARVALID) {
+   \                     ??CrossCallReturnLabel_9: (+1)
+   \   000000FE   0x6A28             LDR      R0,[R5, #+32]
+   \   00000100   0xF3C0 0x10C0      UBFX     R0,R0,#+7,#+1
+   \   00000104   0xB118             CBZ.N    R0,??CrossCallReturnLabel_5
+    256                emberSerialPrintfLine(port, "Illegal access address: %4x", c->faultAddress);
+   \   00000106   0x6AEA             LDR      R2,[R5, #+44]
+   \   00000108   0x4649             MOV      R1,R9
+   \   0000010A   0x.... 0x....      BL       ??Subroutine0_0
+    257              }
+    258              for (bit = SCS_CFSR_IACCVIOL_BIT; bit <= SCS_CFSR_MMARVALID_BIT; bit++) {
+   \                     ??CrossCallReturnLabel_5: (+1)
+   \   0000010E   0x2700             MOVS     R7,#+0
+    259                if ( (c->cfsr.word & (1 << bit)) && *cfsrBits[bit] ) {
+   \                     ??halPrintCrashDetails_20: (+1)
+   \   00000110   0x6A28             LDR      R0,[R5, #+32]
+   \   00000112   0x40F8             LSRS     R0,R0,R7
+   \   00000114   0x07C0             LSLS     R0,R0,#+31
+   \   00000116   0xD505             BPL.N    ??CrossCallReturnLabel_4
+   \   00000118   0x.... 0x....      BL       ?Subroutine2
+   \                     ??CrossCallReturnLabel_21: (+1)
+   \   0000011C   0xB110             CBZ.N    R0,??CrossCallReturnLabel_4
+    260                  emberSerialPrintfLine(port, "CFSR.%p", cfsrBits[bit]);
+   \   0000011E   0x4631             MOV      R1,R6
+   \   00000120   0x.... 0x....      BL       ??Subroutine0_0
+    261                }
+    262              }
+   \                     ??CrossCallReturnLabel_4: (+1)
+   \   00000124   0x1C7F             ADDS     R7,R7,#+1
+   \   00000126   0x2F08             CMP      R7,#+8
+   \   00000128   0xDBF2             BLT.N    ??halPrintCrashDetails_20
+   \   0000012A   0xE052             B.N      ??halPrintCrashDetails_19
+    263              emberSerialWaitSend(port);
+    264              break;
+    265          
+    266            case RESET_FAULT_BUS:
+    267              emberSerialPrintfLine(port, "Reset cause: Bus Fault");
+   \                     ??halPrintCrashDetails_5: (+1)
+   \   0000012C   0x.... 0x....      ADR.W    R1,`?<Constant "Reset cause: Bus Fault">`
+   \   00000130   0x.... 0x....      BL       ?Subroutine1
+    268              emberSerialPrintfLine(port, "Instruction address: %4x", c->PC);
+   \                     ??CrossCallReturnLabel_14: (+1)
+   \   00000134   0x.... 0x....      BL       ?Subroutine0
+    269              if (c->cfsr.bits.IMPRECISERR) {
+   \                     ??CrossCallReturnLabel_8: (+1)
+   \   00000138   0x6A28             LDR      R0,[R5, #+32]
+   \   0000013A   0xF3C0 0x2080      UBFX     R0,R0,#+10,#+1
+   \   0000013E   0xB118             CBZ.N    R0,??CrossCallReturnLabel_13
+    270                emberSerialPrintfLine(port, 
+    271                  "Address is of an instruction after bus fault occurred, not the cause.");
+   \   00000140   0x.... 0x....      ADR.W    R1,`?<Constant "Address is of an inst...">`
+   \   00000144   0x.... 0x....      BL       ?Subroutine1
+    272              }
+    273              if (c->cfsr.bits.BFARVALID) {
+   \                     ??CrossCallReturnLabel_13: (+1)
+   \   00000148   0x6A28             LDR      R0,[R5, #+32]
+   \   0000014A   0xF3C0 0x30C0      UBFX     R0,R0,#+15,#+1
+   \   0000014E   0xB118             CBZ.N    R0,??CrossCallReturnLabel_3
+    274                emberSerialPrintfLine(port, "Illegal access address: %4x", 
+    275                                      c->faultAddress);
+   \   00000150   0x6AEA             LDR      R2,[R5, #+44]
+   \   00000152   0x4649             MOV      R1,R9
+   \   00000154   0x.... 0x....      BL       ??Subroutine0_0
+    276              }
+    277              for (bit = SCS_CFSR_IBUSERR_BIT; bit <= SCS_CFSR_BFARVALID_BIT; bit++) {
+   \                     ??CrossCallReturnLabel_3: (+1)
+   \   00000158   0x2708             MOVS     R7,#+8
+    278                if ( (c->cfsr.word & (1 << bit)) && *cfsrBits[bit] ) {
+   \                     ??halPrintCrashDetails_21: (+1)
+   \   0000015A   0x6A28             LDR      R0,[R5, #+32]
+   \   0000015C   0x40F8             LSRS     R0,R0,R7
+   \   0000015E   0x07C0             LSLS     R0,R0,#+31
+   \   00000160   0xD505             BPL.N    ??CrossCallReturnLabel_2
+   \   00000162   0x.... 0x....      BL       ?Subroutine2
+   \                     ??CrossCallReturnLabel_22: (+1)
+   \   00000166   0xB110             CBZ.N    R0,??CrossCallReturnLabel_2
+    279                  emberSerialPrintfLine(port, "CFSR.%p", cfsrBits[bit]);
+   \   00000168   0x4631             MOV      R1,R6
+   \   0000016A   0x.... 0x....      BL       ??Subroutine0_0
+    280                }
+    281              }
+   \                     ??CrossCallReturnLabel_2: (+1)
+   \   0000016E   0x1C7F             ADDS     R7,R7,#+1
+   \   00000170   0x2F10             CMP      R7,#+16
+   \   00000172   0xDBF2             BLT.N    ??halPrintCrashDetails_21
+    282              if ( (c->cfsr.word & 0xFF) == 0) {
+   \   00000174   0xF895 0x0020      LDRB     R0,[R5, #+32]
+   \   00000178   0x0600             LSLS     R0,R0,#+24
+   \   0000017A   0xD103             BNE.N    ??CrossCallReturnLabel_12
+    283                emberSerialPrintfLine(port, "CFSR.(none) load or store at an illegal address");      
+   \   0000017C   0x.... 0x....      ADR.W    R1,`?<Constant "CFSR.(none) load or s...">`
+   \   00000180   0x.... 0x....      BL       ?Subroutine1
+    284              }
+    285              for (bit = SCS_AFSR_RESERVED_BIT; bit <= SCS_AFSR_WRONGSIZE_BIT; bit++) {
+   \                     ??CrossCallReturnLabel_12: (+1)
+   \   00000184   0x2701             MOVS     R7,#+1
+   \   00000186   0x.... 0x....      ADR.W    R6,`?<Constant "AFSR.%p">`
+   \   0000018A   0x.... 0x....      ADR.W    R8,afsrBits
+    286                if ( (c->afsr.word & (1 << bit)) && *afsrBits[bit] ) {
+   \                     ??halPrintCrashDetails_22: (+1)
+   \   0000018E   0x6B28             LDR      R0,[R5, #+48]
+   \   00000190   0x40F8             LSRS     R0,R0,R7
+   \   00000192   0x07C0             LSLS     R0,R0,#+31
+   \   00000194   0xD505             BPL.N    ??CrossCallReturnLabel_1
+   \   00000196   0x.... 0x....      BL       ?Subroutine2
+   \                     ??CrossCallReturnLabel_23: (+1)
+   \   0000019A   0xB110             CBZ.N    R0,??CrossCallReturnLabel_1
+    287                  emberSerialPrintfLine(port, "AFSR.%p", afsrBits[bit]);
+   \   0000019C   0x4631             MOV      R1,R6
+   \   0000019E   0x.... 0x....      BL       ??Subroutine0_0
+    288                }
+    289              }
+   \                     ??CrossCallReturnLabel_1: (+1)
+   \   000001A2   0x1C7F             ADDS     R7,R7,#+1
+   \   000001A4   0x2F04             CMP      R7,#+4
+   \   000001A6   0xDBF2             BLT.N    ??halPrintCrashDetails_22
+   \   000001A8   0xE013             B.N      ??halPrintCrashDetails_19
+    290              emberSerialWaitSend(port);
+    291              break;
+    292          
+    293            case RESET_FAULT_USAGE:
+    294              emberSerialPrintfLine(port, "Reset cause: Usage Fault");
+   \                     ??halPrintCrashDetails_6: (+1)
+   \   000001AA   0x.... 0x....      ADR.W    R1,`?<Constant "Reset cause: Usage Fault">`
+   \   000001AE   0x.... 0x....      BL       ?Subroutine1
+    295              emberSerialPrintfLine(port, "Instruction address: %4x", c->PC);
+   \                     ??CrossCallReturnLabel_11: (+1)
+   \   000001B2   0x.... 0x....      BL       ?Subroutine0
+    296              for (bit = SCS_CFSR_UNDEFINSTR_BIT; bit <= SCS_CFSR_DIVBYZERO_BIT; bit++) {
+   \                     ??CrossCallReturnLabel_7: (+1)
+   \   000001B6   0x2710             MOVS     R7,#+16
+    297                if ( (c->cfsr.word & (1 << bit)) && *cfsrBits[bit] ) {
+   \                     ??halPrintCrashDetails_23: (+1)
+   \   000001B8   0x6A28             LDR      R0,[R5, #+32]
+   \   000001BA   0x40F8             LSRS     R0,R0,R7
+   \   000001BC   0x07C0             LSLS     R0,R0,#+31
+   \   000001BE   0xD505             BPL.N    ??CrossCallReturnLabel_0
+   \   000001C0   0x.... 0x....      BL       ?Subroutine2
+   \                     ??CrossCallReturnLabel_24: (+1)
+   \   000001C4   0xB110             CBZ.N    R0,??CrossCallReturnLabel_0
+    298                  emberSerialPrintfLine(port, "CFSR.%p", cfsrBits[bit]);
+   \   000001C6   0x4631             MOV      R1,R6
+   \   000001C8   0x.... 0x....      BL       ??Subroutine0_0
+    299                }
+    300              }
+   \                     ??CrossCallReturnLabel_0: (+1)
+   \   000001CC   0x1C7F             ADDS     R7,R7,#+1
+   \   000001CE   0x2F1A             CMP      R7,#+26
+   \   000001D0   0xDBF2             BLT.N    ??halPrintCrashDetails_23
+    301              emberSerialWaitSend(port);
+   \                     ??halPrintCrashDetails_19: (+1)
+   \   000001D2   0x4620             MOV      R0,R4
+   \   000001D4   0xE8BD 0x47F0      POP      {R4-R10,LR}
+   \   000001D8   0x.... 0x....      B.W      emberSerialWaitSend
+    302              break;
+    303          
+    304            case RESET_FAULT_DBGMON:
+    305              emberSerialPrintfLine(port, "Reset cause: Debug Monitor Fault");
+    306              emberSerialPrintfLine(port, "Instruction address: %4x", c->PC);
+    307              emberSerialWaitSend(port);
+    308              break;
+    309          
+    310            default:
+    311              break;
+    312            }
+    313          }
+   \                     ??halPrintCrashDetails_9: (+1)
+   \   000001DC   0xE8BD 0x87F0      POP      {R4-R10,PC}      ;; return
+   \                     ??halPrintCrashDetails_7: (+1)
+   \   000001E0   0x.... 0x....      ADR.W    R1,`?<Constant "Reset cause: Debug Mo...">`
+   \                     ??halPrintCrashDetails_11: (+1)
+   \   000001E4   0x.... 0x....      BL       ?Subroutine1
+   \                     ??CrossCallReturnLabel_10: (+1)
+   \   000001E8   0x.... 0x....      BL       ?Subroutine0
+   \                     ??CrossCallReturnLabel_6: (+1)
+   \   000001EC   0xE7F1             B.N      ??halPrintCrashDetails_19
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine2: (+1)
+   \   00000000   0xF858 0x2027      LDR      R2,[R8, R7, LSL #+2]
+   \   00000004   0x7810             LDRB     R0,[R2, #+0]
+   \   00000006   0x4770             BX       LR
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine1: (+1)
+   \   00000000   0x4620             MOV      R0,R4
+   \   00000002   0x.... 0x....      B.W      emberSerialPrintfLine
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine0: (+1)
+   \   00000000   0x6C7A             LDR      R2,[R7, #+68]
+   \   00000002   0x4651             MOV      R1,R10
+   \                     ??Subroutine0_0: (+1)
+   \   00000004   0x4620             MOV      R0,R4
+   \   00000006   0x.... 0x....      B.W      emberSerialPrintfLine
+    314          
+    315          // Output an array of 32 bit values, 4 per line, each preceded by its name.
+
+   \                                 In section .text, align 2, keep-with-next
+    316          void halPrintCrashData(int8u port)
+    317          {
+   \                     halPrintCrashData: (+1)
+   \   00000000   0xE92D 0x47F0      PUSH     {R4-R10,LR}
+   \   00000004   0x4680             MOV      R8,R0
+    318            int32u *data = (int32u *)&halResetInfo.crash.R0;
+   \   00000006   0x.... 0x....      LDR.W    R10,??DataTable81_8
+    319            char const *name = nameStrings;
+   \   0000000A   0x.... 0x....      ADR.W    R6,nameStrings
+    320            char const *separator;
+    321            int8u i;
+    322          
+    323            for (i = 0; *name; i++) {
+   \   0000000E   0x.... 0x....      ADR.W    R9,`?<Constant "%p = %4x">`
+   \   00000012   0x2500             MOVS     R5,#+0
+   \   00000014   0x....             ADR.N    R7,??DataTable81_3  ;; 0x0D, 0x0A, 0x00, 0x00
+   \   00000016   0x....             ADR.N    R4,??DataTable81_4  ;; 0x2C, 0x20, 0x00, 0x00
+   \   00000018   0xE006             B.N      ??halPrintCrashData_0
+    324              emberSerialPrintf(port, "%p = %4x", name, *data++);
+    325              while (*name++) {}  // intentionally empty while loop body
+    326              /*lint -save -e448 */
+    327              separator = (*name && ((i & 3) != 3) ) ? ", " : "\r\n";
+    328              /*lint -restore */ 
+    329              emberSerialPrintf(port, separator);
+   \                     ??halPrintCrashData_1: (+1)
+   \   0000001A   0x4640             MOV      R0,R8
+   \   0000001C   0x.... 0x....      BL       emberSerialPrintf
+    330              emberSerialWaitSend(port);
+   \   00000020   0x4640             MOV      R0,R8
+   \   00000022   0x.... 0x....      BL       emberSerialWaitSend
+   \   00000026   0x1C6D             ADDS     R5,R5,#+1
+   \                     ??halPrintCrashData_0: (+1)
+   \   00000028   0x7830             LDRB     R0,[R6, #+0]
+   \   0000002A   0xB1A8             CBZ.N    R0,??halPrintCrashData_2
+   \   0000002C   0xF85A 0x3B04      LDR      R3,[R10], #+4
+   \   00000030   0x4632             MOV      R2,R6
+   \   00000032   0x4649             MOV      R1,R9
+   \   00000034   0x4640             MOV      R0,R8
+   \   00000036   0x.... 0x....      BL       emberSerialPrintf
+   \                     ??halPrintCrashData_3: (+1)
+   \   0000003A   0xF816 0x0B01      LDRB     R0,[R6], #+1
+   \   0000003E   0x2800             CMP      R0,#+0
+   \   00000040   0xD1FB             BNE.N    ??halPrintCrashData_3
+   \   00000042   0x7830             LDRB     R0,[R6, #+0]
+   \   00000044   0x2800             CMP      R0,#+0
+   \   00000046   0xBF1E             ITTT     NE 
+   \   00000048   0xB2ED             UXTBNE   R5,R5
+   \   0000004A   0xF005 0x0003      ANDNE    R0,R5,#0x3
+   \   0000004E   0x2803             CMPNE    R0,#+3
+   \   00000050   0xBF14             ITE      NE 
+   \   00000052   0x4621             MOVNE    R1,R4
+   \   00000054   0x4639             MOVEQ    R1,R7
+   \   00000056   0xE7E0             B.N      ??halPrintCrashData_1
+    331            }
+    332          }
+   \                     ??halPrintCrashData_2: (+1)
+   \   00000058   0xE8BD 0x87F0      POP      {R4-R10,PC}      ;; return
+    333          
+
+   \                                 In section .text, align 2, keep-with-next
+    334          int16u halGetPCDiagnostics( void )
+    335          {
+    336            return 0;
+   \                     halGetPCDiagnostics: (+1)
+   \   00000000   0x2000             MOVS     R0,#+0
+   \   00000002   0x4770             BX       LR               ;; return
+    337          }
+    338          
+
+   \                                 In section .text, align 2, keep-with-next
+    339          void halStartPCDiagnostics( void )
+    340          {
+    341          }
+   \                     halStartPCDiagnostics: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+    342          
+
+   \                                 In section .text, align 2, keep-with-next
+    343          void halStopPCDiagnostics( void )
+    344          {
+    345          }
+   \                     halStopPCDiagnostics: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable81:
+   \   00000000   0x20 0x25          DC8      " %p"
+   \              0x70 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable81_1:
+   \   00000000   0x41 0x44          DC8      "ADC"
+   \              0x43 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable81_2:
+   \   00000000   0x3F 0x3F          DC8      0x3F, 0x3F, 0x00, 0x00
+   \              0x00 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable81_3:
+   \   00000000   0x0D 0x0A          DC8      0x0D, 0x0A, 0x00, 0x00
+   \              0x00 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable81_4:
+   \   00000000   0x2C 0x20          DC8      0x2C, 0x20, 0x00, 0x00
+   \              0x00 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable81_5:
+   \   00000000   0x........         DC32     halResetInfo
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable81_6:
+   \   00000000   0x........         DC32     SFE(CSTACK)
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable81_7:
+   \   00000000   0x........         DC32     SFE(RESETINFO)
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable81_8:
+   \   00000000   0x........         DC32     halResetInfo+0x4
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "IACCVIOL: attempted i...">`:
+   \   00000000   0x49 0x41          DC8 49H, 41H, 43H, 43H, 56H, 49H, 4FH, 4CH
+   \              0x43 0x43    
+   \              0x56 0x49    
+   \              0x4F 0x4C    
+   \   00000008   0x3A 0x20          DC8 3AH, 20H, 61H, 74H, 74H, 65H, 6DH, 70H
+   \              0x61 0x74    
+   \              0x74 0x65    
+   \              0x6D 0x70    
+   \   00000010   0x74 0x65          DC8 74H, 65H, 64H, 20H, 69H, 6EH, 73H, 74H
+   \              0x64 0x20    
+   \              0x69 0x6E    
+   \              0x73 0x74    
+   \   00000018   0x72 0x75          DC8 72H, 75H, 63H, 74H, 69H, 6FH, 6EH, 20H
+   \              0x63 0x74    
+   \              0x69 0x6F    
+   \              0x6E 0x20    
+   \   00000020   0x66 0x65          DC8 66H, 65H, 74H, 63H, 68H, 20H, 66H, 72H
+   \              0x74 0x63    
+   \              0x68 0x20    
+   \              0x66 0x72    
+   \   00000028   0x6F 0x6D          DC8 6FH, 6DH, 20H, 61H, 20H, 6EH, 6FH, 2DH
+   \              0x20 0x61    
+   \              0x20 0x6E    
+   \              0x6F 0x2D    
+   \   00000030   0x65 0x78          DC8 65H, 78H, 65H, 63H, 75H, 74H, 65H, 20H
+   \              0x65 0x63    
+   \              0x75 0x74    
+   \              0x65 0x20    
+   \   00000038   0x61 0x64          DC8 61H, 64H, 64H, 72H, 65H, 73H, 73H, 0
+   \              0x64 0x72    
+   \              0x65 0x73    
+   \              0x73 0x00    
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "DACCVIOL: attempted l...">`:
+   \   00000000   0x44 0x41          DC8 44H, 41H, 43H, 43H, 56H, 49H, 4FH, 4CH
+   \              0x43 0x43    
+   \              0x56 0x49    
+   \              0x4F 0x4C    
+   \   00000008   0x3A 0x20          DC8 3AH, 20H, 61H, 74H, 74H, 65H, 6DH, 70H
+   \              0x61 0x74    
+   \              0x74 0x65    
+   \              0x6D 0x70    
+   \   00000010   0x74 0x65          DC8 74H, 65H, 64H, 20H, 6CH, 6FH, 61H, 64H
+   \              0x64 0x20    
+   \              0x6C 0x6F    
+   \              0x61 0x64    
+   \   00000018   0x20 0x6F          DC8 20H, 6FH, 72H, 20H, 73H, 74H, 6FH, 72H
+   \              0x72 0x20    
+   \              0x73 0x74    
+   \              0x6F 0x72    
+   \   00000020   0x65 0x20          DC8 65H, 20H, 61H, 74H, 20H, 61H, 6EH, 20H
+   \              0x61 0x74    
+   \              0x20 0x61    
+   \              0x6E 0x20    
+   \   00000028   0x69 0x6C          DC8 69H, 6CH, 6CH, 65H, 67H, 61H, 6CH, 20H
+   \              0x6C 0x65    
+   \              0x67 0x61    
+   \              0x6C 0x20    
+   \   00000030   0x61 0x64          DC8 61H, 64H, 64H, 72H, 65H, 73H, 73H, 0
+   \              0x64 0x72    
+   \              0x65 0x73    
+   \              0x73 0x00    
+
+   \                                 In section .rodata, align 1, keep-with-next
+   \                     `?<Constant "">`:
+   \   00000000   0x00               DC8 ""
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "MUNSTKERR: unstack fr...">`:
+   \   00000000   0x4D 0x55          DC8 4DH, 55H, 4EH, 53H, 54H, 4BH, 45H, 52H
+   \              0x4E 0x53    
+   \              0x54 0x4B    
+   \              0x45 0x52    
+   \   00000008   0x52 0x3A          DC8 52H, 3AH, 20H, 75H, 6EH, 73H, 74H, 61H
+   \              0x20 0x75    
+   \              0x6E 0x73    
+   \              0x74 0x61    
+   \   00000010   0x63 0x6B          DC8 63H, 6BH, 20H, 66H, 72H, 6FH, 6DH, 20H
+   \              0x20 0x66    
+   \              0x72 0x6F    
+   \              0x6D 0x20    
+   \   00000018   0x65 0x78          DC8 65H, 78H, 63H, 65H, 70H, 74H, 69H, 6FH
+   \              0x63 0x65    
+   \              0x70 0x74    
+   \              0x69 0x6F    
+   \   00000020   0x6E 0x20          DC8 6EH, 20H, 72H, 65H, 74H, 75H, 72H, 6EH
+   \              0x72 0x65    
+   \              0x74 0x75    
+   \              0x72 0x6E    
+   \   00000028   0x20 0x63          DC8 20H, 63H, 61H, 75H, 73H, 65H, 64H, 20H
+   \              0x61 0x75    
+   \              0x73 0x65    
+   \              0x64 0x20    
+   \   00000030   0x61 0x63          DC8 61H, 63H, 63H, 65H, 73H, 73H, 20H, 76H
+   \              0x63 0x65    
+   \              0x73 0x73    
+   \              0x20 0x76    
+   \   00000038   0x69 0x6F          DC8 69H, 6FH, 6CH, 61H, 74H, 69H, 6FH, 6EH
+   \              0x6C 0x61    
+   \              0x74 0x69    
+   \              0x6F 0x6E    
+   \   00000040   0x00               DC8 0
+   \   00000041   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "MSTKERR: stacking fro...">`:
+   \   00000000   0x4D 0x53          DC8 4DH, 53H, 54H, 4BH, 45H, 52H, 52H, 3AH
+   \              0x54 0x4B    
+   \              0x45 0x52    
+   \              0x52 0x3A    
+   \   00000008   0x20 0x73          DC8 20H, 73H, 74H, 61H, 63H, 6BH, 69H, 6EH
+   \              0x74 0x61    
+   \              0x63 0x6B    
+   \              0x69 0x6E    
+   \   00000010   0x67 0x20          DC8 67H, 20H, 66H, 72H, 6FH, 6DH, 20H, 65H
+   \              0x66 0x72    
+   \              0x6F 0x6D    
+   \              0x20 0x65    
+   \   00000018   0x78 0x63          DC8 78H, 63H, 65H, 70H, 74H, 69H, 6FH, 6EH
+   \              0x65 0x70    
+   \              0x74 0x69    
+   \              0x6F 0x6E    
+   \   00000020   0x20 0x63          DC8 20H, 63H, 61H, 75H, 73H, 65H, 64H, 20H
+   \              0x61 0x75    
+   \              0x73 0x65    
+   \              0x64 0x20    
+   \   00000028   0x61 0x63          DC8 61H, 63H, 63H, 65H, 73H, 73H, 20H, 76H
+   \              0x63 0x65    
+   \              0x73 0x73    
+   \              0x20 0x76    
+   \   00000030   0x69 0x6F          DC8 69H, 6FH, 6CH, 61H, 74H, 69H, 6FH, 6EH
+   \              0x6C 0x61    
+   \              0x74 0x69    
+   \              0x6F 0x6E    
+   \   00000038   0x00               DC8 0
+   \   00000039   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "MMARVALID: MMAR conta...">`:
+   \   00000000   0x4D 0x4D          DC8 "MMARVALID: MMAR contains valid fault address"
+   \              0x41 0x52    
+   \              0x56 0x41    
+   \              0x4C 0x49    
+   \              0x44 0x3A    
+   \              0x20 0x4D    
+   \              0x4D 0x41    
+   \              0x52 0x20    
+   \              0x63 0x6F    
+   \              0x6E 0x74    
+   \              0x61 0x69    
+   \              0x6E 0x73    
+   \              0x20 0x76    
+   \              0x61 0x6C    
+   \              0x69 0x64    
+   \              0x20 0x66    
+   \              0x61 0x75    
+   \              0x6C 0x74    
+   \              0x20 0x61    
+   \              0x64 0x64    
+   \              0x72 0x65    
+   \              0x73 0x73    
+   \              0x00         
+   \   0000002D   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "IBUSERR: instruction ...">`:
+   \   00000000   0x49 0x42          DC8 "IBUSERR: instruction prefetch caused bus fault"
+   \              0x55 0x53    
+   \              0x45 0x52    
+   \              0x52 0x3A    
+   \              0x20 0x69    
+   \              0x6E 0x73    
+   \              0x74 0x72    
+   \              0x75 0x63    
+   \              0x74 0x69    
+   \              0x6F 0x6E    
+   \              0x20 0x70    
+   \              0x72 0x65    
+   \              0x66 0x65    
+   \              0x74 0x63    
+   \              0x68 0x20    
+   \              0x63 0x61    
+   \              0x75 0x73    
+   \              0x65 0x64    
+   \              0x20 0x62    
+   \              0x75 0x73    
+   \              0x20 0x66    
+   \              0x61 0x75    
+   \              0x6C 0x74    
+   \              0x00         
+   \   0000002F   0x00               DC8 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "PRECISERR: precise da...">`:
+   \   00000000   0x50 0x52          DC8 "PRECISERR: precise data bus fault"
+   \              0x45 0x43    
+   \              0x49 0x53    
+   \              0x45 0x52    
+   \              0x52 0x3A    
+   \              0x20 0x70    
+   \              0x72 0x65    
+   \              0x63 0x69    
+   \              0x73 0x65    
+   \              0x20 0x64    
+   \              0x61 0x74    
+   \              0x61 0x20    
+   \              0x62 0x75    
+   \              0x73 0x20    
+   \              0x66 0x61    
+   \              0x75 0x6C    
+   \              0x74 0x00    
+   \   00000022   0x00 0x00          DC8 0, 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "IMPRECISERR: imprecis...">`:
+   \   00000000   0x49 0x4D          DC8 "IMPRECISERR: imprecise data bus fault"
+   \              0x50 0x52    
+   \              0x45 0x43    
+   \              0x49 0x53    
+   \              0x45 0x52    
+   \              0x52 0x3A    
+   \              0x20 0x69    
+   \              0x6D 0x70    
+   \              0x72 0x65    
+   \              0x63 0x69    
+   \              0x73 0x65    
+   \              0x20 0x64    
+   \              0x61 0x74    
+   \              0x61 0x20    
+   \              0x62 0x75    
+   \              0x73 0x20    
+   \              0x66 0x61    
+   \              0x75 0x6C    
+   \              0x74 0x00    
+   \   00000026   0x00 0x00          DC8 0, 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "UNSTKERR: unstacking ...">`:
+   \   00000000   0x55 0x4E          DC8 55H, 4EH, 53H, 54H, 4BH, 45H, 52H, 52H
+   \              0x53 0x54    
+   \              0x4B 0x45    
+   \              0x52 0x52    
+   \   00000008   0x3A 0x20          DC8 3AH, 20H, 75H, 6EH, 73H, 74H, 61H, 63H
+   \              0x75 0x6E    
+   \              0x73 0x74    
+   \              0x61 0x63    
+   \   00000010   0x6B 0x69          DC8 6BH, 69H, 6EH, 67H, 20H, 6FH, 6EH, 20H
+   \              0x6E 0x67    
+   \              0x20 0x6F    
+   \              0x6E 0x20    
+   \   00000018   0x65 0x78          DC8 65H, 78H, 63H, 65H, 70H, 74H, 69H, 6FH
+   \              0x63 0x65    
+   \              0x70 0x74    
+   \              0x69 0x6F    
+   \   00000020   0x6E 0x20          DC8 6EH, 20H, 72H, 65H, 74H, 75H, 72H, 6EH
+   \              0x72 0x65    
+   \              0x74 0x75    
+   \              0x72 0x6E    
+   \   00000028   0x20 0x63          DC8 20H, 63H, 61H, 75H, 73H, 65H, 64H, 20H
+   \              0x61 0x75    
+   \              0x73 0x65    
+   \              0x64 0x20    
+   \   00000030   0x64 0x61          DC8 64H, 61H, 74H, 61H, 20H, 62H, 75H, 73H
+   \              0x74 0x61    
+   \              0x20 0x62    
+   \              0x75 0x73    
+   \   00000038   0x20 0x66          DC8 20H, 66H, 61H, 75H, 6CH, 74H, 0
+   \              0x61 0x75    
+   \              0x6C 0x74    
+   \              0x00         
+   \   0000003F   0x00               DC8 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "STKERR: stacking on e...">`:
+   \   00000000   0x53 0x54          DC8 53H, 54H, 4BH, 45H, 52H, 52H, 3AH, 20H
+   \              0x4B 0x45    
+   \              0x52 0x52    
+   \              0x3A 0x20    
+   \   00000008   0x73 0x74          DC8 73H, 74H, 61H, 63H, 6BH, 69H, 6EH, 67H
+   \              0x61 0x63    
+   \              0x6B 0x69    
+   \              0x6E 0x67    
+   \   00000010   0x20 0x6F          DC8 20H, 6FH, 6EH, 20H, 65H, 78H, 63H, 65H
+   \              0x6E 0x20    
+   \              0x65 0x78    
+   \              0x63 0x65    
+   \   00000018   0x70 0x74          DC8 70H, 74H, 69H, 6FH, 6EH, 20H, 65H, 6EH
+   \              0x69 0x6F    
+   \              0x6E 0x20    
+   \              0x65 0x6E    
+   \   00000020   0x74 0x72          DC8 74H, 72H, 79H, 20H, 63H, 61H, 75H, 73H
+   \              0x79 0x20    
+   \              0x63 0x61    
+   \              0x75 0x73    
+   \   00000028   0x65 0x64          DC8 65H, 64H, 20H, 64H, 61H, 74H, 61H, 20H
+   \              0x20 0x64    
+   \              0x61 0x74    
+   \              0x61 0x20    
+   \   00000030   0x62 0x75          DC8 62H, 75H, 73H, 20H, 66H, 61H, 75H, 6CH
+   \              0x73 0x20    
+   \              0x66 0x61    
+   \              0x75 0x6C    
+   \   00000038   0x74 0x00          DC8 74H, 0
+   \   0000003A   0x00 0x00          DC8 0, 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "BFARVALID: BFAR conta...">`:
+   \   00000000   0x42 0x46          DC8 "BFARVALID: BFAR contains valid fault address"
+   \              0x41 0x52    
+   \              0x56 0x41    
+   \              0x4C 0x49    
+   \              0x44 0x3A    
+   \              0x20 0x42    
+   \              0x46 0x41    
+   \              0x52 0x20    
+   \              0x63 0x6F    
+   \              0x6E 0x74    
+   \              0x61 0x69    
+   \              0x6E 0x73    
+   \              0x20 0x76    
+   \              0x61 0x6C    
+   \              0x69 0x64    
+   \              0x20 0x66    
+   \              0x61 0x75    
+   \              0x6C 0x74    
+   \              0x20 0x61    
+   \              0x64 0x64    
+   \              0x72 0x65    
+   \              0x73 0x73    
+   \              0x00         
+   \   0000002D   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "UNDEFINSTR: tried to ...">`:
+   \   00000000   0x55 0x4E          DC8 55H, 4EH, 44H, 45H, 46H, 49H, 4EH, 53H
+   \              0x44 0x45    
+   \              0x46 0x49    
+   \              0x4E 0x53    
+   \   00000008   0x54 0x52          DC8 54H, 52H, 3AH, 20H, 74H, 72H, 69H, 65H
+   \              0x3A 0x20    
+   \              0x74 0x72    
+   \              0x69 0x65    
+   \   00000010   0x64 0x20          DC8 64H, 20H, 74H, 6FH, 20H, 65H, 78H, 65H
+   \              0x74 0x6F    
+   \              0x20 0x65    
+   \              0x78 0x65    
+   \   00000018   0x63 0x75          DC8 63H, 75H, 74H, 65H, 20H, 61H, 6EH, 20H
+   \              0x74 0x65    
+   \              0x20 0x61    
+   \              0x6E 0x20    
+   \   00000020   0x75 0x6E          DC8 75H, 6EH, 64H, 65H, 66H, 69H, 6EH, 65H
+   \              0x64 0x65    
+   \              0x66 0x69    
+   \              0x6E 0x65    
+   \   00000028   0x64 0x20          DC8 64H, 20H, 69H, 6EH, 73H, 74H, 72H, 75H
+   \              0x69 0x6E    
+   \              0x73 0x74    
+   \              0x72 0x75    
+   \   00000030   0x63 0x74          DC8 63H, 74H, 69H, 6FH, 6EH, 0
+   \              0x69 0x6F    
+   \              0x6E 0x00    
+   \   00000036   0x00 0x00          DC8 0, 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "INVSTATE: invalid EPS...">`:
+   \   00000000   0x49 0x4E          DC8 49H, 4EH, 56H, 53H, 54H, 41H, 54H, 45H
+   \              0x56 0x53    
+   \              0x54 0x41    
+   \              0x54 0x45    
+   \   00000008   0x3A 0x20          DC8 3AH, 20H, 69H, 6EH, 76H, 61H, 6CH, 69H
+   \              0x69 0x6E    
+   \              0x76 0x61    
+   \              0x6C 0x69    
+   \   00000010   0x64 0x20          DC8 64H, 20H, 45H, 50H, 53H, 52H, 20H, 2DH
+   \              0x45 0x50    
+   \              0x53 0x52    
+   \              0x20 0x2D    
+   \   00000018   0x20 0x65          DC8 20H, 65H, 2EH, 67H, 2EH, 2CH, 20H, 74H
+   \              0x2E 0x67    
+   \              0x2E 0x2C    
+   \              0x20 0x74    
+   \   00000020   0x72 0x69          DC8 72H, 69H, 65H, 64H, 20H, 74H, 6FH, 20H
+   \              0x65 0x64    
+   \              0x20 0x74    
+   \              0x6F 0x20    
+   \   00000028   0x73 0x77          DC8 73H, 77H, 69H, 74H, 63H, 68H, 20H, 74H
+   \              0x69 0x74    
+   \              0x63 0x68    
+   \              0x20 0x74    
+   \   00000030   0x6F 0x20          DC8 6FH, 20H, 41H, 52H, 4DH, 20H, 6DH, 6FH
+   \              0x41 0x52    
+   \              0x4D 0x20    
+   \              0x6D 0x6F    
+   \   00000038   0x64 0x65          DC8 64H, 65H, 0
+   \              0x00         
+   \   0000003B   0x00               DC8 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "INVPC: exception retu...">`:
+   \   00000000   0x49 0x4E          DC8 "INVPC: exception return integrity checks failed"
+   \              0x56 0x50    
+   \              0x43 0x3A    
+   \              0x20 0x65    
+   \              0x78 0x63    
+   \              0x65 0x70    
+   \              0x74 0x69    
+   \              0x6F 0x6E    
+   \              0x20 0x72    
+   \              0x65 0x74    
+   \              0x75 0x72    
+   \              0x6E 0x20    
+   \              0x69 0x6E    
+   \              0x74 0x65    
+   \              0x67 0x72    
+   \              0x69 0x74    
+   \              0x79 0x20    
+   \              0x63 0x68    
+   \              0x65 0x63    
+   \              0x6B 0x73    
+   \              0x20 0x66    
+   \              0x61 0x69    
+   \              0x6C 0x65    
+   \              0x64 0x00    
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "NOCP: attempted to ex...">`:
+   \   00000000   0x4E 0x4F          DC8 4EH, 4FH, 43H, 50H, 3AH, 20H, 61H, 74H
+   \              0x43 0x50    
+   \              0x3A 0x20    
+   \              0x61 0x74    
+   \   00000008   0x74 0x65          DC8 74H, 65H, 6DH, 70H, 74H, 65H, 64H, 20H
+   \              0x6D 0x70    
+   \              0x74 0x65    
+   \              0x64 0x20    
+   \   00000010   0x74 0x6F          DC8 74H, 6FH, 20H, 65H, 78H, 65H, 63H, 75H
+   \              0x20 0x65    
+   \              0x78 0x65    
+   \              0x63 0x75    
+   \   00000018   0x74 0x65          DC8 74H, 65H, 20H, 61H, 20H, 63H, 6FH, 70H
+   \              0x20 0x61    
+   \              0x20 0x63    
+   \              0x6F 0x70    
+   \   00000020   0x72 0x6F          DC8 72H, 6FH, 63H, 65H, 73H, 73H, 6FH, 72H
+   \              0x63 0x65    
+   \              0x73 0x73    
+   \              0x6F 0x72    
+   \   00000028   0x20 0x69          DC8 20H, 69H, 6EH, 73H, 74H, 72H, 75H, 63H
+   \              0x6E 0x73    
+   \              0x74 0x72    
+   \              0x75 0x63    
+   \   00000030   0x74 0x69          DC8 74H, 69H, 6FH, 6EH, 0
+   \              0x6F 0x6E    
+   \              0x00         
+   \   00000035   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "UNALIGNED: attempted ...">`:
+   \   00000000   0x55 0x4E          DC8 "UNALIGNED: attempted an unaligned memory access"
+   \              0x41 0x4C    
+   \              0x49 0x47    
+   \              0x4E 0x45    
+   \              0x44 0x3A    
+   \              0x20 0x61    
+   \              0x74 0x74    
+   \              0x65 0x6D    
+   \              0x70 0x74    
+   \              0x65 0x64    
+   \              0x20 0x61    
+   \              0x6E 0x20    
+   \              0x75 0x6E    
+   \              0x61 0x6C    
+   \              0x69 0x67    
+   \              0x6E 0x65    
+   \              0x64 0x20    
+   \              0x6D 0x65    
+   \              0x6D 0x6F    
+   \              0x72 0x79    
+   \              0x20 0x61    
+   \              0x63 0x63    
+   \              0x65 0x73    
+   \              0x73 0x00    
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "DIVBYZERO: attempted ...">`:
+   \   00000000   0x44 0x49          DC8 44H, 49H, 56H, 42H, 59H, 5AH, 45H, 52H
+   \              0x56 0x42    
+   \              0x59 0x5A    
+   \              0x45 0x52    
+   \   00000008   0x4F 0x3A          DC8 4FH, 3AH, 20H, 61H, 74H, 74H, 65H, 6DH
+   \              0x20 0x61    
+   \              0x74 0x74    
+   \              0x65 0x6D    
+   \   00000010   0x70 0x74          DC8 70H, 74H, 65H, 64H, 20H, 74H, 6FH, 20H
+   \              0x65 0x64    
+   \              0x20 0x74    
+   \              0x6F 0x20    
+   \   00000018   0x65 0x78          DC8 65H, 78H, 65H, 63H, 75H, 74H, 65H, 20H
+   \              0x65 0x63    
+   \              0x75 0x74    
+   \              0x65 0x20    
+   \   00000020   0x53 0x44          DC8 53H, 44H, 49H, 56H, 20H, 6FH, 72H, 20H
+   \              0x49 0x56    
+   \              0x20 0x6F    
+   \              0x72 0x20    
+   \   00000028   0x55 0x44          DC8 55H, 44H, 49H, 56H, 20H, 77H, 69H, 74H
+   \              0x49 0x56    
+   \              0x20 0x77    
+   \              0x69 0x74    
+   \   00000030   0x68 0x20          DC8 68H, 20H, 64H, 69H, 76H, 69H, 73H, 6FH
+   \              0x64 0x69    
+   \              0x76 0x69    
+   \              0x73 0x6F    
+   \   00000038   0x72 0x20          DC8 72H, 20H, 6FH, 66H, 20H, 30H, 0
+   \              0x6F 0x66    
+   \              0x20 0x30    
+   \              0x00         
+   \   0000003F   0x00               DC8 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "RESERVED: attempted a...">`:
+   \   00000000   0x52 0x45          DC8 52H, 45H, 53H, 45H, 52H, 56H, 45H, 44H
+   \              0x53 0x45    
+   \              0x52 0x56    
+   \              0x45 0x44    
+   \   00000008   0x3A 0x20          DC8 3AH, 20H, 61H, 74H, 74H, 65H, 6DH, 70H
+   \              0x61 0x74    
+   \              0x74 0x65    
+   \              0x6D 0x70    
+   \   00000010   0x74 0x65          DC8 74H, 65H, 64H, 20H, 61H, 63H, 63H, 65H
+   \              0x64 0x20    
+   \              0x61 0x63    
+   \              0x63 0x65    
+   \   00000018   0x73 0x73          DC8 73H, 73H, 20H, 70H, 61H, 73H, 74H, 20H
+   \              0x20 0x70    
+   \              0x61 0x73    
+   \              0x74 0x20    
+   \   00000020   0x6C 0x61          DC8 6CH, 61H, 73H, 74H, 20H, 70H, 65H, 72H
+   \              0x73 0x74    
+   \              0x20 0x70    
+   \              0x65 0x72    
+   \   00000028   0x69 0x70          DC8 69H, 70H, 68H, 65H, 72H, 61H, 6CH, 20H
+   \              0x68 0x65    
+   \              0x72 0x61    
+   \              0x6C 0x20    
+   \   00000030   0x72 0x65          DC8 72H, 65H, 67H, 69H, 73H, 74H, 65H, 72H
+   \              0x67 0x69    
+   \              0x73 0x74    
+   \              0x65 0x72    
+   \   00000038   0x20 0x61          DC8 20H, 61H, 64H, 64H, 72H, 65H, 73H, 73H
+   \              0x64 0x64    
+   \              0x72 0x65    
+   \              0x73 0x73    
+   \   00000040   0x00               DC8 0
+   \   00000041   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "PROTECTED: attempted ...">`:
+   \   00000000   0x50 0x52          DC8 50H, 52H, 4FH, 54H, 45H, 43H, 54H, 45H
+   \              0x4F 0x54    
+   \              0x45 0x43    
+   \              0x54 0x45    
+   \   00000008   0x44 0x3A          DC8 44H, 3AH, 20H, 61H, 74H, 74H, 65H, 6DH
+   \              0x20 0x61    
+   \              0x74 0x74    
+   \              0x65 0x6D    
+   \   00000010   0x70 0x74          DC8 70H, 74H, 65H, 64H, 20H, 75H, 73H, 65H
+   \              0x65 0x64    
+   \              0x20 0x75    
+   \              0x73 0x65    
+   \   00000018   0x72 0x20          DC8 72H, 20H, 6DH, 6FH, 64H, 65H, 20H, 77H
+   \              0x6D 0x6F    
+   \              0x64 0x65    
+   \              0x20 0x77    
+   \   00000020   0x72 0x69          DC8 72H, 69H, 74H, 65H, 20H, 74H, 6FH, 20H
+   \              0x74 0x65    
+   \              0x20 0x74    
+   \              0x6F 0x20    
+   \   00000028   0x70 0x72          DC8 70H, 72H, 69H, 76H, 69H, 6CH, 65H, 67H
+   \              0x69 0x76    
+   \              0x69 0x6C    
+   \              0x65 0x67    
+   \   00000030   0x65 0x64          DC8 65H, 64H, 20H, 70H, 65H, 72H, 69H, 70H
+   \              0x20 0x70    
+   \              0x65 0x72    
+   \              0x69 0x70    
+   \   00000038   0x68 0x65          DC8 68H, 65H, 72H, 61H, 6CH, 0
+   \              0x72 0x61    
+   \              0x6C 0x00    
+   \   0000003E   0x00 0x00          DC8 0, 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "WRONGSIZE: attempted ...">`:
+   \   00000000   0x57 0x52          DC8 57H, 52H, 4FH, 4EH, 47H, 53H, 49H, 5AH
+   \              0x4F 0x4E    
+   \              0x47 0x53    
+   \              0x49 0x5A    
+   \   00000008   0x45 0x3A          DC8 45H, 3AH, 20H, 61H, 74H, 74H, 65H, 6DH
+   \              0x20 0x61    
+   \              0x74 0x74    
+   \              0x65 0x6D    
+   \   00000010   0x70 0x74          DC8 70H, 74H, 65H, 64H, 20H, 38H, 2FH, 31H
+   \              0x65 0x64    
+   \              0x20 0x38    
+   \              0x2F 0x31    
+   \   00000018   0x36 0x2D          DC8 36H, 2DH, 62H, 69H, 74H, 20H, 61H, 63H
+   \              0x62 0x69    
+   \              0x74 0x20    
+   \              0x61 0x63    
+   \   00000020   0x63 0x65          DC8 63H, 65H, 73H, 73H, 20H, 74H, 6FH, 20H
+   \              0x73 0x73    
+   \              0x20 0x74    
+   \              0x6F 0x20    
+   \   00000028   0x70 0x65          DC8 70H, 65H, 72H, 69H, 70H, 68H, 65H, 72H
+   \              0x72 0x69    
+   \              0x70 0x68    
+   \              0x65 0x72    
+   \   00000030   0x61 0x6C          DC8 61H, 6CH, 20H, 72H, 65H, 67H, 69H, 73H
+   \              0x20 0x72    
+   \              0x65 0x67    
+   \              0x69 0x73    
+   \   00000038   0x74 0x65          DC8 74H, 65H, 72H, 0
+   \              0x72 0x00    
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "Timer1">`:
+   \   00000000   0x54 0x69          DC8 "Timer1"
+   \              0x6D 0x65    
+   \              0x72 0x31    
+   \              0x00         
+   \   00000007   0x00               DC8 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "Timer2">`:
+   \   00000000   0x54 0x69          DC8 "Timer2"
+   \              0x6D 0x65    
+   \              0x72 0x32    
+   \              0x00         
+   \   00000007   0x00               DC8 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "Management">`:
+   \   00000000   0x4D 0x61          DC8 "Management"
+   \              0x6E 0x61    
+   \              0x67 0x65    
+   \              0x6D 0x65    
+   \              0x6E 0x74    
+   \              0x00         
+   \   0000000B   0x00               DC8 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "Baseband">`:
+   \   00000000   0x42 0x61          DC8 "Baseband"
+   \              0x73 0x65    
+   \              0x62 0x61    
+   \              0x6E 0x64    
+   \              0x00         
+   \   00000009   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "Sleep_Timer">`:
+   \   00000000   0x53 0x6C          DC8 "Sleep_Timer"
+   \              0x65 0x65    
+   \              0x70 0x5F    
+   \              0x54 0x69    
+   \              0x6D 0x65    
+   \              0x72 0x00    
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "SC1">`:
+   \   00000000   0x53 0x43          DC8 "SC1"
+   \              0x31 0x00    
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "SC2">`:
+   \   00000000   0x53 0x43          DC8 "SC2"
+   \              0x32 0x00    
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "Security">`:
+   \   00000000   0x53 0x65          DC8 "Security"
+   \              0x63 0x75    
+   \              0x72 0x69    
+   \              0x74 0x79    
+   \              0x00         
+   \   00000009   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "MAC_Timer">`:
+   \   00000000   0x4D 0x41          DC8 "MAC_Timer"
+   \              0x43 0x5F    
+   \              0x54 0x69    
+   \              0x6D 0x65    
+   \              0x72 0x00    
+   \   0000000A   0x00 0x00          DC8 0, 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "MAC_TX">`:
+   \   00000000   0x4D 0x41          DC8 "MAC_TX"
+   \              0x43 0x5F    
+   \              0x54 0x58    
+   \              0x00         
+   \   00000007   0x00               DC8 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "MAC_RX">`:
+   \   00000000   0x4D 0x41          DC8 "MAC_RX"
+   \              0x43 0x5F    
+   \              0x52 0x58    
+   \              0x00         
+   \   00000007   0x00               DC8 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "ADC">`:
+   \   00000000   0x41 0x44          DC8 "ADC"
+   \              0x43 0x00    
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "IRQ_A">`:
+   \   00000000   0x49 0x52          DC8 "IRQ_A"
+   \              0x51 0x5F    
+   \              0x41 0x00    
+   \   00000006   0x00 0x00          DC8 0, 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "IRQ_B">`:
+   \   00000000   0x49 0x52          DC8 "IRQ_B"
+   \              0x51 0x5F    
+   \              0x42 0x00    
+   \   00000006   0x00 0x00          DC8 0, 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "IRQ_C">`:
+   \   00000000   0x49 0x52          DC8 "IRQ_C"
+   \              0x51 0x5F    
+   \              0x43 0x00    
+   \   00000006   0x00 0x00          DC8 0, 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "IRQ_D">`:
+   \   00000000   0x49 0x52          DC8 "IRQ_D"
+   \              0x51 0x5F    
+   \              0x44 0x00    
+   \   00000006   0x00 0x00          DC8 0, 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "Debug">`:
+   \   00000000   0x44 0x65          DC8 "Debug"
+   \              0x62 0x75    
+   \              0x67 0x00    
+   \   00000006   0x00 0x00          DC8 0, 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant " %p">`:
+   \   00000000   0x20 0x25          DC8 " %p"
+   \              0x70 0x00    
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "??">`:
+   \   00000000   0x3F 0x3F          DC8 "??"
+   \              0x00         
+   \   00000003   0x00               DC8 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant ", ">`:
+   \   00000000   0x2C 0x20          DC8 ", "
+   \              0x00         
+   \   00000003   0x00               DC8 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "\\r\\n">`:
+   \   00000000   0x0D 0x0A          DC8 "\015\012"
+   \              0x00         
+   \   00000003   0x00               DC8 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "process">`:
+   \   00000000   0x70 0x72          DC8 "process"
+   \              0x6F 0x63    
+   \              0x65 0x73    
+   \              0x73 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "main">`:
+   \   00000000   0x6D 0x61          DC8 "main"
+   \              0x69 0x6E    
+   \              0x00         
+   \   00000005   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Thread">`:
+   \   00000000   0x54 0x68          DC8 "Thread"
+   \              0x72 0x65    
+   \              0x61 0x64    
+   \              0x00         
+   \   00000007   0x00               DC8 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Handler">`:
+   \   00000000   0x48 0x61          DC8 "Handler"
+   \              0x6E 0x64    
+   \              0x6C 0x65    
+   \              0x72 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "%p mode using %p stac...">`:
+   \   00000000   0x25 0x70          DC8 "%p mode using %p stack (%4x to %4x), SP = %4x"
+   \              0x20 0x6D    
+   \              0x6F 0x64    
+   \              0x65 0x20    
+   \              0x75 0x73    
+   \              0x69 0x6E    
+   \              0x67 0x20    
+   \              0x25 0x70    
+   \              0x20 0x73    
+   \              0x74 0x61    
+   \              0x63 0x6B    
+   \              0x20 0x28    
+   \              0x25 0x34    
+   \              0x78 0x20    
+   \              0x74 0x6F    
+   \              0x20 0x25    
+   \              0x34 0x78    
+   \              0x29 0x2C    
+   \              0x20 0x53    
+   \              0x50 0x20    
+   \              0x3D 0x20    
+   \              0x25 0x34    
+   \              0x78 0x00    
+   \   0000002E   0x00 0x00          DC8 0, 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "%u bytes used (%u%%) ...">`:
+   \   00000000   0x25 0x75          DC8 25H, 75H, 20H, 62H, 79H, 74H, 65H, 73H
+   \              0x20 0x62    
+   \              0x79 0x74    
+   \              0x65 0x73    
+   \   00000008   0x20 0x75          DC8 20H, 75H, 73H, 65H, 64H, 20H, 28H, 25H
+   \              0x73 0x65    
+   \              0x64 0x20    
+   \              0x28 0x25    
+   \   00000010   0x75 0x25          DC8 75H, 25H, 25H, 29H, 20H, 69H, 6EH, 20H
+   \              0x25 0x29    
+   \              0x20 0x69    
+   \              0x6E 0x20    
+   \   00000018   0x25 0x70          DC8 25H, 70H, 20H, 73H, 74H, 61H, 63H, 6BH
+   \              0x20 0x73    
+   \              0x74 0x61    
+   \              0x63 0x6B    
+   \   00000020   0x20 0x28          DC8 20H, 28H, 6FH, 75H, 74H, 20H, 6FH, 66H
+   \              0x6F 0x75    
+   \              0x74 0x20    
+   \              0x6F 0x66    
+   \   00000028   0x20 0x25          DC8 20H, 25H, 75H, 20H, 62H, 79H, 74H, 65H
+   \              0x75 0x20    
+   \              0x62 0x79    
+   \              0x74 0x65    
+   \   00000030   0x73 0x20          DC8 73H, 20H, 74H, 6FH, 74H, 61H, 6CH, 29H
+   \              0x74 0x6F    
+   \              0x74 0x61    
+   \              0x6C 0x29    
+   \   00000038   0x00               DC8 0
+   \   00000039   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Stack _may_ have used...">`:
+   \   00000000   0x53 0x74          DC8 "Stack _may_ have used up to 100%% of total."
+   \              0x61 0x63    
+   \              0x6B 0x20    
+   \              0x5F 0x6D    
+   \              0x61 0x79    
+   \              0x5F 0x20    
+   \              0x68 0x61    
+   \              0x76 0x65    
+   \              0x20 0x75    
+   \              0x73 0x65    
+   \              0x64 0x20    
+   \              0x75 0x70    
+   \              0x20 0x74    
+   \              0x6F 0x20    
+   \              0x31 0x30    
+   \              0x30 0x25    
+   \              0x25 0x20    
+   \              0x6F 0x66    
+   \              0x20 0x74    
+   \              0x6F 0x74    
+   \              0x61 0x6C    
+   \              0x2E 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "SP is outside %p stac...">`:
+   \   00000000   0x53 0x50          DC8 "SP is outside %p stack range!"
+   \              0x20 0x69    
+   \              0x73 0x20    
+   \              0x6F 0x75    
+   \              0x74 0x73    
+   \              0x69 0x64    
+   \              0x65 0x20    
+   \              0x25 0x70    
+   \              0x20 0x73    
+   \              0x74 0x61    
+   \              0x63 0x6B    
+   \              0x20 0x72    
+   \              0x61 0x6E    
+   \              0x67 0x65    
+   \              0x21 0x00    
+   \   0000001E   0x00 0x00          DC8 0, 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Interrupts active (or...">`:
+   \   00000000   0x49 0x6E          DC8 "Interrupts active (or pre-empted and stacked):"
+   \              0x74 0x65    
+   \              0x72 0x72    
+   \              0x75 0x70    
+   \              0x74 0x73    
+   \              0x20 0x61    
+   \              0x63 0x74    
+   \              0x69 0x76    
+   \              0x65 0x20    
+   \              0x28 0x6F    
+   \              0x72 0x20    
+   \              0x70 0x72    
+   \              0x65 0x2D    
+   \              0x65 0x6D    
+   \              0x70 0x74    
+   \              0x65 0x64    
+   \              0x20 0x61    
+   \              0x6E 0x64    
+   \              0x20 0x73    
+   \              0x74 0x61    
+   \              0x63 0x6B    
+   \              0x65 0x64    
+   \              0x29 0x3A    
+   \              0x00         
+   \   0000002F   0x00               DC8 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "No interrupts active">`:
+   \   00000000   0x4E 0x6F          DC8 "No interrupts active"
+   \              0x20 0x69    
+   \              0x6E 0x74    
+   \              0x65 0x72    
+   \              0x72 0x75    
+   \              0x70 0x74    
+   \              0x73 0x20    
+   \              0x61 0x63    
+   \              0x74 0x69    
+   \              0x76 0x65    
+   \              0x00         
+   \   00000015   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Reset cause: Watchdog...">`:
+   \   00000000   0x52 0x65          DC8 52H, 65H, 73H, 65H, 74H, 20H, 63H, 61H
+   \              0x73 0x65    
+   \              0x74 0x20    
+   \              0x63 0x61    
+   \   00000008   0x75 0x73          DC8 75H, 73H, 65H, 3AH, 20H, 57H, 61H, 74H
+   \              0x65 0x3A    
+   \              0x20 0x57    
+   \              0x61 0x74    
+   \   00000010   0x63 0x68          DC8 63H, 68H, 64H, 6FH, 67H, 20H, 65H, 78H
+   \              0x64 0x6F    
+   \              0x67 0x20    
+   \              0x65 0x78    
+   \   00000018   0x70 0x69          DC8 70H, 69H, 72H, 65H, 64H, 2CH, 20H, 6EH
+   \              0x72 0x65    
+   \              0x64 0x2C    
+   \              0x20 0x6E    
+   \   00000020   0x6F 0x20          DC8 6FH, 20H, 72H, 65H, 6CH, 69H, 61H, 62H
+   \              0x72 0x65    
+   \              0x6C 0x69    
+   \              0x61 0x62    
+   \   00000028   0x6C 0x65          DC8 6CH, 65H, 20H, 65H, 78H, 74H, 72H, 61H
+   \              0x20 0x65    
+   \              0x78 0x74    
+   \              0x72 0x61    
+   \   00000030   0x20 0x69          DC8 20H, 69H, 6EH, 66H, 6FH, 72H, 6DH, 61H
+   \              0x6E 0x66    
+   \              0x6F 0x72    
+   \              0x6D 0x61    
+   \   00000038   0x74 0x69          DC8 74H, 69H, 6FH, 6EH, 0
+   \              0x6F 0x6E    
+   \              0x00         
+   \   0000003D   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Reset cause: Watchdog...">_1`:
+   \   00000000   0x52 0x65          DC8 "Reset cause: Watchdog caught with enhanced info"
+   \              0x73 0x65    
+   \              0x74 0x20    
+   \              0x63 0x61    
+   \              0x75 0x73    
+   \              0x65 0x3A    
+   \              0x20 0x57    
+   \              0x61 0x74    
+   \              0x63 0x68    
+   \              0x64 0x6F    
+   \              0x67 0x20    
+   \              0x63 0x61    
+   \              0x75 0x67    
+   \              0x68 0x74    
+   \              0x20 0x77    
+   \              0x69 0x74    
+   \              0x68 0x20    
+   \              0x65 0x6E    
+   \              0x68 0x61    
+   \              0x6E 0x63    
+   \              0x65 0x64    
+   \              0x20 0x69    
+   \              0x6E 0x66    
+   \              0x6F 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Instruction address: %4x">`:
+   \   00000000   0x49 0x6E          DC8 "Instruction address: %4x"
+   \              0x73 0x74    
+   \              0x72 0x75    
+   \              0x63 0x74    
+   \              0x69 0x6F    
+   \              0x6E 0x20    
+   \              0x61 0x64    
+   \              0x64 0x72    
+   \              0x65 0x73    
+   \              0x73 0x3A    
+   \              0x20 0x25    
+   \              0x34 0x78    
+   \              0x00         
+   \   00000019   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "SC1 Rx">`:
+   \   00000000   0x53 0x43          DC8 "SC1 Rx"
+   \              0x31 0x20    
+   \              0x52 0x78    
+   \              0x00         
+   \   00000007   0x00               DC8 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "MAC Rx">`:
+   \   00000000   0x4D 0x41          DC8 "MAC Rx"
+   \              0x43 0x20    
+   \              0x52 0x78    
+   \              0x00         
+   \   00000007   0x00               DC8 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "SC2 Rx">`:
+   \   00000000   0x53 0x43          DC8 "SC2 Rx"
+   \              0x32 0x20    
+   \              0x52 0x78    
+   \              0x00         
+   \   00000007   0x00               DC8 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Reset cause: DMA prot...">`:
+   \   00000000   0x52 0x65          DC8 "Reset cause: DMA protection violation"
+   \              0x73 0x65    
+   \              0x74 0x20    
+   \              0x63 0x61    
+   \              0x75 0x73    
+   \              0x65 0x3A    
+   \              0x20 0x44    
+   \              0x4D 0x41    
+   \              0x20 0x70    
+   \              0x72 0x6F    
+   \              0x74 0x65    
+   \              0x63 0x74    
+   \              0x69 0x6F    
+   \              0x6E 0x20    
+   \              0x76 0x69    
+   \              0x6F 0x6C    
+   \              0x61 0x74    
+   \              0x69 0x6F    
+   \              0x6E 0x00    
+   \   00000026   0x00 0x00          DC8 0, 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "DMA: %p, address: %4x">`:
+   \   00000000   0x44 0x4D          DC8 "DMA: %p, address: %4x"
+   \              0x41 0x3A    
+   \              0x20 0x25    
+   \              0x70 0x2C    
+   \              0x20 0x61    
+   \              0x64 0x64    
+   \              0x72 0x65    
+   \              0x73 0x73    
+   \              0x3A 0x20    
+   \              0x25 0x34    
+   \              0x78 0x00    
+   \   00000016   0x00 0x00          DC8 0, 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Reset cause: Assert %...">`:
+   \   00000000   0x52 0x65          DC8 "Reset cause: Assert %p:%d"
+   \              0x73 0x65    
+   \              0x74 0x20    
+   \              0x63 0x61    
+   \              0x75 0x73    
+   \              0x65 0x3A    
+   \              0x20 0x41    
+   \              0x73 0x73    
+   \              0x65 0x72    
+   \              0x74 0x20    
+   \              0x25 0x70    
+   \              0x3A 0x25    
+   \              0x64 0x00    
+   \   0000001A   0x00 0x00          DC8 0, 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Reset cause: Hard Fault">`:
+   \   00000000   0x52 0x65          DC8 "Reset cause: Hard Fault"
+   \              0x73 0x65    
+   \              0x74 0x20    
+   \              0x63 0x61    
+   \              0x75 0x73    
+   \              0x65 0x3A    
+   \              0x20 0x48    
+   \              0x61 0x72    
+   \              0x64 0x20    
+   \              0x46 0x61    
+   \              0x75 0x6C    
+   \              0x74 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "HFSR.VECTTBL: error r...">`:
+   \   00000000   0x48 0x46          DC8 48H, 46H, 53H, 52H, 2EH, 56H, 45H, 43H
+   \              0x53 0x52    
+   \              0x2E 0x56    
+   \              0x45 0x43    
+   \   00000008   0x54 0x54          DC8 54H, 54H, 42H, 4CH, 3AH, 20H, 65H, 72H
+   \              0x42 0x4C    
+   \              0x3A 0x20    
+   \              0x65 0x72    
+   \   00000010   0x72 0x6F          DC8 72H, 6FH, 72H, 20H, 72H, 65H, 61H, 64H
+   \              0x72 0x20    
+   \              0x72 0x65    
+   \              0x61 0x64    
+   \   00000018   0x69 0x6E          DC8 69H, 6EH, 67H, 20H, 76H, 65H, 63H, 74H
+   \              0x67 0x20    
+   \              0x76 0x65    
+   \              0x63 0x74    
+   \   00000020   0x6F 0x72          DC8 6FH, 72H, 20H, 74H, 61H, 62H, 6CH, 65H
+   \              0x20 0x74    
+   \              0x61 0x62    
+   \              0x6C 0x65    
+   \   00000028   0x20 0x66          DC8 20H, 66H, 6FH, 72H, 20H, 61H, 6EH, 20H
+   \              0x6F 0x72    
+   \              0x20 0x61    
+   \              0x6E 0x20    
+   \   00000030   0x65 0x78          DC8 65H, 78H, 63H, 65H, 70H, 74H, 69H, 6FH
+   \              0x63 0x65    
+   \              0x70 0x74    
+   \              0x69 0x6F    
+   \   00000038   0x6E 0x00          DC8 6EH, 0
+   \   0000003A   0x00 0x00          DC8 0, 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "HFSR.FORCED: configur...">`:
+   \   00000000   0x48 0x46          DC8 48H, 46H, 53H, 52H, 2EH, 46H, 4FH, 52H
+   \              0x53 0x52    
+   \              0x2E 0x46    
+   \              0x4F 0x52    
+   \   00000008   0x43 0x45          DC8 43H, 45H, 44H, 3AH, 20H, 63H, 6FH, 6EH
+   \              0x44 0x3A    
+   \              0x20 0x63    
+   \              0x6F 0x6E    
+   \   00000010   0x66 0x69          DC8 66H, 69H, 67H, 75H, 72H, 61H, 62H, 6CH
+   \              0x67 0x75    
+   \              0x72 0x61    
+   \              0x62 0x6C    
+   \   00000018   0x65 0x20          DC8 65H, 20H, 66H, 61H, 75H, 6CH, 74H, 20H
+   \              0x66 0x61    
+   \              0x75 0x6C    
+   \              0x74 0x20    
+   \   00000020   0x63 0x6F          DC8 63H, 6FH, 75H, 6CH, 64H, 20H, 6EH, 6FH
+   \              0x75 0x6C    
+   \              0x64 0x20    
+   \              0x6E 0x6F    
+   \   00000028   0x74 0x20          DC8 74H, 20H, 61H, 63H, 74H, 69H, 76H, 61H
+   \              0x61 0x63    
+   \              0x74 0x69    
+   \              0x76 0x61    
+   \   00000030   0x74 0x65          DC8 74H, 65H, 0
+   \              0x00         
+   \   00000033   0x00               DC8 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "HFSR.DEBUGEVT: fault ...">`:
+   \   00000000   0x48 0x46          DC8 48H, 46H, 53H, 52H, 2EH, 44H, 45H, 42H
+   \              0x53 0x52    
+   \              0x2E 0x44    
+   \              0x45 0x42    
+   \   00000008   0x55 0x47          DC8 55H, 47H, 45H, 56H, 54H, 3AH, 20H, 66H
+   \              0x45 0x56    
+   \              0x54 0x3A    
+   \              0x20 0x66    
+   \   00000010   0x61 0x75          DC8 61H, 75H, 6CH, 74H, 20H, 72H, 65H, 6CH
+   \              0x6C 0x74    
+   \              0x20 0x72    
+   \              0x65 0x6C    
+   \   00000018   0x61 0x74          DC8 61H, 74H, 65H, 64H, 20H, 74H, 6FH, 20H
+   \              0x65 0x64    
+   \              0x20 0x74    
+   \              0x6F 0x20    
+   \   00000020   0x64 0x65          DC8 64H, 65H, 62H, 75H, 67H, 20H, 2DH, 20H
+   \              0x62 0x75    
+   \              0x67 0x20    
+   \              0x2D 0x20    
+   \   00000028   0x65 0x2E          DC8 65H, 2EH, 67H, 2EH, 2CH, 20H, 65H, 78H
+   \              0x67 0x2E    
+   \              0x2C 0x20    
+   \              0x65 0x78    
+   \   00000030   0x65 0x63          DC8 65H, 63H, 75H, 74H, 65H, 64H, 20H, 42H
+   \              0x75 0x74    
+   \              0x65 0x64    
+   \              0x20 0x42    
+   \   00000038   0x4B 0x50          DC8 4BH, 50H, 54H, 0
+   \              0x54 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Reset cause: Memory M...">`:
+   \   00000000   0x52 0x65          DC8 "Reset cause: Memory Management Fault"
+   \              0x73 0x65    
+   \              0x74 0x20    
+   \              0x63 0x61    
+   \              0x75 0x73    
+   \              0x65 0x3A    
+   \              0x20 0x4D    
+   \              0x65 0x6D    
+   \              0x6F 0x72    
+   \              0x79 0x20    
+   \              0x4D 0x61    
+   \              0x6E 0x61    
+   \              0x67 0x65    
+   \              0x6D 0x65    
+   \              0x6E 0x74    
+   \              0x20 0x46    
+   \              0x61 0x75    
+   \              0x6C 0x74    
+   \              0x00         
+   \   00000025   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Illegal access addres...">`:
+   \   00000000   0x49 0x6C          DC8 "Illegal access address: %4x"
+   \              0x6C 0x65    
+   \              0x67 0x61    
+   \              0x6C 0x20    
+   \              0x61 0x63    
+   \              0x63 0x65    
+   \              0x73 0x73    
+   \              0x20 0x61    
+   \              0x64 0x64    
+   \              0x72 0x65    
+   \              0x73 0x73    
+   \              0x3A 0x20    
+   \              0x25 0x34    
+   \              0x78 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "CFSR.%p">`:
+   \   00000000   0x43 0x46          DC8 "CFSR.%p"
+   \              0x53 0x52    
+   \              0x2E 0x25    
+   \              0x70 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Reset cause: Bus Fault">`:
+   \   00000000   0x52 0x65          DC8 "Reset cause: Bus Fault"
+   \              0x73 0x65    
+   \              0x74 0x20    
+   \              0x63 0x61    
+   \              0x75 0x73    
+   \              0x65 0x3A    
+   \              0x20 0x42    
+   \              0x75 0x73    
+   \              0x20 0x46    
+   \              0x61 0x75    
+   \              0x6C 0x74    
+   \              0x00         
+   \   00000017   0x00               DC8 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Address is of an inst...">`:
+   \   00000000   0x41 0x64          DC8 41H, 64H, 64H, 72H, 65H, 73H, 73H, 20H
+   \              0x64 0x72    
+   \              0x65 0x73    
+   \              0x73 0x20    
+   \   00000008   0x69 0x73          DC8 69H, 73H, 20H, 6FH, 66H, 20H, 61H, 6EH
+   \              0x20 0x6F    
+   \              0x66 0x20    
+   \              0x61 0x6E    
+   \   00000010   0x20 0x69          DC8 20H, 69H, 6EH, 73H, 74H, 72H, 75H, 63H
+   \              0x6E 0x73    
+   \              0x74 0x72    
+   \              0x75 0x63    
+   \   00000018   0x74 0x69          DC8 74H, 69H, 6FH, 6EH, 20H, 61H, 66H, 74H
+   \              0x6F 0x6E    
+   \              0x20 0x61    
+   \              0x66 0x74    
+   \   00000020   0x65 0x72          DC8 65H, 72H, 20H, 62H, 75H, 73H, 20H, 66H
+   \              0x20 0x62    
+   \              0x75 0x73    
+   \              0x20 0x66    
+   \   00000028   0x61 0x75          DC8 61H, 75H, 6CH, 74H, 20H, 6FH, 63H, 63H
+   \              0x6C 0x74    
+   \              0x20 0x6F    
+   \              0x63 0x63    
+   \   00000030   0x75 0x72          DC8 75H, 72H, 72H, 65H, 64H, 2CH, 20H, 6EH
+   \              0x72 0x65    
+   \              0x64 0x2C    
+   \              0x20 0x6E    
+   \   00000038   0x6F 0x74          DC8 6FH, 74H, 20H, 74H, 68H, 65H, 20H, 63H
+   \              0x20 0x74    
+   \              0x68 0x65    
+   \              0x20 0x63    
+   \   00000040   0x61 0x75          DC8 61H, 75H, 73H, 65H, 2EH, 0
+   \              0x73 0x65    
+   \              0x2E 0x00    
+   \   00000046   0x00 0x00          DC8 0, 0
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "CFSR.(none) load or s...">`:
+   \   00000000   0x43 0x46          DC8 "CFSR.(none) load or store at an illegal address"
+   \              0x53 0x52    
+   \              0x2E 0x28    
+   \              0x6E 0x6F    
+   \              0x6E 0x65    
+   \              0x29 0x20    
+   \              0x6C 0x6F    
+   \              0x61 0x64    
+   \              0x20 0x6F    
+   \              0x72 0x20    
+   \              0x73 0x74    
+   \              0x6F 0x72    
+   \              0x65 0x20    
+   \              0x61 0x74    
+   \              0x20 0x61    
+   \              0x6E 0x20    
+   \              0x69 0x6C    
+   \              0x6C 0x65    
+   \              0x67 0x61    
+   \              0x6C 0x20    
+   \              0x61 0x64    
+   \              0x64 0x72    
+   \              0x65 0x73    
+   \              0x73 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "AFSR.%p">`:
+   \   00000000   0x41 0x46          DC8 "AFSR.%p"
+   \              0x53 0x52    
+   \              0x2E 0x25    
+   \              0x70 0x00    
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Reset cause: Usage Fault">`:
+   \   00000000   0x52 0x65          DC8 "Reset cause: Usage Fault"
+   \              0x73 0x65    
+   \              0x74 0x20    
+   \              0x63 0x61    
+   \              0x75 0x73    
+   \              0x65 0x3A    
+   \              0x20 0x55    
+   \              0x73 0x61    
+   \              0x67 0x65    
+   \              0x20 0x46    
+   \              0x61 0x75    
+   \              0x6C 0x74    
+   \              0x00         
+   \   00000019   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Reset cause: Debug Mo...">`:
+   \   00000000   0x52 0x65          DC8 "Reset cause: Debug Monitor Fault"
+   \              0x73 0x65    
+   \              0x74 0x20    
+   \              0x63 0x61    
+   \              0x75 0x73    
+   \              0x65 0x3A    
+   \              0x20 0x44    
+   \              0x65 0x62    
+   \              0x75 0x67    
+   \              0x20 0x4D    
+   \              0x6F 0x6E    
+   \              0x69 0x74    
+   \              0x6F 0x72    
+   \              0x20 0x46    
+   \              0x61 0x75    
+   \              0x6C 0x74    
+   \              0x00         
+   \   00000021   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "%p = %4x">`:
+   \   00000000   0x25 0x70          DC8 "%p = %4x"
+   \              0x20 0x3D    
+   \              0x20 0x25    
+   \              0x34 0x78    
+   \              0x00         
+   \   00000009   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   halGetPCDiagnostics
+      32   halPrintCrashData
+        32   -> emberSerialPrintf
+        32   -> emberSerialWaitSend
+      32   halPrintCrashDetails
+        32   -> emberSerialPrintfLine
+         0   -> emberSerialWaitSend
+        32   -> halGetExtendedResetInfo
+      56   halPrintCrashSummary
+         0   -> emberSerialPrintCarriageReturn
+        56   -> emberSerialPrintf
+         0   -> emberSerialPrintfLine
+        56   -> emberSerialPrintfLine
+        56   -> emberSerialWaitSend
+       0   halStartPCDiagnostics
+       0   halStopPCDiagnostics
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ?<Constant " %p">
+       1  ?<Constant "">
+      12  ?<Constant "%p = %4x">
+      48  ?<Constant "%p mode using %p stac...">
+      60  ?<Constant "%u bytes used (%u%%) ...">
+       4  ?<Constant ", ">
+       4  ?<Constant "??">
+       4  ?<Constant "ADC">
+       8  ?<Constant "AFSR.%p">
+      72  ?<Constant "Address is of an inst...">
+      48  ?<Constant "BFARVALID: BFAR conta...">
+      12  ?<Constant "Baseband">
+       8  ?<Constant "CFSR.%p">
+      48  ?<Constant "CFSR.(none) load or s...">
+      56  ?<Constant "DACCVIOL: attempted l...">
+      64  ?<Constant "DIVBYZERO: attempted ...">
+      24  ?<Constant "DMA: %p, address: %4x">
+       8  ?<Constant "Debug">
+      60  ?<Constant "HFSR.DEBUGEVT: fault ...">
+      52  ?<Constant "HFSR.FORCED: configur...">
+      60  ?<Constant "HFSR.VECTTBL: error r...">
+       8  ?<Constant "Handler">
+      64  ?<Constant "IACCVIOL: attempted i...">
+      48  ?<Constant "IBUSERR: instruction ...">
+      40  ?<Constant "IMPRECISERR: imprecis...">
+      48  ?<Constant "INVPC: exception retu...">
+      60  ?<Constant "INVSTATE: invalid EPS...">
+       8  ?<Constant "IRQ_A">
+       8  ?<Constant "IRQ_B">
+       8  ?<Constant "IRQ_C">
+       8  ?<Constant "IRQ_D">
+      28  ?<Constant "Illegal access addres...">
+      28  ?<Constant "Instruction address: %4x">
+      48  ?<Constant "Interrupts active (or...">
+       8  ?<Constant "MAC Rx">
+       8  ?<Constant "MAC_RX">
+       8  ?<Constant "MAC_TX">
+      12  ?<Constant "MAC_Timer">
+      48  ?<Constant "MMARVALID: MMAR conta...">
+      60  ?<Constant "MSTKERR: stacking fro...">
+      68  ?<Constant "MUNSTKERR: unstack fr...">
+      12  ?<Constant "Management">
+      56  ?<Constant "NOCP: attempted to ex...">
+      24  ?<Constant "No interrupts active">
+      36  ?<Constant "PRECISERR: precise da...">
+      64  ?<Constant "PROTECTED: attempted ...">
+      68  ?<Constant "RESERVED: attempted a...">
+      28  ?<Constant "Reset cause: Assert %...">
+      24  ?<Constant "Reset cause: Bus Fault">
+      40  ?<Constant "Reset cause: DMA prot...">
+      36  ?<Constant "Reset cause: Debug Mo...">
+      24  ?<Constant "Reset cause: Hard Fault">
+      40  ?<Constant "Reset cause: Memory M...">
+      28  ?<Constant "Reset cause: Usage Fault">
+      64  ?<Constant "Reset cause: Watchdog...">
+      48  ?<Constant "Reset cause: Watchdog...">_1
+       8  ?<Constant "SC1 Rx">
+       4  ?<Constant "SC1">
+       8  ?<Constant "SC2 Rx">
+       4  ?<Constant "SC2">
+      32  ?<Constant "SP is outside %p stac...">
+      60  ?<Constant "STKERR: stacking on e...">
+      12  ?<Constant "Security">
+      12  ?<Constant "Sleep_Timer">
+      44  ?<Constant "Stack _may_ have used...">
+       8  ?<Constant "Thread">
+       8  ?<Constant "Timer1">
+       8  ?<Constant "Timer2">
+      48  ?<Constant "UNALIGNED: attempted ...">
+      56  ?<Constant "UNDEFINSTR: tried to ...">
+      64  ?<Constant "UNSTKERR: unstacking ...">
+      60  ?<Constant "WRONGSIZE: attempted ...">
+       4  ?<Constant "\r\n">
+       8  ?<Constant "main">
+       8  ?<Constant "process">
+       4  ??DataTable81
+       4  ??DataTable81_1
+       4  ??DataTable81_2
+       4  ??DataTable81_3
+       4  ??DataTable81_4
+       4  ??DataTable81_5
+       4  ??DataTable81_6
+       4  ??DataTable81_7
+       4  ??DataTable81_8
+      10  ?Subroutine0
+       6  ?Subroutine1
+       8  ?Subroutine2
+      16  afsrBits
+     104  cfsrBits
+       4  halGetPCDiagnostics
+      92  halPrintCrashData
+     494  halPrintCrashDetails
+     276  halPrintCrashSummary
+       2  halStartPCDiagnostics
+       2  halStopPCDiagnostics
+      68  intActiveBits
+     192  nameStrings
+
+ 
+ 1 277 bytes in section .rodata
+ 2 354 bytes in section .text
+ 
+ 2 354 bytes of CODE  memory
+ 1 277 bytes of CONST memory
+
+Errors: none
+Warnings: none

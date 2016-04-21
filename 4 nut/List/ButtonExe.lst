@@ -1,0 +1,482 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        19/Apr/2016  16:28:28
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ButtonExe.c
+#    Command line =  
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ButtonExe.c"
+#        -D SWITCH_4_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"ButtonExe.c\"" -lC "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\List\" --diag_suppress Pa050 -o "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\Obj\" --debug --endian=little --cpu=Cortex-M3
+#        --no_path_in_file_macros --separate_cluster_for_initialized_variables
+#        -e --fpu=None --dlib_config "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\"
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\List\ButtonExe.lst
+#    Object file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\Obj\ButtonExe.o
+#
+###############################################################################
+
+D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ButtonExe.c
+      1          
+      2          
+      3          
+      4          
+      5          //-----------------------------Khai bao thu vien---------------------//
+      6          
+      7          
+      8          #include "app/framework/include/af.h"
+      9          #include "ButtonExe.h"
+     10          #include "task.h"
+     11          #include "UART_task.h"
+     12          #include "halDelay.h"
+     13          
+     14          //-----------------------------Khai bao bien-------------------------//
+     15          
+
+   \                                 In section .bss, align 2
+     16          int16u ReleaseLongHoldTime = 0;
+     17          int8u ButtonLongHoldFlag;
+   \                     ButtonLongHoldFlag:
+   \   00000000                      DS8 1
+   \   00000001                      DS8 1
+   \                     ReleaseLongHoldTime:
+   \   00000002                      DS8 2
+     18          
+     19          
+     20          //---------------------Enum--------------------//
+     21          
+     22          
+     23          
+     24          //---------------------Struct------------------//
+     25          
+     26          
+     27          
+     28          //------------------------------Xu li chuong trinh-------------------//
+     29          
+     30          
+     31          
+     32          
+     33          
+
+   \                                 In section .text, align 2, keep-with-next
+     34          void beButtonPress (unsigned char ButtonNumber){
+     35          }
+   \                     beButtonPress: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+     36          
+
+   \                                 In section .text, align 2, keep-with-next
+     37          void beButtonPress3Time(int8u ButtonNumber){
+   \                     beButtonPress3Time: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+     38          //	EmberNetworkStatus NetworkStatus;
+     39          //	NetworkStatus = emberAfNetworkState();
+     40          //
+     41          //
+     42          //	if(NetworkStatus == EMBER_NO_NETWORK){
+     43          ////		if no network -> network join
+     44          ////		CallJoinTask(10,6000);
+     45          //        ClearAllBlinkTask();
+     46          //		UartSendBlinkLed(0x0F,2);
+     47          //	}
+     48          //	else if (NetworkStatus == EMBER_JOINED_NETWORK){
+     49          ////		if had network -> network leave
+     50          //		emberLeaveNetwork();
+     51          ////		include clear bindTable;
+     52          //		emberClearBindingTable();
+     53          ////		Clear all Blinkled before new Blink
+     54          //
+     55          ////		Led Flash to display Network Leave success
+     56          //		UartSendBlinkLed(0x0F,2);
+     57          //
+     58          //	}
+     59          	UartSendPinkLed(0x0F);
+   \   00000002   0x200F             MOVS     R0,#+15
+   \   00000004   0x.... 0x....      BL       UartSendPinkLed
+     60          	ReleaseLongHoldTime =  (int16u)halCommonGetInt32uMillisecondTick();
+   \   00000008   0x....             LDR.N    R4,??DataTable2
+   \   0000000A   0x.... 0x....      BL       halCommonGetInt32uMillisecondTick
+   \   0000000E   0x8060             STRH     R0,[R4, #+2]
+     61          	ButtonLongHoldFlag = 1;
+   \   00000010   0x2001             MOVS     R0,#+1
+   \   00000012   0x7020             STRB     R0,[R4, #+0]
+     62          
+     63          }
+   \   00000014   0xBD10             POP      {R4,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+     64          void beButtonRealease(int8u ButtonNumber){
+   \                     beButtonRealease: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+     65          	if(ButtonLongHoldFlag == 1){
+   \   00000002   0x....             LDR.N    R4,??DataTable2
+   \   00000004   0x7820             LDRB     R0,[R4, #+0]
+   \   00000006   0x2801             CMP      R0,#+1
+   \   00000008   0xD110             BNE.N    ??beButtonRealease_0
+     66          		if(CommonGetDurationTime(ReleaseLongHoldTime) < 1000){
+   \   0000000A   0x8860             LDRH     R0,[R4, #+2]
+   \   0000000C   0x.... 0x....      BL       CommonGetDurationTime
+   \   00000010   0xF5B0 0x7F7A      CMP      R0,#+1000
+   \   00000014   0xDA08             BGE.N    ??beButtonRealease_1
+     67          			emberLeaveNetwork();
+   \   00000016   0x.... 0x....      BL       emberLeaveNetwork
+     68          			emberClearBindingTable();
+   \   0000001A   0x.... 0x....      BL       emberClearBindingTable
+     69          //			UartSendBlinkLed(0x0F,2);
+     70          			CallResetMCU(500);
+   \   0000001E   0xF44F 0x70FA      MOV      R0,#+500
+   \   00000022   0x.... 0x....      BL       CallResetMCU
+   \   00000026   0xE001             B.N      ??beButtonRealease_0
+     71          		}
+     72          		else{
+     73          			UartSendRefreshAllLed();
+   \                     ??beButtonRealease_1: (+1)
+   \   00000028   0x.... 0x....      BL       UartSendRefreshAllLed
+     74          		}
+     75          	}
+     76          	ButtonLongHoldFlag  = 0;
+   \                     ??beButtonRealease_0: (+1)
+   \   0000002C   0x2000             MOVS     R0,#+0
+   \   0000002E   0x7020             STRB     R0,[R4, #+0]
+     77          }
+   \   00000030   0xBD10             POP      {R4,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+     78          void beButtonPress2Time(int8u ButtonNumber){
+     79          //		Creat Simple Bind Request ButtonNumber is the Endpoint Bind
+     80          // 		Send Pink State to Led
+     81          //		When Bind done clear Led by func ZDO response Bind Success call back.
+     82          //		emberAfSendEndDeviceBind(ButtonNumber);
+     83          //		UartSendSpecialLedNumber(ButtonNumber, PinkState);
+     84          
+     85          }
+   \                     beButtonPress2Time: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+     86          
+
+   \                                 In section .text, align 2, keep-with-next
+     87          void CommonSetLed(int8u LedNumber){
+     88          
+     89          	switch (LedNumber){
+   \                     CommonSetLed: (+1)
+   \   00000000   0x2801             CMP      R0,#+1
+   \   00000002   0xD004             BEQ.N    ??CommonSetLed_0
+   \   00000004   0xD30A             BCC.N    ??CommonSetLed_1
+   \   00000006   0x2803             CMP      R0,#+3
+   \   00000008   0xD005             BEQ.N    ??CommonSetLed_2
+   \   0000000A   0xD302             BCC.N    ??CommonSetLed_3
+   \   0000000C   0x4770             BX       LR
+     90          		case 1: halSetLed(BOARDLED0);
+   \                     ??CommonSetLed_0: (+1)
+   \   0000000E   0x2015             MOVS     R0,#+21
+   \   00000010   0xE002             B.N      ??CommonSetLed_4
+     91          			break;
+     92          		case 2: halSetLed(BOARDLED1);
+   \                     ??CommonSetLed_3: (+1)
+   \   00000012   0x2016             MOVS     R0,#+22
+   \   00000014   0xE000             B.N      ??CommonSetLed_4
+     93          			break;
+     94          		case 3: halSetLed(BOARDLED2);
+   \                     ??CommonSetLed_2: (+1)
+   \   00000016   0x2017             MOVS     R0,#+23
+   \                     ??CommonSetLed_4: (+1)
+   \   00000018   0x.... 0x....      B.W      halSetLed
+     95          			break;
+     96          		default:
+     97          			break;
+     98          	}
+     99          }
+   \                     ??CommonSetLed_1: (+1)
+   \   0000001C   0x4770             BX       LR               ;; return
+    100          
+
+   \                                 In section .text, align 2, keep-with-next
+    101          void CommonClearLed(int8u LedNumber){
+    102          
+    103          	switch (LedNumber){
+   \                     CommonClearLed: (+1)
+   \   00000000   0x2801             CMP      R0,#+1
+   \   00000002   0xD004             BEQ.N    ??CommonClearLed_0
+   \   00000004   0xD30A             BCC.N    ??CommonClearLed_1
+   \   00000006   0x2803             CMP      R0,#+3
+   \   00000008   0xD005             BEQ.N    ??CommonClearLed_2
+   \   0000000A   0xD302             BCC.N    ??CommonClearLed_3
+   \   0000000C   0x4770             BX       LR
+    104          		case 1: halClearLed(BOARDLED0);
+   \                     ??CommonClearLed_0: (+1)
+   \   0000000E   0x2015             MOVS     R0,#+21
+   \   00000010   0xE002             B.N      ??CommonClearLed_4
+    105          			break;
+    106          		case 2: halClearLed(BOARDLED1);
+   \                     ??CommonClearLed_3: (+1)
+   \   00000012   0x2016             MOVS     R0,#+22
+   \   00000014   0xE000             B.N      ??CommonClearLed_4
+    107          			break;
+    108          		case 3: halClearLed(BOARDLED2);
+   \                     ??CommonClearLed_2: (+1)
+   \   00000016   0x2017             MOVS     R0,#+23
+   \                     ??CommonClearLed_4: (+1)
+   \   00000018   0x.... 0x....      B.W      halClearLed
+    109          			break;
+    110          		default:
+    111          			break;
+    112          	}
+    113          }
+   \                     ??CommonClearLed_1: (+1)
+   \   0000001C   0x4770             BX       LR               ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    114          void CommonLedRefresh(void){
+   \                     CommonLedRefresh: (+1)
+   \   00000000   0xB51C             PUSH     {R2-R4,LR}
+    115          	EmberAfStatus readStatus;
+    116          	int8u LedStatus;
+    117          	int8u i;
+    118          	for(i=1;i<4;i++){
+   \   00000002   0x2401             MOVS     R4,#+1
+    119          		readStatus = emberAfReadServerAttribute(i,
+    120          			ZCL_ON_OFF_CLUSTER_ID, ZCL_ON_OFF_ATTRIBUTE_ID, &LedStatus, sizeof(LedStatus));
+    121          		if(readStatus == EMBER_ZCL_STATUS_SUCCESS){
+   \                     ??CommonLedRefresh_0: (+1)
+   \   00000004   0x2001             MOVS     R0,#+1
+   \   00000006   0x9000             STR      R0,[SP, #+0]
+   \   00000008   0xAB01             ADD      R3,SP,#+4
+   \   0000000A   0x2200             MOVS     R2,#+0
+   \   0000000C   0x2106             MOVS     R1,#+6
+   \   0000000E   0x4620             MOV      R0,R4
+   \   00000010   0x.... 0x....      BL       emberAfReadServerAttribute
+   \   00000014   0xB948             CBNZ.N   R0,??CommonLedRefresh_1
+    122          			if(LedStatus == 1){
+   \   00000016   0xF89D 0x0004      LDRB     R0,[SP, #+4]
+   \   0000001A   0x2801             CMP      R0,#+1
+   \   0000001C   0x4620             MOV      R0,R4
+   \   0000001E   0xD102             BNE.N    ??CommonLedRefresh_2
+    123          				CommonSetLed(i);
+   \   00000020   0x.... 0x....      BL       CommonSetLed
+   \   00000024   0xE001             B.N      ??CommonLedRefresh_1
+    124          			}
+    125          			else{
+    126          				CommonClearLed(i);
+   \                     ??CommonLedRefresh_2: (+1)
+   \   00000026   0x.... 0x....      BL       CommonClearLed
+    127          			}
+    128          		}
+    129          	}
+   \                     ??CommonLedRefresh_1: (+1)
+   \   0000002A   0x1C64             ADDS     R4,R4,#+1
+   \   0000002C   0x2C04             CMP      R4,#+4
+   \   0000002E   0xDBE9             BLT.N    ??CommonLedRefresh_0
+    130          }
+   \   00000030   0xBD13             POP      {R0,R1,R4,PC}    ;; return
+    131          
+    132          
+
+   \                                 In section .text, align 2, keep-with-next
+    133          void TestUART(void){
+   \                     TestUART: (+1)
+   \   00000000   0xB500             PUSH     {LR}
+   \   00000002   0xB0A1             SUB      SP,SP,#+132
+    134          	int16u NumberOfByteReCeiver;
+    135          	int8u ReadSerialData[128] ={0};
+   \   00000004   0xA800             ADD      R0,SP,#+0
+   \   00000006   0x2180             MOVS     R1,#+128
+   \   00000008   0x.... 0x....      BL       __aeabi_memclr4
+    136          	int8u ReadStatus;
+    137          
+    138          	NumberOfByteReCeiver = emberSerialReadAvailable (1);
+    139          	if(NumberOfByteReCeiver > 0){
+   \   0000000C   0x2001             MOVS     R0,#+1
+   \   0000000E   0x.... 0x....      BL       emberSerialReadAvailable
+   \   00000012   0xB148             CBZ.N    R0,??TestUART_0
+    140          		ReadStatus = emberSerialReadByte(1, ReadSerialData);
+    141          		if(ReadStatus == EMBER_SUCCESS){
+   \   00000014   0xA900             ADD      R1,SP,#+0
+   \   00000016   0x2001             MOVS     R0,#+1
+   \   00000018   0x.... 0x....      BL       emberSerialReadByte
+   \   0000001C   0xB920             CBNZ.N   R0,??TestUART_0
+    142          			emberSerialWriteData(1,ReadSerialData, 1);
+   \   0000001E   0x2201             MOVS     R2,#+1
+   \   00000020   0xA900             ADD      R1,SP,#+0
+   \   00000022   0x2001             MOVS     R0,#+1
+   \   00000024   0x.... 0x....      BL       emberSerialWriteData
+    143          		}
+    144          	}
+    145          }
+   \                     ??TestUART_0: (+1)
+   \   00000028   0xB021             ADD      SP,SP,#+132
+   \   0000002A   0xBD00             POP      {PC}             ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2:
+   \   00000000   0x........         DC32     ButtonLongHoldFlag
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant {0}>`:
+   \   00000000   0x00 0x00          DC8 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00         
+   \   00000011   0x00 0x00          DC8 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \   00000021   0x00 0x00          DC8 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \   00000031   0x00 0x00          DC8 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \   00000041   0x00 0x00          DC8 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \   00000051   0x00 0x00          DC8 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \   00000061   0x00 0x00          DC8 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \   00000071   0x00 0x00          DC8 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00 0x00    
+   \              0x00         
+    146          
+    147          
+    148          
+    149          //------------------------------End File-------------------------//
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   CommonClearLed
+         0   -> halClearLed
+      16   CommonLedRefresh
+        16   -> CommonClearLed
+        16   -> CommonSetLed
+        16   -> emberAfReadServerAttribute
+       0   CommonSetLed
+         0   -> halSetLed
+     136   TestUART
+       136   -> __aeabi_memclr4
+       136   -> emberSerialReadAvailable
+       136   -> emberSerialReadByte
+       136   -> emberSerialWriteData
+       0   beButtonPress
+       0   beButtonPress2Time
+       8   beButtonPress3Time
+         8   -> UartSendPinkLed
+         8   -> halCommonGetInt32uMillisecondTick
+       8   beButtonRealease
+         8   -> CallResetMCU
+         8   -> CommonGetDurationTime
+         8   -> UartSendRefreshAllLed
+         8   -> emberClearBindingTable
+         8   -> emberLeaveNetwork
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+     128  ?<Constant {0}>
+       4  ??DataTable2
+       4  ButtonLongHoldFlag
+          ReleaseLongHoldTime
+      30  CommonClearLed
+      50  CommonLedRefresh
+      30  CommonSetLed
+      44  TestUART
+       2  beButtonPress
+       2  beButtonPress2Time
+      22  beButtonPress3Time
+      50  beButtonRealease
+
+ 
+   4 bytes in section .bss
+ 128 bytes in section .rodata
+ 234 bytes in section .text
+ 
+ 234 bytes of CODE  memory
+ 128 bytes of CONST memory
+   4 bytes of DATA  memory
+
+Errors: none
+Warnings: none

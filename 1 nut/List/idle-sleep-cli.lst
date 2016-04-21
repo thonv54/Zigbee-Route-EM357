@@ -1,0 +1,146 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        18/Apr/2016  13:01:34
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin-soc\idle-sleep\idle-sleep-cli.c
+#    Command line =  
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin-soc\idle-sleep\idle-sleep-cli.c"
+#        -D SWITCH_1_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"idle-sleep-cli.c\"" -lC "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\" --diag_suppress Pa050 -o "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\" --debug --endian=little --cpu=Cortex-M3
+#        --no_path_in_file_macros --separate_cluster_for_initialized_variables
+#        -e --fpu=None --dlib_config "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin-soc\idle-sleep\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\"
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\idle-sleep-cli.lst
+#    Object file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\idle-sleep-cli.o
+#
+###############################################################################
+
+D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin-soc\idle-sleep\idle-sleep-cli.c
+      1          // Copyright 2013 Silicon Laboratories, Inc.
+      2          
+      3          #include "app/framework/include/af.h"
+      4          #include "idle-sleep.h"
+      5          
+      6          #ifndef EMBER_AF_GENERATE_CLI
+      7            #error The Idle/Sleep plugin is not compatible with the legacy CLI.
+      8          #endif
+      9          
+
+   \                                 In section .text, align 2, keep-with-next
+     10          void emberAfPluginIdleSleepStatusCommand(void)
+     11          {
+     12            emberAfCorePrintln("Stay awake when not joined: %p",
+     13                               (emAfStayAwakeWhenNotJoined ? "yes" : "no"));
+     14            emberAfCorePrintln("Forced stay awake:          %p",
+     15                               (emAfForceEndDeviceToStayAwake ? "yes" : "no"));
+     16          }
+   \                     emberAfPluginIdleSleepStatusCommand: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+     17          
+
+   \                                 In section .text, align 2, keep-with-next
+     18          void emberAfPluginIdleSleepStayAwakeCommand(void)
+     19          {
+   \                     emberAfPluginIdleSleepStayAwakeCommand: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     20            boolean stayAwake = (boolean)emberUnsignedCommandArgument(0);
+   \   00000002   0x2000             MOVS     R0,#+0
+   \   00000004   0x.... 0x....      BL       emberUnsignedCommandArgument
+     21            if (stayAwake) {
+     22              emberAfCorePrintln("Forcing device to stay awake");
+     23            } else {
+     24              emberAfCorePrintln("Allowing device to go to sleep");
+     25            }
+     26            emberAfForceEndDeviceToStayAwake(stayAwake);
+   \   00000008   0xE8BD 0x4002      POP      {R1,LR}
+   \   0000000C   0xB2C0             UXTB     R0,R0
+   \   0000000E   0x.... 0x....      B.W      emberAfForceEndDeviceToStayAwake
+     27          }
+     28          
+
+   \                                 In section .text, align 2, keep-with-next
+     29          void emberAfPluginIdleSleepAwakeWhenNotJoinedCommand(void)
+     30          {
+   \                     emberAfPluginIdleSleepAwakeWhenNotJoinedCommand: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     31            emAfStayAwakeWhenNotJoined = (boolean)emberUnsignedCommandArgument(0);
+   \   00000002   0x2000             MOVS     R0,#+0
+   \   00000004   0x.... 0x....      BL       emberUnsignedCommandArgument
+   \   00000008   0x....             LDR.N    R1,??DataTable0
+   \   0000000A   0x7008             STRB     R0,[R1, #+0]
+     32          }
+   \   0000000C   0xBD01             POP      {R0,PC}          ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable0:
+   \   00000000   0x........         DC32     emAfStayAwakeWhenNotJoined
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   emberAfPluginIdleSleepAwakeWhenNotJoinedCommand
+         8   -> emberUnsignedCommandArgument
+       0   emberAfPluginIdleSleepStatusCommand
+       8   emberAfPluginIdleSleepStayAwakeCommand
+         0   -> emberAfForceEndDeviceToStayAwake
+         8   -> emberUnsignedCommandArgument
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable0
+      14  emberAfPluginIdleSleepAwakeWhenNotJoinedCommand
+       2  emberAfPluginIdleSleepStatusCommand
+      18  emberAfPluginIdleSleepStayAwakeCommand
+
+ 
+ 38 bytes in section .text
+ 
+ 38 bytes of CODE memory
+
+Errors: none
+Warnings: none

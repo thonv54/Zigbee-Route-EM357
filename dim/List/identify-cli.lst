@@ -1,0 +1,106 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        22/Oct/2015  09:33:28
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\identify\identify-cli.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\identify\identify-cli.c
+#        -D DIMMER -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"identify-cli.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\identify\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\identify-cli.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\identify-cli.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\identify\identify-cli.c
+      1          // *******************************************************************
+      2          // * identify-cli.c
+      3          // *
+      4          // *
+      5          // * Copyright 2012 by Ember Corporation. All rights reserved.              *80*
+      6          // *******************************************************************
+      7          
+      8          #include "app/framework/include/af.h"
+      9          #include "app/util/serial/command-interpreter2.h"
+     10          
+     11          void emAfPluginIdentifyCliPrint(void);
+     12          
+     13          #if !defined(EMBER_AF_GENERATE_CLI)
+     14          EmberCommandEntry emberAfPluginIdentifyCommands[] = {
+     15            emberCommandEntryAction("print",  emAfPluginIdentifyCliPrint, "", "Print the identify state of each endpoint"),
+     16            emberCommandEntryTerminator(),
+     17          };
+     18          #endif // EMBER_AF_GENERATE_CLI
+     19          
+     20          // plugin identify print
+
+   \                                 In section .text, align 2, keep-with-next
+     21          void emAfPluginIdentifyCliPrint(void) 
+     22          {
+     23          #if defined(EMBER_AF_PRINT_ENABLE) && defined(EMBER_AF_PRINT_IDENTIFY_CLUSTER)
+     24            int8u i;
+     25            for (i = 0; i < emberAfEndpointCount(); ++i) {
+     26              int8u endpoint = emberAfEndpointFromIndex(i);
+     27              emberAfIdentifyClusterPrintln("Endpoint 0x%x is identifying: %p",
+     28                                            endpoint,
+     29                                            (emberAfIsDeviceIdentifying(endpoint)
+     30                                             ? "TRUE"
+     31                                             : "FALSE"));
+     32            }
+     33          #endif //defined(EMBER_AF_PRINT_ENABLE) && defined(EMBER_AF_PRINT_IDENTIFY_CLUSTER)
+     34          }
+   \                     emAfPluginIdentifyCliPrint: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   emAfPluginIdentifyCliPrint
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       2  emAfPluginIdentifyCliPrint
+
+ 
+ 2 bytes in section .text
+ 
+ 2 bytes of CODE memory
+
+Errors: none
+Warnings: none

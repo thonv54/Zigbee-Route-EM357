@@ -1,0 +1,156 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        18/Apr/2016  13:01:14
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\util\attribute-size.c
+#    Command line =  
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\util\attribute-size.c"
+#        -D SWITCH_1_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"attribute-size.c\"" -lC "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\" --diag_suppress Pa050 -o "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\" --debug --endian=little --cpu=Cortex-M3
+#        --no_path_in_file_macros --separate_cluster_for_initialized_variables
+#        -e --fpu=None --dlib_config "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        "D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\util\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\"
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\attribute-size.lst
+#    Object file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\attribute-size.o
+#
+###############################################################################
+
+D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\util\attribute-size.c
+      1           // *******************************************************************
+      2          // * attribute-size.c
+      3          // *
+      4          // * Contains storage and function for retrieving attribute size.
+      5          // *
+      6          // * Copyright 2009 by Ember Corporation. All rights reserved.              *80*
+      7          // *******************************************************************
+      8          
+      9          #include PLATFORM_HEADER
+     10          
+     11          #include "attribute-type.h"
+     12          
+
+   \                                 In section .text, align 4, keep-with-next
+     13          static PGM int8u attributeSizes[] =
+   \                     attributeSizes:
+   \   00000000   0x19 0x02          DC8 25, 2, 27, 4, 29, 6, 31, 8, 24, 1, 16, 1, 8, 1, 49, 2, 48, 1, 240
+   \              0x1B 0x04    
+   \              0x1D 0x06    
+   \              0x1F 0x08    
+   \              0x18 0x01    
+   \              0x10 0x01    
+   \              0x08 0x01    
+   \              0x31 0x02    
+   \              0x30 0x01    
+   \              0xF0         
+   \   00000013   0x08 0x29          DC8 8, 41, 2, 33, 2, 42, 3, 34, 3, 43, 4, 35, 4, 37, 6, 38, 7, 40, 1
+   \              0x02 0x21    
+   \              0x02 0x2A    
+   \              0x03 0x22    
+   \              0x03 0x2B    
+   \              0x04 0x23    
+   \              0x04 0x25    
+   \              0x06 0x26    
+   \              0x07 0x28    
+   \              0x01         
+   \   00000026   0x20 0x01          DC8 32, 1, 241, 16, 224, 4, 226, 4, 0, 0
+   \              0xF1 0x10    
+   \              0xE0 0x04    
+   \              0xE2 0x04    
+   \              0x00 0x00    
+     14          {
+     15          #include "attribute-size.h"
+     16          };
+     17          
+
+   \                                 In section .text, align 2, keep-with-next
+     18          int8u emberAfGetDataSize(int8u dataType) {
+     19            int8u i;
+     20            for (i = 0; (i+1) < sizeof(attributeSizes); i+=2) {
+   \                     emberAfGetDataSize: (+1)
+   \   00000000   0x2100             MOVS     R1,#+0
+   \   00000002   0x.... 0x....      ADR.W    R2,attributeSizes
+     21              if (attributeSizes[i] == dataType) {
+   \                     ??emberAfGetDataSize_0: (+1)
+   \   00000006   0x5C8B             LDRB     R3,[R1, R2]
+   \   00000008   0x4283             CMP      R3,R0
+   \   0000000A   0xD102             BNE.N    ??emberAfGetDataSize_1
+     22                return attributeSizes[i + 1];
+   \   0000000C   0x1888             ADDS     R0,R1,R2
+   \   0000000E   0x7840             LDRB     R0,[R0, #+1]
+   \   00000010   0x4770             BX       LR
+     23              }
+     24            }
+   \                     ??emberAfGetDataSize_1: (+1)
+   \   00000012   0x1C89             ADDS     R1,R1,#+2
+   \   00000014   0xB2C9             UXTB     R1,R1
+   \   00000016   0x1C4B             ADDS     R3,R1,#+1
+   \   00000018   0x2B2E             CMP      R3,#+46
+   \   0000001A   0xD3F4             BCC.N    ??emberAfGetDataSize_0
+     25          
+     26            return 0;
+   \   0000001C   0x2000             MOVS     R0,#+0
+   \   0000001E   0x4770             BX       LR               ;; return
+     27          }
+     28          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   emberAfGetDataSize
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      48  attributeSizes
+      32  emberAfGetDataSize
+
+ 
+ 80 bytes in section .text
+ 
+ 80 bytes of CODE memory
+
+Errors: none
+Warnings: none

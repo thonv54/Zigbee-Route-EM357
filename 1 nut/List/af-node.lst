@@ -1,0 +1,203 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        18/Apr/2016  13:01:12
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\security\af-node.c
+#    Command line =  
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\security\af-node.c"
+#        -D SWITCH_1_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"af-node.c\"" -lC "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\" --diag_suppress Pa050 -o "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\" --debug --endian=little --cpu=Cortex-M3
+#        --no_path_in_file_macros --separate_cluster_for_initialized_variables
+#        -e --fpu=None --dlib_config "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\security\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\"
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\af-node.lst
+#    Object file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\af-node.o
+#
+###############################################################################
+
+D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\security\af-node.c
+      1          // *******************************************************************
+      2          // * af-node.c
+      3          // *
+      4          // * Security code for a normal (non-Trust Center) node.
+      5          // *
+      6          // * Copyright 2009 by Ember Corporation. All rights reserved.              *80*
+      7          // *******************************************************************
+      8          
+      9          #include "app/framework/include/af.h"
+     10          #define USE_REAL_SECURITY_PROTOTYPES
+     11          #include "app/framework/security/af-security.h"
+     12          
+     13          //------------------------------------------------------------------------------
+     14          
+
+   \                                 In section .text, align 2, keep-with-next
+     15          EmberStatus zaNodeSecurityInit(void)
+     16          {
+   \                     zaNodeSecurityInit: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0xB08C             SUB      SP,SP,#+48
+     17            EmberInitialSecurityState state;
+     18            EmberExtendedSecurityBitmask newExtended;
+     19            EmberExtendedSecurityBitmask oldExtended;
+     20            EmberStatus status;
+     21            const EmberAfSecurityProfileData *data = emAfGetCurrentSecurityProfileData();
+   \   00000004   0x.... 0x....      BL       emAfGetCurrentSecurityProfileData
+   \   00000008   0x0004             MOVS     R4,R0
+     22          
+     23            if (data == NULL) {
+   \   0000000A   0xBF08             IT       EQ 
+     24              return EMBER_ERR_FATAL;
+   \   0000000C   0x2001             MOVEQ    R0,#+1
+   \   0000000E   0xD02F             BEQ.N    ??zaNodeSecurityInit_0
+     25            }
+     26          
+     27            MEMSET(&state, 0, sizeof(EmberInitialSecurityState));
+   \   00000010   0x222C             MOVS     R2,#+44
+   \   00000012   0x2100             MOVS     R1,#+0
+   \   00000014   0xA801             ADD      R0,SP,#+4
+   \   00000016   0x.... 0x....      BL       halCommonMemSet
+     28            state.bitmask = data->nodeBitmask;
+   \   0000001A   0x88E0             LDRH     R0,[R4, #+6]
+   \   0000001C   0xF8AD 0x0004      STRH     R0,[SP, #+4]
+     29            newExtended = data->nodeExtendedBitmask;
+     30            MEMMOVE(emberKeyContents(&state.preconfiguredKey),
+     31                    emberKeyContents(&data->preconfiguredKey),
+     32                    EMBER_ENCRYPTION_KEY_SIZE);
+   \   00000020   0x2210             MOVS     R2,#+16
+   \   00000022   0x8920             LDRH     R0,[R4, #+8]
+   \   00000024   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+   \   00000028   0xF104 0x010C      ADD      R1,R4,#+12
+   \   0000002C   0xF10D 0x0006      ADD      R0,SP,#+6
+   \   00000030   0x.... 0x....      BL       halCommonMemMove
+     33          
+     34          #if defined ZA_CLI_FULL
+     35            // This function will only be used if the full CLI is enabled,
+     36            // and a value has been previously set via the "changekey" command.
+     37            getLinkKeyFromCli(&(state.preconfiguredKey));
+     38          #endif
+     39          
+     40            emberGetExtendedSecurityBitmask(&oldExtended);
+   \   00000034   0xF10D 0x0002      ADD      R0,SP,#+2
+   \   00000038   0x.... 0x....      BL       emberGetExtendedSecurityBitmask
+     41            if (oldExtended & EMBER_EXT_NO_FRAME_COUNTER_RESET){
+   \   0000003C   0xF8BD 0x0002      LDRH     R0,[SP, #+2]
+   \   00000040   0x0680             LSLS     R0,R0,#+26
+   \   00000042   0xD505             BPL.N    ??zaNodeSecurityInit_1
+     42              newExtended |= EMBER_EXT_NO_FRAME_COUNTER_RESET;
+   \   00000044   0xF8BD 0x0000      LDRH     R0,[SP, #+0]
+   \   00000048   0xF040 0x0020      ORR      R0,R0,#0x20
+   \   0000004C   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+     43            }
+     44          #if defined(EMBER_AF_PLUGIN_NETWORK_STEERING)
+     45            // Hack.  We should find a more elegant way to set this policy.
+     46           // state.bitmask |= EMBER_GET_LINK_KEY_WHEN_JOINING;
+     47          #endif
+     48          
+     49            emberAfSecurityInitCallback(&state, &newExtended, FALSE); // trust center?
+   \                     ??zaNodeSecurityInit_1: (+1)
+   \   00000050   0x2200             MOVS     R2,#+0
+   \   00000052   0xA900             ADD      R1,SP,#+0
+   \   00000054   0xA801             ADD      R0,SP,#+4
+   \   00000056   0x.... 0x....      BL       emberAfSecurityInitCallback
+     50          
+     51            emberAfSecurityPrintln("set state to: 0x%2x", state.bitmask);
+     52            status = emberSetInitialSecurityState(&state);
+   \   0000005A   0xA801             ADD      R0,SP,#+4
+   \   0000005C   0x.... 0x....      BL       emberSetInitialSecurityState
+     53            if (status != EMBER_SUCCESS) {
+   \   00000060   0xB930             CBNZ.N   R0,??zaNodeSecurityInit_0
+     54              emberAfSecurityPrintln("security init node: 0x%x", status);
+     55              return status;
+     56            }
+     57          
+     58          #if defined(EMBER_AF_PLUGIN_NETWORK_STEERING)
+     59            newExtended |= EMBER_VERIFY_REQUESTED_LINK_KEY;
+     60          #endif  
+     61          
+     62            // Don't need to check on the status here, emberSetExtendedSecurityBitmask
+     63            // always returns EMBER_SUCCESS.
+     64            emberAfSecurityPrintln("set extended security to: 0x%2x", newExtended);
+     65            emberSetExtendedSecurityBitmask(newExtended);
+   \   00000062   0xF8BD 0x0000      LDRH     R0,[SP, #+0]
+   \   00000066   0x.... 0x....      BL       emberSetExtendedSecurityBitmask
+     66          
+     67            emAfClearLinkKeyTable();
+   \   0000006A   0x.... 0x....      BL       emAfClearLinkKeyTable
+     68          
+     69            return EMBER_SUCCESS;
+   \   0000006E   0x2000             MOVS     R0,#+0
+   \                     ??zaNodeSecurityInit_0: (+1)
+   \   00000070   0xB00C             ADD      SP,SP,#+48
+   \   00000072   0xBD10             POP      {R4,PC}          ;; return
+     70          }
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      56   zaNodeSecurityInit
+        56   -> emAfClearLinkKeyTable
+        56   -> emAfGetCurrentSecurityProfileData
+        56   -> emberAfSecurityInitCallback
+        56   -> emberGetExtendedSecurityBitmask
+        56   -> emberSetExtendedSecurityBitmask
+        56   -> emberSetInitialSecurityState
+        56   -> halCommonMemMove
+        56   -> halCommonMemSet
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+     116  zaNodeSecurityInit
+
+ 
+ 116 bytes in section .text
+ 
+ 116 bytes of CODE memory
+
+Errors: none
+Warnings: none

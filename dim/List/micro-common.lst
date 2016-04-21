@@ -1,0 +1,699 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        22/Oct/2015  09:33:41
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\micro-common.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\micro-common.c -D
+#        DIMMER -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"micro-common.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\micro-common.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\micro-common.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\micro-common.c
+      1          /*
+      2           * File: micro-common.c
+      3           * Description: EM3XX micro specific HAL functions common to
+      4           *  full and minimal hal
+      5           *
+      6           * Copyright 2013 Silicon Laboratories, Inc.                                *80*
+      7           */
+      8          
+      9          #include PLATFORM_HEADER
+     10          #include "include/error.h"
+     11          #include "hal/micro/micro-common.h"
+     12          #include "hal/micro/cortexm3/micro-common.h"
+     13          #if defined(BOARD_HEADER) && !defined(MINIMAL_HAL)
+     14            #include BOARD_HEADER
+     15          #endif //defined(BOARD_HEADER)
+     16          
+     17          //NOTE:  The reason ENABLE_OSC32K gets translated into an int8u is so that
+     18          //       haltest can override the build time configuration and force use of
+     19          //       a different OSC32K mode when running the "RTC" command which is used
+     20          //       to check proper connectivity of the 32kHz XTAL or external clock.
+     21          #define DO_EXPAND(sym)  1 ## sym
+     22          #define EXPAND(sym)     DO_EXPAND(sym)
+     23          #define CHECK_BLANK_DEFINE(sym) (1 == EXPAND(sym))
+     24          
+     25          #ifdef  ENABLE_OSC32K
+     26            #if CHECK_BLANK_DEFINE(ENABLE_OSC32K) // Empty #define => OSC32K_CRYSTAL
+     27              #undef  ENABLE_OSC32K
+     28              #define ENABLE_OSC32K OSC32K_CRYSTAL // Default if ENABLE_OSC32K is blank
+     29            #endif
+     30          #else //!ENABLE_OSC32K
+     31            #define ENABLE_OSC32K OSC32K_DISABLE // Default if BOARD_HEADER doesn't say
+     32          #endif //ENABLE_OSC32K
+
+   \                                 In section .bss, align 1
+     33          int8u useOsc32k = ENABLE_OSC32K;
+   \                     useOsc32k:
+   \   00000000                      DS8 1
+     34          #ifndef OSC32K_STARTUP_DELAY_MS
+     35            #define OSC32K_STARTUP_DELAY_MS (0) // Not all BOARD_HEADERs define this
+     36          #endif //OSC32K_STARTUP_DELAY_MS
+     37          
+     38          // Would like to move this to micro-common.h, but that's #included *before*
+     39          // the BOARD_HEADER where ENABLE_OSC24M might be defined :-(
+     40          #if     DISABLE_OSC24M
+     41            // For compatibility, DISABLE_OSC24M takes precedence over ENABLE_OSC24M
+     42            #undef  ENABLE_OSC24M
+     43            #define ENABLE_OSC24M 0
+     44          #endif //DISABLE_OSC24M
+     45          #ifndef ENABLE_OSC24M
+     46            #define  ENABLE_OSC24M 24 // Default is 24 MHz Xtal
+     47          #endif //ENABLE_OSC24M
+     48          #if     ((ENABLE_OSC24M >= 1000000) || (ENABLE_OSC24M <= -1000000)) // Hz
+     49            #define OSC24M_HZ (ENABLE_OSC24M)
+     50          #elif   ((ENABLE_OSC24M >=    1000) || (ENABLE_OSC24M <=    -1000)) // KHz
+     51            #define OSC24M_HZ (ENABLE_OSC24M * 1000L)
+     52          #else //!((ENABLE_OSC24M >=    1000) || (ENABLE_OSC24M <=    -1000)) // MHz
+     53            #define OSC24M_HZ (ENABLE_OSC24M * 1000000L)
+     54          #endif //(ENABLE_OSC24M >= 1000000)
+     55          
+     56          
+     57          
+     58          
+     59          
+     60          
+     61          
+     62            #define HALF_SPEED_SYSCLK (FALSE)
+     63          
+     64          
+     65          
+     66          
+     67          #if     BTL_SYSCLK_KNOWN
+     68          
+     69          // serial-ota-bootloader must use 24 MHz Xtal
+     70          // This saves some much needed code space so serial-ota-bootloader fits
+     71          
+     72          #else //!BTL_SYSCLK_KNOWN
+     73          
+     74          // Expose configuration to library code
+     75          #if     (OSC24M_HZ == -1000000) // Sentinal for runtime determination
+     76          int32s halSystemXtalHz = OSC24M_HZ;
+     77          #else //!(OSC24M_HZ == -1000000)
+
+   \                                 In section .rodata, align 4, keep-with-next
+     78          const int32s halSystemXtalHz = OSC24M_HZ;
+   \                     halSystemXtalHz:
+   \   00000000   0x016E3600         DC32 24000000
+     79          #endif //(OSC24M_HZ == -1000000)
+     80          
+
+   \                                 In section .text, align 2, keep-with-next
+     81          int32u halSystemClockHz(void)
+     82          {
+     83            if ((OSC24M_CTRL & OSC24M_CTRL_OSC24M_SEL) == 0) {
+   \                     halSystemClockHz: (+1)
+   \   00000000   0x....             LDR.N    R0,??DataTable12  ;; 0x4000401c
+   \   00000002   0x6800             LDR      R0,[R0, #+0]
+   \   00000004   0x07C0             LSLS     R0,R0,#+31
+   \   00000006   0xD401             BMI.N    ??halSystemClockHz_0
+     84              // Running off internal fast RC
+     85              #if     (defined(DISABLE_RC_CALIBRATION) || (ENABLE_OSC24M == 0))
+     86                // RC is uncalibrated -- estimate using OSCHF_TUNE,
+     87                // assuming typical centered at 9 MHz and 0.5 MHz +/- tuning increments
+     88                // (per Lipari-S-002-Lipari_analogue_specification.doc Table 25.5)
+     89                // Use bitfield to make unsigned field within word into signed word
+     90                struct { int16s bitfield : OSCHF_TUNE_FIELD_BITS; } offsetbf;
+     91                offsetbf.bitfield = OSCHF_TUNE;
+     92                int32s offset = offsetbf.bitfield;
+     93                return (9 * 1000000) - (offset * 500000);
+     94              #elif  (ENABLE_OSC24M < 0)
+     95                // Assume calibrated to 1/2 of halSystemXtalHz
+     96                return -(halSystemXtalHz / 2);
+     97              #else //(ENABLE_OSC24M > 0)
+     98                // Assume calibrated to 1/2 of OSC24M
+     99                return (OSC24M_HZ / 2);
+   \   00000008   0x....             LDR.N    R0,??DataTable12_1  ;; 0xb71b00
+   \   0000000A   0x4770             BX       LR
+    100              #endif //(defined(DISABLE_RC_CALIBRATION) || (ENABLE_OSC24M == 0))
+    101            } else {
+    102              // Running off external Xtal or signal -- or want what that would be
+    103              #if     (ENABLE_OSC24M == 0)
+    104                // RC is uncalibrated -- estimate using OSCHF_TUNE_VALUE (or actual
+    105                // if no tuning will be done),
+    106                // assuming typical centered at 9 MHz and 0.5 MHz +/- tuning increments
+    107                // (per Lipari-S-002-Lipari_analogue_specification.doc Table 25.5)
+    108                #if     (defined(DISABLE_RC_CALIBRATION) || !defined(OSCHF_TUNE_VALUE))
+    109                  // Use bitfield to make unsigned field within word into signed word
+    110                  struct { int16s bitfield : OSCHF_TUNE_FIELD_BITS; } offsetbf;
+    111                  offsetbf.bitfield = OSCHF_TUNE;
+    112                  int32s offset = offsetbf.bitfield;
+    113                #else //!(defined(DISABLE_RC_CALIBRATION) || !defined(OSCHF_TUNE_VALUE))
+    114                  int32s offset = OSCHF_TUNE_VALUE;
+    115                #endif //(defined(DISABLE_RC_CALIBRATION) || !defined(OSCHF_TUNE_VALUE))
+    116                return (9 * 1000000) - (offset * 500000);
+    117              #elif   (ENABLE_OSC24M < 0)
+    118                return -halSystemXtalHz;
+    119              #else //!(ENABLE_OSC24M < 0)
+    120                return (OSC24M_HZ / (HALF_SPEED_SYSCLK ? 2 : 1));
+   \                     ??halSystemClockHz_0: (+1)
+   \   0000000C   0x....             LDR.N    R0,??DataTable12_2  ;; 0x16e3600
+   \   0000000E   0x4770             BX       LR               ;; return
+    121              #endif //(ENABLE_OSC24M < 0)
+    122            }
+    123          }
+    124          
+
+   \                                 In section .text, align 2, keep-with-next
+    125          int32u halMcuClockHz(void)
+    126          {
+   \                     halMcuClockHz: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    127            int32u clkHz = halSystemClockHz();
+   \   00000002   0x.... 0x....      BL       halSystemClockHz
+    128            if (!CPU_CLKSEL && !HALF_SPEED_SYSCLK) {
+   \   00000006   0x....             LDR.N    R1,??DataTable12_3  ;; 0x40004020
+   \   00000008   0x6809             LDR      R1,[R1, #+0]
+   \   0000000A   0xB901             CBNZ.N   R1,??halMcuClockHz_0
+    129              // MCU (FCLK) is running off PCLK = SYSCLK/2
+    130              clkHz /= 2;
+   \   0000000C   0x0840             LSRS     R0,R0,#+1
+    131            } else {
+    132              // MCU (FCLK) is (or will be) running off SYSCLK directly
+    133              // With HALF_SPEED_SYSCLK, PCLK == SYSCLK and CPU_CLKSEL doesn't matter
+    134            }
+    135            return clkHz;
+   \                     ??halMcuClockHz_0: (+1)
+   \   0000000E   0xBD02             POP      {R1,PC}          ;; return
+    136          }
+    137          
+
+   \                                 In section .text, align 2, keep-with-next
+    138          int32u halPeripheralClockHz()
+    139          {
+   \                     halPeripheralClockHz: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    140            int32u clkHz = halSystemClockHz();
+    141            if (HALF_SPEED_SYSCLK) {
+    142              // PCLK == SYSCLK
+    143            } else {
+    144              clkHz /= 2; // PCLK == SYSLCK/2
+    145            }
+    146            return clkHz;
+   \   00000002   0x.... 0x....      BL       halSystemClockHz
+   \   00000006   0x0840             LSRS     R0,R0,#+1
+   \   00000008   0xBD02             POP      {R1,PC}          ;; return
+    147          }
+    148          
+    149          #endif //BTL_SYSCLK_KNOWN
+    150          
+    151          extern void halInternalClocksCalibrateFastRc(void); // Belongs in a clocks.h
+    152          extern void halInternalClocksCalibrateSlowRc(void); // Belongs in a clocks.h
+    153          
+
+   \                                 In section .text, align 2, keep-with-next
+    154          void halInternalCalibrateFastRc(void)
+    155          {
+    156            #ifndef DISABLE_RC_CALIBRATION
+    157              #if     (ENABLE_OSC24M == 0)
+    158                #ifdef  OSCHF_TUNE_VALUE
+    159                  OSCHF_TUNE = (int32u) OSCHF_TUNE_VALUE;
+    160                #endif //OSCHF_TUNE_VALUE
+    161              #else //!(ENABLE_OSC24M == 0)
+    162                halInternalClocksCalibrateFastRc();
+   \                     halInternalCalibrateFastRc: (+1)
+   \   00000000   0x.... 0x....      B.W      halInternalClocksCalibrateFastRc
+    163              #endif //(ENABLE_OSC24M == 0)
+    164            #endif //DISABLE_RC_CALIBRATION
+    165          }
+    166          
+
+   \                                 In section .text, align 2, keep-with-next
+    167          void halInternalCalibrateSlowRc(void)
+    168          {
+    169            #ifndef DISABLE_RC_CALIBRATION
+    170              #if     (ENABLE_OSC24M != 0)
+    171                halInternalClocksCalibrateSlowRc();
+   \                     halInternalCalibrateSlowRc: (+1)
+   \   00000000   0x.... 0x....      B.W      halInternalClocksCalibrateSlowRc
+    172              #endif //(ENABLE_OSC24M == 0)
+    173            #endif //DISABLE_RC_CALIBRATION
+    174          }
+    175          
+
+   \                                 In section .text, align 2, keep-with-next
+    176          void halInternalEnableWatchDog(void)
+    177          {
+    178            //Just to be on the safe side, restart the watchdog before enabling it
+    179            WDOG_RESET = 1;
+   \                     halInternalEnableWatchDog: (+1)
+   \   00000000   0x....             LDR.N    R0,??DataTable12_4  ;; 0x40006000
+   \   00000002   0x2101             MOVS     R1,#+1
+   \   00000004   0x6081             STR      R1,[R0, #+8]
+    180            WDOG_KEY = 0xEABE;
+   \   00000006   0xF64E 0x21BE      MOVW     R1,#+60094
+   \   0000000A   0x6041             STR      R1,[R0, #+4]
+    181            WDOG_CFG = WDOG_ENABLE;
+   \   0000000C   0x2101             MOVS     R1,#+1
+   \   0000000E   0x6001             STR      R1,[R0, #+0]
+    182          }
+   \   00000010   0x4770             BX       LR               ;; return
+    183          
+
+   \                                 In section .text, align 2, keep-with-next
+    184          void halInternalResetWatchDog(void)
+    185          {
+    186            //Writing any value will restart the watchdog
+    187            WDOG_RESET = 1;
+   \                     halInternalResetWatchDog: (+1)
+   \   00000000   0x....             LDR.N    R1,??DataTable12_5  ;; 0x40006008
+   \   00000002   0x2001             MOVS     R0,#+1
+   \   00000004   0x6008             STR      R0,[R1, #+0]
+    188          }
+   \   00000006   0x4770             BX       LR               ;; return
+    189          
+
+   \                                 In section .text, align 2, keep-with-next
+    190          void halInternalDisableWatchDog(int8u magicKey)
+    191          {
+    192            if (magicKey == MICRO_DISABLE_WATCH_DOG_KEY) {
+   \                     halInternalDisableWatchDog: (+1)
+   \   00000000   0x28A5             CMP      R0,#+165
+   \   00000002   0xD105             BNE.N    ??halInternalDisableWatchDog_0
+    193              WDOG_KEY = 0xDEAD;
+   \   00000004   0x....             LDR.N    R0,??DataTable12_4  ;; 0x40006000
+   \   00000006   0xF64D 0x61AD      MOVW     R1,#+57005
+   \   0000000A   0x6041             STR      R1,[R0, #+4]
+    194              WDOG_CFG = WDOG_DISABLE;
+   \   0000000C   0x2102             MOVS     R1,#+2
+   \   0000000E   0x6001             STR      R1,[R0, #+0]
+    195            }
+    196          }
+   \                     ??halInternalDisableWatchDog_0: (+1)
+   \   00000010   0x4770             BX       LR               ;; return
+    197          
+
+   \                                 In section .text, align 2, keep-with-next
+    198          boolean halInternalWatchDogEnabled(void)
+    199          {
+    200            if(WDOG_CFG&WDOG_ENABLE) {
+   \                     halInternalWatchDogEnabled: (+1)
+   \   00000000   0x....             LDR.N    R0,??DataTable12_4  ;; 0x40006000
+   \   00000002   0x6800             LDR      R0,[R0, #+0]
+   \   00000004   0x07C0             LSLS     R0,R0,#+31
+   \   00000006   0xD501             BPL.N    ??halInternalWatchDogEnabled_0
+    201              return TRUE;
+   \   00000008   0x2001             MOVS     R0,#+1
+   \   0000000A   0x4770             BX       LR
+    202            } else {
+    203              return FALSE;
+   \                     ??halInternalWatchDogEnabled_0: (+1)
+   \   0000000C   0x2000             MOVS     R0,#+0
+   \   0000000E   0x4770             BX       LR               ;; return
+    204            }
+    205          }
+    206          
+    207          #define GPIO_PxCFGL_BASE      (GPIO_PACFGL_ADDR)
+    208          #define GPIO_PxCFGH_BASE      (GPIO_PACFGH_ADDR)
+    209          #define GPIO_PxIN_BASE        (GPIO_PAIN_ADDR)
+    210          #define GPIO_PxOUT_BASE       (GPIO_PAOUT_ADDR)
+    211          #define GPIO_PxCLR_BASE       (GPIO_PACLR_ADDR)
+    212          #define GPIO_PxSET_BASE       (GPIO_PASET_ADDR)
+    213          #define GPIO_Px_OFFSET        (GPIO_PBCFGL_ADDR - GPIO_PACFGL_ADDR)
+    214          
+
+   \                                 In section .text, align 2, keep-with-next
+    215          void halGpioSetConfig(int32u gpio, int32u config)
+    216          {
+   \                     halGpioSetConfig: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+    217            int32u port = gpio / 8;
+   \   00000002   0x08C2             LSRS     R2,R0,#+3
+    218            int32u address = ((gpio & 0x4) ? GPIO_PxCFGH_BASE : GPIO_PxCFGL_BASE) + port * GPIO_Px_OFFSET;
+   \   00000004   0x0743             LSLS     R3,R0,#+29
+   \   00000006   0xBF4C             ITE      MI 
+   \   00000008   0x....             LDRMI.N  R3,??DataTable12_6  ;; 0x4000b004
+   \   0000000A   0x....             LDRPL.N  R3,??DataTable12_7  ;; 0x4000b000
+   \   0000000C   0xEB03 0x2282      ADD      R2,R3,R2, LSL #+10
+    219            int32u shift =  (gpio & 0x3) * 4;
+   \   00000010   0xF000 0x0003      AND      R0,R0,#0x3
+   \   00000014   0x0080             LSLS     R0,R0,#+2
+    220            int32u saved = *((volatile int32u *)address) & ~(0xF << shift);
+   \   00000016   0x6813             LDR      R3,[R2, #+0]
+    221            *((volatile int32u *)address) = saved | (config << shift);
+   \   00000018   0x240F             MOVS     R4,#+15
+   \   0000001A   0x4084             LSLS     R4,R4,R0
+   \   0000001C   0x43A3             BICS     R3,R3,R4
+   \   0000001E   0xFA01 0xF000      LSL      R0,R1,R0
+   \   00000022   0x4318             ORRS     R0,R0,R3
+   \   00000024   0x6010             STR      R0,[R2, #+0]
+    222          }
+   \   00000026   0xBD10             POP      {R4,PC}          ;; return
+    223          
+
+   \                                 In section .text, align 2, keep-with-next
+    224          int32u halGpioGetConfig(int32u gpio)
+    225          {
+    226            int32u port = gpio / 8;
+   \                     halGpioGetConfig: (+1)
+   \   00000000   0x08C1             LSRS     R1,R0,#+3
+    227            int32u address = ((gpio & 0x4) ? GPIO_PxCFGH_BASE : GPIO_PxCFGL_BASE) + port * GPIO_Px_OFFSET;
+   \   00000002   0x0742             LSLS     R2,R0,#+29
+   \   00000004   0xBF4C             ITE      MI 
+   \   00000006   0x....             LDRMI.N  R2,??DataTable12_6  ;; 0x4000b004
+   \   00000008   0x....             LDRPL.N  R2,??DataTable12_7  ;; 0x4000b000
+    228            int32u shift =  (gpio & 0x3) * 4;
+    229            int32u saved = *((volatile int32u *)address);
+   \   0000000A   0x0289             LSLS     R1,R1,#+10
+    230            return (saved >> shift) & 0xF;
+   \   0000000C   0xF000 0x0003      AND      R0,R0,#0x3
+   \   00000010   0x5889             LDR      R1,[R1, R2]
+   \   00000012   0x0080             LSLS     R0,R0,#+2
+   \   00000014   0xFA21 0xF000      LSR      R0,R1,R0
+   \   00000018   0xF000 0x000F      AND      R0,R0,#0xF
+   \   0000001C   0x4770             BX       LR               ;; return
+    231          }
+    232          
+
+   \                                 In section .text, align 2, keep-with-next
+    233          void halGpioClear(int32u gpio)
+    234          {
+    235            int32u port = gpio / 8;
+    236            int32u address = GPIO_PxCLR_BASE + port * GPIO_Px_OFFSET;
+    237            int32u pin = gpio & 0x7;
+    238            *((volatile int32u *) address) = BIT(pin);
+   \                     halGpioClear: (+1)
+   \   00000000   0x2101             MOVS     R1,#+1
+   \   00000002   0xF000 0x0207      AND      R2,R0,#0x7
+   \   00000006   0x4091             LSLS     R1,R1,R2
+   \   00000008   0x08C0             LSRS     R0,R0,#+3
+   \   0000000A   0x0280             LSLS     R0,R0,#+10
+   \   0000000C   0x....             LDR.N    R2,??DataTable12_8  ;; 0x4000b014
+   \   0000000E   0x5011             STR      R1,[R2, R0]
+    239          }
+   \   00000010   0x4770             BX       LR               ;; return
+    240          
+
+   \                                 In section .text, align 2, keep-with-next
+    241          void halGpioSet(int32u gpio)
+    242          {
+    243            int32u port = gpio / 8;
+    244            int32u address = GPIO_PxSET_BASE + port * GPIO_Px_OFFSET;
+    245            int32u pin = gpio & 0x7;
+    246            *((volatile int32u *) address) = BIT(pin);
+   \                     halGpioSet: (+1)
+   \   00000000   0x2101             MOVS     R1,#+1
+   \   00000002   0xF000 0x0207      AND      R2,R0,#0x7
+   \   00000006   0x4091             LSLS     R1,R1,R2
+   \   00000008   0x08C0             LSRS     R0,R0,#+3
+   \   0000000A   0x0280             LSLS     R0,R0,#+10
+   \   0000000C   0x....             LDR.N    R2,??DataTable12_9  ;; 0x4000b010
+   \   0000000E   0x5011             STR      R1,[R2, R0]
+    247          }
+   \   00000010   0x4770             BX       LR               ;; return
+    248          
+
+   \                                 In section .text, align 2, keep-with-next
+    249          int32u halGpioRead(int32u gpio)
+    250          {
+    251            int32u port = gpio / 8;
+    252            int32u address = GPIO_PxIN_BASE + port * GPIO_Px_OFFSET;
+    253            int32u pin = gpio & 0x7;
+   \                     halGpioRead: (+1)
+   \   00000000   0xF000 0x0107      AND      R1,R0,#0x7
+    254            return (*((volatile int32u *) address) & BIT(pin)) >> pin;
+   \   00000004   0x08C0             LSRS     R0,R0,#+3
+   \   00000006   0x0280             LSLS     R0,R0,#+10
+   \   00000008   0x....             LDR.N    R2,??DataTable12_10  ;; 0x4000b008
+   \   0000000A   0x5810             LDR      R0,[R2, R0]
+   \   0000000C   0x2201             MOVS     R2,#+1
+   \   0000000E   0x408A             LSLS     R2,R2,R1
+   \   00000010   0x4010             ANDS     R0,R2,R0
+   \   00000012   0x40C8             LSRS     R0,R0,R1
+   \   00000014   0x4770             BX       LR               ;; return
+    255          }
+    256          
+    257          
+    258          
+    259          
+    260          
+    261          
+    262          
+
+   \                                 In section .text, align 2, keep-with-next
+    263          int16u halInternalStartSystemTimer(void)
+    264          {
+   \                     halInternalStartSystemTimer: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    265            //Since the SleepTMR is the only timer maintained during deep sleep, it is
+    266            //used as the System Timer (RTC).  We maintain a 32 bit hardware timer
+    267            //configured for a tick value time of 1024 ticks/second (0.9765625 ms/tick)
+    268            //using either the 10 kHz internal SlowRC clock divided and calibrated to
+    269            //1024 Hz or the external 32.768 kHz crystal divided to 1024 Hz.
+    270            //With a tick time of ~1ms, this 32bit timer will wrap after ~48.5 days.
+    271          
+    272            //disable top-level interrupt while configuring
+    273            INT_CFGCLR = INT_SLEEPTMR;
+   \   00000002   0x....             LDR.N    R1,??DataTable12_11  ;; 0xe000e180
+    274          
+    275            if (useOsc32k > OSC32K_DISABLE) {
+   \   00000004   0x....             LDR.N    R2,??DataTable12_12  ;; 0x40000008
+   \   00000006   0x2010             MOVS     R0,#+16
+   \   00000008   0x6008             STR      R0,[R1, #+0]
+   \   0000000A   0x....             LDR.N    R1,??DataTable12_13  ;; 0x4000600c
+   \   0000000C   0x....             LDR.N    R0,??DataTable12_14
+   \   0000000E   0x7800             LDRB     R0,[R0, #+0]
+   \   00000010   0xB158             CBZ.N    R0,??halInternalStartSystemTimer_0
+    276              if (useOsc32k == OSC32K_DIGITAL) {
+   \   00000012   0x2803             CMP      R0,#+3
+   \   00000014   0xBF0C             ITE      EQ 
+    277                //Disable both OSC32K and SLOWRC if using external digital clock input
+    278                SLEEPTMR_CLKEN = 0;
+   \   00000016   0x2000             MOVEQ    R0,#+0
+    279              } else { // OSC32K_CRYSTAL || OSC32K_SINE_1V
+    280                //Enable the 32kHz XTAL (and disable SlowRC since it is not needed)
+    281                SLEEPTMR_CLKEN = SLEEPTMR_CLK32KEN;
+   \   00000018   0x2001             MOVNE    R0,#+1
+   \   0000001A   0x6010             STR      R0,[R2, #+0]
+    282              }
+    283              //Sleep timer configuration is the same for crystal and external clock
+    284              SLEEPTMR_CFG = (SLEEPTMR_ENABLE            | //enable TMR
+    285                             (0 << SLEEPTMR_DBGPAUSE_BIT)| //TMR not paused when halted
+    286                             (5 << SLEEPTMR_CLKDIV_BIT)  | //divide down to 1024Hz
+    287                             (1 << SLEEPTMR_CLKSEL_BIT)) ; //select CLK32K external clock
+   \   0000001C   0xF640 0x0051      MOVW     R0,#+2129
+   \   00000020   0x6008             STR      R0,[R1, #+0]
+    288              halCommonDelayMilliseconds(OSC32K_STARTUP_DELAY_MS);
+   \   00000022   0x2000             MOVS     R0,#+0
+   \   00000024   0x.... 0x....      BL       halCommonDelayMilliseconds
+   \   00000028   0xE006             B.N      ??halInternalStartSystemTimer_1
+    289            } else {
+    290              //Enable the SlowRC (and disable 32kHz XTAL since it is not needed)
+    291              SLEEPTMR_CLKEN = SLEEPTMR_CLK10KEN;
+   \                     ??halInternalStartSystemTimer_0: (+1)
+   \   0000002A   0x2002             MOVS     R0,#+2
+   \   0000002C   0x6010             STR      R0,[R2, #+0]
+    292              SLEEPTMR_CFG = (SLEEPTMR_ENABLE            | //enable TMR
+    293                             (0 << SLEEPTMR_DBGPAUSE_BIT)| //TMR not paused when halted
+    294                             (0 << SLEEPTMR_CLKDIV_BIT)  | //already 1024Hz
+    295                             (0 << SLEEPTMR_CLKSEL_BIT)) ; //select CLK1K internal SlowRC
+   \   0000002E   0xF44F 0x6000      MOV      R0,#+2048
+   \   00000032   0x6008             STR      R0,[R1, #+0]
+    296              #ifndef DISABLE_RC_CALIBRATION
+    297                halInternalCalibrateSlowRc(); //calibrate SlowRC to 1024Hz
+   \   00000034   0x.... 0x....      BL       halInternalClocksCalibrateSlowRc
+    298              #endif //DISABLE_RC_CALIBRATION
+    299            }
+    300          
+    301            //clear out any stale interrupts
+    302            INT_SLEEPTMRFLAG = (INT_SLEEPTMRWRAP | INT_SLEEPTMRCMPA | INT_SLEEPTMRCMPB);
+   \                     ??halInternalStartSystemTimer_1: (+1)
+   \   00000038   0x2107             MOVS     R1,#+7
+   \   0000003A   0x....             LDR.N    R0,??DataTable12_15  ;; 0x4000a014
+   \   0000003C   0x6001             STR      R1,[R0, #+0]
+    303            //turn off second level interrupts.  they will be enabled elsewhere as needed
+    304            INT_SLEEPTMRCFG = INT_SLEEPTMRCFG_RESET;
+   \   0000003E   0x2100             MOVS     R1,#+0
+   \   00000040   0x6401             STR      R1,[R0, #+64]
+    305            //enable top-level interrupt
+    306            INT_CFGSET = INT_SLEEPTMR;
+   \   00000042   0x2010             MOVS     R0,#+16
+   \   00000044   0x....             LDR.N    R1,??DataTable12_16  ;; 0xe000e100
+   \   00000046   0x6008             STR      R0,[R1, #+0]
+    307          
+    308            return 0;
+   \   00000048   0x2000             MOVS     R0,#+0
+   \   0000004A   0xBD02             POP      {R1,PC}          ;; return
+    309          }
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12:
+   \   00000000   0x4000401C         DC32     0x4000401c
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_1:
+   \   00000000   0x00B71B00         DC32     0xb71b00
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_2:
+   \   00000000   0x016E3600         DC32     0x16e3600
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_3:
+   \   00000000   0x40004020         DC32     0x40004020
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_4:
+   \   00000000   0x40006000         DC32     0x40006000
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_5:
+   \   00000000   0x40006008         DC32     0x40006008
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_6:
+   \   00000000   0x4000B004         DC32     0x4000b004
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_7:
+   \   00000000   0x4000B000         DC32     0x4000b000
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_8:
+   \   00000000   0x4000B014         DC32     0x4000b014
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_9:
+   \   00000000   0x4000B010         DC32     0x4000b010
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_10:
+   \   00000000   0x4000B008         DC32     0x4000b008
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_11:
+   \   00000000   0xE000E180         DC32     0xe000e180
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_12:
+   \   00000000   0x40000008         DC32     0x40000008
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_13:
+   \   00000000   0x4000600C         DC32     0x4000600c
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_14:
+   \   00000000   0x........         DC32     useOsc32k
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_15:
+   \   00000000   0x4000A014         DC32     0x4000a014
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable12_16:
+   \   00000000   0xE000E100         DC32     0xe000e100
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   halGpioClear
+       0   halGpioGetConfig
+       0   halGpioRead
+       0   halGpioSet
+       8   halGpioSetConfig
+       0   halInternalCalibrateFastRc
+         0   -> halInternalClocksCalibrateFastRc
+       0   halInternalCalibrateSlowRc
+         0   -> halInternalClocksCalibrateSlowRc
+       0   halInternalDisableWatchDog
+       0   halInternalEnableWatchDog
+       0   halInternalResetWatchDog
+       8   halInternalStartSystemTimer
+         8   -> halCommonDelayMilliseconds
+         8   -> halInternalClocksCalibrateSlowRc
+       0   halInternalWatchDogEnabled
+       8   halMcuClockHz
+         8   -> halSystemClockHz
+       8   halPeripheralClockHz
+         8   -> halSystemClockHz
+       0   halSystemClockHz
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable12
+       4  ??DataTable12_1
+       4  ??DataTable12_10
+       4  ??DataTable12_11
+       4  ??DataTable12_12
+       4  ??DataTable12_13
+       4  ??DataTable12_14
+       4  ??DataTable12_15
+       4  ??DataTable12_16
+       4  ??DataTable12_2
+       4  ??DataTable12_3
+       4  ??DataTable12_4
+       4  ??DataTable12_5
+       4  ??DataTable12_6
+       4  ??DataTable12_7
+       4  ??DataTable12_8
+       4  ??DataTable12_9
+      18  halGpioClear
+      30  halGpioGetConfig
+      22  halGpioRead
+      18  halGpioSet
+      40  halGpioSetConfig
+       4  halInternalCalibrateFastRc
+       4  halInternalCalibrateSlowRc
+      18  halInternalDisableWatchDog
+      18  halInternalEnableWatchDog
+       8  halInternalResetWatchDog
+      76  halInternalStartSystemTimer
+      16  halInternalWatchDogEnabled
+      16  halMcuClockHz
+      10  halPeripheralClockHz
+      16  halSystemClockHz
+       4  halSystemXtalHz
+       1  useOsc32k
+
+ 
+   1 byte  in section .bss
+   4 bytes in section .rodata
+ 382 bytes in section .text
+ 
+ 382 bytes of CODE  memory
+   4 bytes of CONST memory
+   1 byte  of DATA  memory
+
+Errors: none
+Warnings: none

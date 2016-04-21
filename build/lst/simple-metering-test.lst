@@ -1,0 +1,899 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        31/Aug/2015  14:18:43
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\simple-metering-server\simple-metering-test.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\simple-metering-server\simple-metering-test.c
+#        -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"simple-metering-test.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\simple-metering-server\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\simple-metering-test.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\simple-metering-test.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\simple-metering-server\simple-metering-test.c
+      1          // *******************************************************************
+      2          // * simple-metering-test.c
+      3          // *
+      4          // *
+      5          // * Copyright 2007 by Ember Corporation. All rights reserved.              *80*
+      6          // *******************************************************************
+      7          
+      8          // this file contains all the common includes for clusters in the util
+      9          #include "../include/af.h"
+     10          #include "../../util/common.h"
+     11          #include "../../util/af-main.h"
+     12          #include "../../util/client-api.h"
+     13          #include "enums.h"
+     14          #include "simple-metering-test.h"
+     15          
+     16          #ifdef EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_ENABLE
+     17          
+     18          // Test mode:
+     19          //   bit 0: 0 - electric, 1 - gas
+     20          //   bit 1: reserved for future use
+     21          //   bit 2: 0 - no profiles, 1 - profiles
+     22          //   bit 3: 0 - no tick, 1 = tick
+     23          int8u testMode = 0;
+     24          int8u errorChance = 0;
+     25          int16u meterConsumptionRate = 0;
+     26          int16u meterConsumptionVariance = 0;
+     27          int16u batteryRate = 1;
+     28          int32u nextGetProfileInterval;
+     29          static int32u hourCounterTable[EMBER_AF_SIMPLE_METERING_CLUSTER_SERVER_ENDPOINT_COUNT];
+     30          
+     31          #define emAfContainsSimpleMeterServerAttribute(endpoint,attribute) \
+     32            emberAfContainsAttribute((endpoint),ZCL_SIMPLE_METERING_CLUSTER_ID,(attribute),CLUSTER_MASK_SERVER,EMBER_AF_NULL_MANUFACTURER_CODE)
+     33          
+     34          static void hourCounterTableInit(void);
+     35          
+     36          static void hourCounterTableInit(void)
+     37          {
+     38            int8u i;
+     39          
+     40            for (i = 0; i < EMBER_AF_SIMPLE_METERING_CLUSTER_SERVER_ENDPOINT_COUNT; i++) {
+     41              hourCounterTable[i] = 0;
+     42            }
+     43          }
+     44          
+     45          static void addToByteArray(int8u *data,
+     46                   int8u len,
+     47                   int32u toAdd,
+     48                   boolean lowHigh) {
+     49            int16u sum = 0;
+     50            int8s loc, end, incr;
+     51            if (lowHigh) {
+     52              loc  = 0;
+     53              end  = len;
+     54              incr = 1;
+     55            } else {
+     56              loc  = len - 1;
+     57              end  = -1;
+     58              incr = -1;
+     59            }
+     60          
+     61            while ( loc != end ) {
+     62              int8u t, s;
+     63              t = data[loc];
+     64              s = toAdd & 0xff;
+     65              sum += t + s;
+     66              data[loc] = sum & 0xff;
+     67              sum >>= 8;
+     68              toAdd >>= 8;
+     69              loc += incr;
+     70            }
+     71          }
+     72          static void addToByteArrayLowHigh(int8u *data,
+     73                    int8u len,
+     74                    int32u toAdd) {
+     75            addToByteArray(data, len, toAdd, TRUE);
+     76          }
+     77          static void addToByteArrayHighLow(int8u *data,
+     78                    int8u len,
+     79                    int32u toAdd) {
+     80            addToByteArray(data, len, toAdd, FALSE);
+     81          }
+     82          
+     83          static int32u getMeteringConsumptionRate(int8u endpoint)
+     84          {
+     85            int8u multiplierArray[] = {0,0,0};
+     86            int8u divisorArray[] = {0,0,0};
+     87            EmberAfAttributeType dataType;
+     88            EmberStatus status;
+     89            int32u multiplier;
+     90            int32u divisor;
+     91            int32u returnValue;
+     92          
+     93            // Now let's adjust the summation
+     94            status = emberAfReadAttribute(endpoint,
+     95                                          ZCL_SIMPLE_METERING_CLUSTER_ID,
+     96                                          ZCL_MULTIPLIER_ATTRIBUTE_ID,
+     97                                          CLUSTER_MASK_SERVER,
+     98                                          multiplierArray,
+     99                                          3,
+    100                                          &dataType);
+    101          
+    102            status = emberAfReadAttribute(endpoint,
+    103                                          ZCL_SIMPLE_METERING_CLUSTER_ID,
+    104                                          ZCL_DIVISOR_ATTRIBUTE_ID,
+    105                                          CLUSTER_MASK_SERVER,
+    106                                          divisorArray,
+    107                                          3,
+    108                                          &dataType);
+    109          
+    110            multiplier = multiplierArray[2] << 16 | multiplierArray[1] << 8 | multiplierArray[0];
+    111            divisor = divisorArray[2] << 16 | divisorArray[1] << 8 | divisorArray[0];
+    112            returnValue = divisor > 0 ? multiplier/divisor : 0;
+    113            return returnValue;
+    114          }
+    115          
+    116          static void setMeteringConsumptionRate(int16u rate,int8u endpoint)
+    117          {
+    118            int8u dataType;
+    119            EmberStatus status;
+    120            int32u multiplier;
+    121            int32u divisor;
+    122          
+    123            int8u multiplierArray[] = {0,0,0};
+    124            int8u divisorArray[] = {1,0,0};
+    125            multiplierArray[0] = rate & 0x00FF;
+    126            multiplierArray[1] = rate & 0xFF00 >> 8;
+    127          
+    128            // Now let's adjust the summation
+    129            status = emberAfWriteAttribute(endpoint,
+    130                                          ZCL_SIMPLE_METERING_CLUSTER_ID,
+    131                                          ZCL_MULTIPLIER_ATTRIBUTE_ID,
+    132                                          CLUSTER_MASK_SERVER,
+    133                                          multiplierArray,
+    134                                          ZCL_INT24U_ATTRIBUTE_TYPE);
+    135          
+    136            status = emberAfReadAttribute(endpoint,
+    137                                          ZCL_SIMPLE_METERING_CLUSTER_ID,
+    138                                          ZCL_MULTIPLIER_ATTRIBUTE_ID,
+    139                                          CLUSTER_MASK_SERVER,
+    140                                          multiplierArray,
+    141                                          3,
+    142                                          &dataType);
+    143          
+    144            multiplier = multiplierArray[2] << 16 | multiplierArray[1] << 8 | multiplierArray[0];
+    145          
+    146            status = emberAfWriteAttribute(endpoint,
+    147                                          ZCL_SIMPLE_METERING_CLUSTER_ID,
+    148                                          ZCL_DIVISOR_ATTRIBUTE_ID,
+    149                                          CLUSTER_MASK_SERVER,
+    150                                          divisorArray,
+    151                                          ZCL_INT24U_ATTRIBUTE_TYPE);
+    152          
+    153              status = emberAfReadAttribute(endpoint,
+    154                                          ZCL_SIMPLE_METERING_CLUSTER_ID,
+    155                                          ZCL_DIVISOR_ATTRIBUTE_ID,
+    156                                          CLUSTER_MASK_SERVER,
+    157                                          divisorArray,
+    158                                          3,
+    159                                          &dataType);
+    160            divisor = divisorArray[2] << 16 | divisorArray[1] << 8 | divisorArray[0];
+    161            emberAfCorePrintln("divisor %u",divisor);
+    162          }
+    163          
+    164          
+    165          
+    166          void afTestMeterPrint(void) {
+    167            emberAfSimpleMeteringClusterPrintln("TM:\r\n"
+    168                                                "mode:%x\r\n"
+    169                                                "meterConsumptionRate:%2x\r\n"
+    170                                                "meterConsumptionVariance:%2x\r\n",
+    171                                                testMode,
+    172                                                meterConsumptionRate,
+    173                                                meterConsumptionVariance);
+    174          }
+    175          
+    176          void afTestMeterSetConsumptionRate(int16u rate,int8u endpoint) {
+    177            emberAfSimpleMeteringClusterPrintln("TM: set consumption rate %2x", rate);
+    178            meterConsumptionRate = rate;
+    179            //setMeteringConsumptionRate(rate,endpoint);
+    180          }
+    181          
+    182          void afTestMeterSetConsumptionVariance(int16u variance) {
+    183            emberAfSimpleMeteringClusterPrintln("TM: set consumption variance %2x", variance);
+    184            meterConsumptionVariance = variance;
+    185          }
+    186          void afTestMeterAdjust(int8u endpoint) {
+    187          
+    188            int8u summation[] = {0,0,0,0,0,0};
+    189          
+    190            // Seconds in day
+    191            int32u ct = emberAfGetCurrentTime() % 86400;
+    192            int32u diff;
+    193          
+    194            emberAfSimpleMeteringClusterPrintln("TM: adjust");
+    195          
+    196            diff = (int32u)meterConsumptionRate * ct;
+    197          
+    198            if ( meterConsumptionVariance > 0 )
+    199              diff += ct * (int32u)(halCommonGetRandom() % meterConsumptionVariance);
+    200          
+    201            if (BIGENDIAN_CPU)
+    202              addToByteArrayHighLow(summation, 6, diff);
+    203            else
+    204              addToByteArrayLowHigh(summation, 6, diff);
+    205          
+    206            emberAfSimpleMeteringClusterPrintln("Summation:%x %x %x %x %x %x",
+    207                        summation[0],
+    208                        summation[1],
+    209                        summation[2],
+    210                        summation[3],
+    211                        summation[4],
+    212                        summation[5]);
+    213          
+    214            emberAfWriteAttribute(endpoint,
+    215                                  ZCL_SIMPLE_METERING_CLUSTER_ID,
+    216                                  ZCL_CURRENT_SUMMATION_DELIVERED_ATTRIBUTE_ID,
+    217                                  CLUSTER_MASK_SERVER,
+    218                                  summation,
+    219                                  ZCL_INT48U_ATTRIBUTE_TYPE);
+    220          }
+    221          
+    222          // 0 off, 1 if electric, 2 if gas
+    223          void afTestMeterMode(int8u endpoint, int8u mode) {
+    224            int8u status = 0;
+    225            int8u unitOfMeasure;
+    226            int8u deviceType;
+    227            int8u summationFormatting = 0x2C; // 00101100
+    228          
+    229            if ( mode == 0 ) {
+    230              testMode &= ( ~0x08);
+    231            } else if ( mode == 1 ) {
+    232              testMode &= (~0x01);
+    233              testMode |= 0x08;
+    234              unitOfMeasure = EMBER_ZCL_AMI_UNIT_OF_MEASURE_KILO_WATT_HOURS;
+    235              deviceType = EMBER_ZCL_METERING_DEVICE_TYPE_ELECTRIC_METERING;
+    236            } else if ( mode == 2 ) {
+    237              testMode |= (0x01|0x08);
+    238              unitOfMeasure = EMBER_ZCL_AMI_UNIT_OF_MEASURE_BT_US_OR_BTU_PER_HOUR;
+    239              deviceType = EMBER_ZCL_METERING_DEVICE_TYPE_GAS_METERING;
+    240            }
+    241            emberAfSimpleMeteringClusterPrintln("TM: mode %x", testMode);
+    242          
+    243            // Set attributes...
+    244          
+    245            // Status = OK
+    246            emberAfWriteAttribute(endpoint,
+    247                                  ZCL_SIMPLE_METERING_CLUSTER_ID,
+    248                                  ZCL_STATUS_ATTRIBUTE_ID,
+    249                                  CLUSTER_MASK_SERVER,
+    250                                  &status,
+    251                                  ZCL_BITMAP8_ATTRIBUTE_TYPE);
+    252          
+    253            // Device type is either gas or electric
+    254            emberAfWriteAttribute(endpoint,
+    255                                  ZCL_SIMPLE_METERING_CLUSTER_ID,
+    256                                  ZCL_METERING_DEVICE_TYPE_ATTRIBUTE_ID,
+    257                                  CLUSTER_MASK_SERVER,
+    258                                  &deviceType,
+    259                                  ZCL_BITMAP8_ATTRIBUTE_TYPE);
+    260          
+    261            // Unit of measure is either KWH or BTU
+    262            emberAfWriteAttribute(endpoint,
+    263                                  ZCL_SIMPLE_METERING_CLUSTER_ID,
+    264                                  ZCL_UNIT_OF_MEASURE_ATTRIBUTE_ID,
+    265                                  CLUSTER_MASK_SERVER,
+    266                                  &unitOfMeasure,
+    267                                  ZCL_ENUM8_ATTRIBUTE_TYPE);
+    268          
+    269            // Summation formatting is 0x2C
+    270            emberAfWriteAttribute(endpoint,
+    271                                  ZCL_SIMPLE_METERING_CLUSTER_ID,
+    272                                  ZCL_SUMMATION_FORMATTING_ATTRIBUTE_ID,
+    273                                  CLUSTER_MASK_SERVER,
+    274                                  &summationFormatting,
+    275                                  ZCL_BITMAP8_ATTRIBUTE_TYPE);
+    276          }
+    277          
+    278          #ifdef EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_ERRORS
+    279          void afTestMeterSetError(int8u endpoint,
+    280                 int8u error) {
+    281            emberAfSimpleMeteringClusterPrintln("TM: set error %x", error);
+    282            emberAfWriteAttribute(endpoint,
+    283                                  ZCL_SIMPLE_METERING_CLUSTER_ID,
+    284                                  ZCL_STATUS_ATTRIBUTE_ID,
+    285                                  CLUSTER_MASK_SERVER,
+    286                                  &error,
+    287                                  ZCL_BITMAP8_ATTRIBUTE_TYPE);
+    288          }
+    289          
+    290          void afTestMeterRandomError(int8u chanceIn256) {
+    291            emberAfSimpleMeteringClusterPrintln("TM: random error %x", chanceIn256);
+    292            errorChance = chanceIn256;
+    293          }
+    294          #endif //EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_ERRORS
+    295          
+    296          #if ( EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES != 0 )
+    297          
+    298          int8u testMeterProfiles[EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES][3];
+    299          int32u testMeterIntervalEndTimes[EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES];
+    300          void afTestMeterEnableProfiles(int8u enable) {
+    301            int8u i;
+    302            emberAfSimpleMeteringClusterPrintln("TM: profiles %x", enable);
+    303            switch(enable) {
+    304            case 0:
+    305              testMode &= (~0x04);
+    306              break;
+    307            case 1:
+    308              testMode |= 0x04;
+    309              break;
+    310            case 2:
+    311              for ( i=0; i<EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES; i++ ) {
+    312                testMeterProfiles[i][0]
+    313                  = testMeterProfiles[i][1]
+    314                  = testMeterProfiles[i][2]
+    315                  = 0x00;
+    316              }
+    317            case 3:
+    318              for ( i=0; i<EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES; i++ ) {
+    319                emberAfSimpleMeteringClusterPrintln("P %x: %x%x%x",
+    320                      i,
+    321                      testMeterProfiles[i][0],
+    322                      testMeterProfiles[i][1],
+    323                      testMeterProfiles[i][2]);
+    324              }
+    325              break;
+    326            }
+    327          }
+    328          
+    329          #endif // EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES != 0
+    330          
+    331          
+    332          void emAfTestMeterInit(int8u endpoint) {
+    333            MEMSET(testMeterProfiles,
+    334                   0,
+    335                   (EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES * 3));
+    336            MEMSET(testMeterIntervalEndTimes,
+    337                   0,
+    338                   (EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES)*4);
+    339            // battery life remaining (0x0201), begin at 255, and decrement every minute. INT8U.
+    340            if ( emAfContainsSimpleMeterServerAttribute(endpoint, 
+    341                                                        ZCL_REMAINING_BATTERY_LIFE_ATTRIBUTE_ID) ) {
+    342              int8u batteryLife = 100; // 100% to begin. 0xff is reserved.
+    343              emberAfWriteAttribute(endpoint,
+    344                                    ZCL_SIMPLE_METERING_CLUSTER_ID,
+    345                                    ZCL_REMAINING_BATTERY_LIFE_ATTRIBUTE_ID,
+    346                                    CLUSTER_MASK_SERVER,
+    347                                    &batteryLife,
+    348                                    ZCL_INT8U_ATTRIBUTE_TYPE);
+    349            }
+    350          
+    351            hourCounterTableInit();
+    352          
+    353          #ifdef EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_BATTERY_RATE
+    354          #if ( EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_BATTERY_RATE != 0 )
+    355            batteryRate = EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_BATTERY_RATE;
+    356          #else
+    357            batteryRate = 1;
+    358          #endif
+    359          #endif
+    360            if (batteryRate>100)
+    361              batteryRate=100;
+    362          
+    363            #if(EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES != 0)
+    364              nextGetProfileInterval = PROFILE_INTERVAL_PERIOD_IN_SECONDS;
+    365            #endif
+    366          }
+    367          
+    368          // Note: In the final implementation, according to the SE spec following must
+    369          //  happen:
+    370          //   - ReadingSnapShotTime attribute must be set to the actual UTC time of
+    371          //        when the CurrentSummationDelivered, CurrentSummationReceived,
+    372          //        CurrentMaxDemandDelievered and CurrentMaxDemandReceived were measured.
+    373          //   - CurrentMaxDemandDeliveredTime must be set to UTC time of when the
+    374          //        CurrentMaxDelivered was read
+    375          //   - CurrentMaxDemandReceivedTime must be set to UTC time of when the
+    376          //        CurrentMaxDemandReceived was read
+    377          void emAfTestMeterTick(int8u endpoint) 
+    378          {
+    379            int32u *hourCounter;
+    380            int32u diff, currentTime;
+    381            int8u status, dataType;
+    382            int8u summation[] = {0,0,0,0,0,0};
+    383            int32u formatting;
+    384          
+    385          #if (EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES != 0)
+    386            int8u intervalSummation[] = {0,0,0};
+    387          #endif
+    388          
+    389            // random counters for keeping track of minutes/seconds locally
+    390            // should probably use local time but I'm worried what happens when
+    391            // that changes through the CLI, so I'm doing this for now.
+    392            int8u ep = emberAfFindClusterServerEndpointIndex(endpoint,
+    393                                                             ZCL_SIMPLE_METERING_CLUSTER_ID);
+    394            if (ep == 0xFF) {
+    395              emberAfSimpleMeteringClusterPrintln("Invalid endpoint %x", endpoint);
+    396              return;
+    397            }
+    398          
+    399            hourCounter = &hourCounterTable[ep];
+    400            //static int16u batteryLifeLastUpdateTime = 0; // would be used for local time
+    401            //static int16u hoursInOperationLastUpdateTime = 0;
+    402          
+    403          #ifdef EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_ERRORS
+    404            int8u meterStatus;
+    405          #endif // EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_ERRORS
+    406          
+    407            // Now let's adjust the summation
+    408            status = emberAfReadAttribute(endpoint,
+    409                                          ZCL_SIMPLE_METERING_CLUSTER_ID,
+    410                                          ZCL_CURRENT_SUMMATION_DELIVERED_ATTRIBUTE_ID,
+    411                                          CLUSTER_MASK_SERVER,
+    412                                          summation,
+    413                                          6,
+    414                                          &dataType);
+    415          
+    416            if ( status != EMBER_ZCL_STATUS_SUCCESS ) {
+    417              emberAfSimpleMeteringClusterPrintln("ERR: can't read summation status 0x%x",status);
+    418              return;
+    419            }
+    420          
+    421            //diff = getMeteringConsumptionRate(endpoint);
+    422            diff = (int32u)meterConsumptionRate;
+    423            if ( meterConsumptionVariance > 0 ){
+    424              diff += (int32u)(halCommonGetRandom() % meterConsumptionVariance);
+    425            }
+    426          
+    427            if (BIGENDIAN_CPU)
+    428              addToByteArrayHighLow(summation, 6, diff);
+    429            else
+    430              addToByteArrayLowHigh(summation, 6, diff);
+    431          
+    432            if ((*hourCounter % 60)==0) {
+    433              // emberAfSimpleMeteringClusterPrintln("TM summation:%x %x %x %x %x %x",
+    434              //                                     summation[0],
+    435              //                                     summation[1],
+    436              //                                     summation[2],
+    437              //                                     summation[3],
+    438              //                                     summation[4],
+    439              //                                     summation[5]);
+    440            }
+    441          
+    442            formatting = getMeteringConsumptionRate(endpoint);
+    443          
+    444            emberAfWriteAttribute(endpoint,
+    445                                  ZCL_SIMPLE_METERING_CLUSTER_ID,
+    446                                  ZCL_CURRENT_SUMMATION_DELIVERED_ATTRIBUTE_ID,
+    447                                  CLUSTER_MASK_SERVER,
+    448                                  summation,
+    449                                  ZCL_INT48U_ATTRIBUTE_TYPE);
+    450          
+    451          #ifdef EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_ERRORS
+    452            if ( errorChance > 0 ) {
+    453              if ( (halCommonGetRandom() % 256) < errorChance ) {
+    454                emberAfReadAttribute(endpoint,
+    455                                     ZCL_SIMPLE_METERING_CLUSTER_ID,
+    456                                     ZCL_STATUS_ATTRIBUTE_ID,
+    457                                     CLUSTER_MASK_SERVER,
+    458                                     &meterStatus,
+    459                                     1,
+    460                                     &dataType);
+    461                if ( meterStatus == 0 ) {
+    462                  emberAfSimpleMeteringClusterPrintln("TM: random error set");
+    463                  meterStatus = 1;
+    464                  emberAfWriteAttribute(endpoint,
+    465                                        ZCL_SIMPLE_METERING_CLUSTER_ID,
+    466                                        ZCL_STATUS_ATTRIBUTE_ID,
+    467                                        CLUSTER_MASK_SERVER,
+    468                                        &meterStatus,
+    469                                        ZCL_BITMAP8_ATTRIBUTE_TYPE);
+    470                }
+    471              }
+    472            }
+    473          #endif // EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_ERRORS
+    474          #if (EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES != 0)
+    475            if ( testMode & 0x04 ) { // Profiles are enabled
+    476              currentTime = emberAfGetCurrentTime();
+    477              if(currentTime >= nextGetProfileInterval) {
+    478                emberAfSimpleMeteringClusterPrintln("Current Time %u",currentTime);
+    479          
+    480          
+    481                //emberAfSimpleMeteringClusterPrintln("currentTime %u nextGetProfileInterval %u",currentTime,nextGetProfileInterval);
+    482                status = emberAfReadAttribute(endpoint,
+    483                                              ZCL_SIMPLE_METERING_CLUSTER_ID,
+    484                                              ZCL_CURRENT_PARTIAL_PROFILE_INTERVAL_VALUE_DELIVERED_ATTRIBUTE_ID,
+    485                                              CLUSTER_MASK_SERVER,
+    486                                              intervalSummation,
+    487                                              3,
+    488                                              &dataType);
+    489                if ( status != EMBER_ZCL_STATUS_SUCCESS ) {
+    490                  emberAfSimpleMeteringClusterPrintln("ERR: can't read interval summation status 0x%x",status);
+    491                  return;
+    492                }
+    493          
+    494                if (BIGENDIAN_CPU)
+    495                  addToByteArrayHighLow(intervalSummation, 3, diff);
+    496                else
+    497                  addToByteArrayLowHigh(intervalSummation, 3, diff);
+    498          
+    499                emberAfSimpleMeteringClusterPrintln("diff %u",diff);
+    500          
+    501                emberAfWriteAttribute(endpoint,
+    502                                      ZCL_SIMPLE_METERING_CLUSTER_ID,
+    503                                      ZCL_CURRENT_PARTIAL_PROFILE_INTERVAL_VALUE_DELIVERED_ATTRIBUTE_ID,
+    504                                      CLUSTER_MASK_SERVER,
+    505                                      intervalSummation,
+    506                                      ZCL_INT24U_ATTRIBUTE_TYPE);
+    507          
+    508                // Profile swap...
+    509                //emberAfSimpleMeteringClusterPrintln("TM: swapping profile");
+    510          
+    511                for ( status = EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES - 1;
+    512                status > 0;
+    513                status -- ) {
+    514                  //emberAfSimpleMeteringClusterPrintln("Copying from %u:%x%x%x to %u:%x%x%x", status, testMeterProfiles[status][0],testMeterProfiles[status][1],testMeterProfiles[status][2],status-1,testMeterProfiles[status-1][0],testMeterProfiles[status-1][1],testMeterProfiles[status-1][2]);
+    515                  MEMCOPY(testMeterProfiles[status],
+    516                    testMeterProfiles[status-1],
+    517                    3);
+    518                  MEMCOPY(&testMeterIntervalEndTimes[status],
+    519                    &testMeterIntervalEndTimes[status-1],
+    520                    4);
+    521                }
+    522                MEMCOPY(testMeterProfiles[0],
+    523                  intervalSummation,
+    524                  3);
+    525                testMeterIntervalEndTimes[0] = nextGetProfileInterval;
+    526          
+    527                for ( status = 0;
+    528                status < EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES;
+    529                status ++ ) {
+    530                  emberAfSimpleMeteringClusterPrintln("i %u profile %x%x%x time %u",status,testMeterProfiles[status][0],testMeterProfiles[status][1],testMeterProfiles[status][2],testMeterIntervalEndTimes[status]);
+    531                }
+    532                  //emberAfSimpleMeteringClusterPrintln("Copying Interval Summation %x%x%x",testMeterProfiles[0][0],testMeterProfiles[0][1],testMeterProfiles[0][2]);
+    533                intervalSummation[0]
+    534                  = intervalSummation[1]
+    535                  = intervalSummation[2] = 0;
+    536                nextGetProfileInterval += PROFILE_INTERVAL_PERIOD_IN_SECONDS;
+    537                // Reset summation
+    538                emberAfWriteAttribute(endpoint,
+    539                    ZCL_SIMPLE_METERING_CLUSTER_ID,
+    540                    ZCL_CURRENT_PARTIAL_PROFILE_INTERVAL_VALUE_DELIVERED_ATTRIBUTE_ID,
+    541                    CLUSTER_MASK_SERVER,
+    542                    intervalSummation,
+    543                    ZCL_INT24U_ATTRIBUTE_TYPE);
+    544          
+    545                // Set interval time
+    546                currentTime = emberAfGetCurrentTime();
+    547                //emberAfSimpleMeteringClusterPrintln("WRITING CURRENT TIME %u",currentTime);
+    548                emberAfWriteAttribute(endpoint,
+    549                    ZCL_SIMPLE_METERING_CLUSTER_ID,
+    550                    ZCL_CURRENT_PARTIAL_PROFILE_INTERVAL_START_TIME_DELIVERED_ATTRIBUTE_ID ,
+    551                    CLUSTER_MASK_SERVER,
+    552                    (int8u*)&nextGetProfileInterval,
+    553                    ZCL_UTC_TIME_ATTRIBUTE_TYPE);
+    554          
+    555                for ( status=0;
+    556                status<EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES;
+    557                status++ ) {
+    558                  // emberAfSimpleMeteringClusterPrintln("TM: Pr %x: %x%x%x",
+    559                       //  status,
+    560                       //  testMeterProfiles[status][0],
+    561                       //  testMeterProfiles[status][1],
+    562                       //  testMeterProfiles[status][2]);
+    563                }
+    564              } // 2nd if
+    565            } // testMode & 0x04
+    566          #endif // (EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES != 0)
+    567          
+    568            // adjust the optional attributes, if they were selected in the cluster configuration window
+    569            // current tier 1 summation delivered (0x0100), increment with same values from current summation
+    570            // delivered. Type is INT48U so same as current samation delivered.
+    571            if ( emAfContainsSimpleMeterServerAttribute(endpoint, 
+    572                                                        ZCL_CURRENT_TIER1_SUMMATION_DELIVERED_ATTRIBUTE_ID) ) {
+    573              emberAfWriteAttribute(endpoint,
+    574                                    ZCL_SIMPLE_METERING_CLUSTER_ID,
+    575                                    ZCL_CURRENT_TIER1_SUMMATION_DELIVERED_ATTRIBUTE_ID,
+    576                                    CLUSTER_MASK_SERVER,
+    577                                    summation,
+    578                                    ZCL_INT48U_ATTRIBUTE_TYPE);
+    579          
+    580              if ((*hourCounter % 60) == 0) {
+    581                //emberAfSimpleMeteringClusterPrintln("TM tier1 updated too");
+    582              }
+    583          
+    584            }
+    585          
+    586            // battery life remaining (0x0201), begin at 255, and decrement every minute. INT8U.
+    587            if ( emAfContainsSimpleMeterServerAttribute(endpoint, 
+    588                                                        ZCL_REMAINING_BATTERY_LIFE_ATTRIBUTE_ID) ) {
+    589              if ((*hourCounter) && ((*hourCounter % (60*batteryRate)) == 0) ) { // every minute
+    590                int8u batteryLife;
+    591                status = emberAfReadAttribute(endpoint,
+    592                                              ZCL_SIMPLE_METERING_CLUSTER_ID,
+    593                                              ZCL_REMAINING_BATTERY_LIFE_ATTRIBUTE_ID,
+    594                                              CLUSTER_MASK_SERVER,
+    595                                              &batteryLife,
+    596                                              1,
+    597                                              &dataType);
+    598                if ( status != EMBER_ZCL_STATUS_SUCCESS ) {
+    599                  emberAfSimpleMeteringClusterPrintln("ERR: can't read battery life");
+    600                  return;
+    601                }
+    602                if (batteryLife)
+    603                  batteryLife--; // decrement every minute. stop at zero.
+    604                emberAfWriteAttribute(endpoint,
+    605                                      ZCL_SIMPLE_METERING_CLUSTER_ID,
+    606                                      ZCL_REMAINING_BATTERY_LIFE_ATTRIBUTE_ID,
+    607                                      CLUSTER_MASK_SERVER,
+    608                                      &batteryLife,
+    609                                      ZCL_INT8U_ATTRIBUTE_TYPE);
+    610                emberAfSimpleMeteringClusterPrintln("TM battery life: %x",
+    611                                                    batteryLife);
+    612              } // end if hourCounter is at minute else do nothing
+    613            } // end if contains attribute battery life
+    614          
+    615            // hours in operation (0x0202), increment every 60 minutes. INT24U.
+    616            if ( emAfContainsSimpleMeterServerAttribute(endpoint, 
+    617                                                        ZCL_HOURS_IN_OPERATION_ATTRIBUTE_ID) ) {
+    618              if ((*hourCounter) && ((*hourCounter % 3600) == 0)) {  // every hour, but skip 0
+    619                int8u hoursInOperation[] = {0,0,0};
+    620                status = emberAfReadAttribute(endpoint,
+    621                                              ZCL_SIMPLE_METERING_CLUSTER_ID,
+    622                                              ZCL_HOURS_IN_OPERATION_ATTRIBUTE_ID,
+    623                                              CLUSTER_MASK_SERVER,
+    624                                              hoursInOperation,
+    625                                              3,
+    626                                              &dataType);
+    627                if ( status != EMBER_ZCL_STATUS_SUCCESS ) {
+    628                  emberAfSimpleMeteringClusterPrintln("ERR: can't read hours in operation");
+    629                  return;
+    630                }
+    631                // increment every hour. no clue what happens on overflow
+    632                if (BIGENDIAN_CPU)
+    633                  addToByteArrayHighLow(hoursInOperation, 3, 1);
+    634                else
+    635                  addToByteArrayLowHigh(hoursInOperation, 3, 1);
+    636                emberAfWriteAttribute(endpoint,
+    637                                      ZCL_SIMPLE_METERING_CLUSTER_ID,
+    638                                      ZCL_HOURS_IN_OPERATION_ATTRIBUTE_ID,
+    639                                      CLUSTER_MASK_SERVER,
+    640                                      hoursInOperation,
+    641                                      ZCL_INT24U_ATTRIBUTE_TYPE);
+    642                emberAfSimpleMeteringClusterPrintln("TM hours in operation:%x %x %x",
+    643                                                    hoursInOperation[0],
+    644                                                    hoursInOperation[1],
+    645                                                    hoursInOperation[2]);
+    646              } // end if hourCounter is at hour else do nothing
+    647            } // end if contains attribute hours in operation
+    648          
+    649            // instantaneous demand (0x0400), increment with same values from current summation
+    650            // delivered, namely the difference from the last second (the rate +/- the variance 
+    651            // applied this current second. this is a INT24S.
+    652            if ( emAfContainsSimpleMeterServerAttribute(endpoint, 
+    653                                                        ZCL_INSTANTANEOUS_DEMAND_ATTRIBUTE_ID) ) {
+    654              // how do you do signed intergers? I think ZCL uses two's complement, but
+    655              // I can't find this in the document anywhere. In this implementation, 
+    656              // the demand will always be positive, so note that this code will not
+    657              // support a negative demand as it is.
+    658              int8u instantaneousDemand[] = {0,0,0};
+    659              if (BIGENDIAN_CPU)
+    660                addToByteArrayHighLow(instantaneousDemand, 3, diff);
+    661              else
+    662                addToByteArrayLowHigh(instantaneousDemand, 3, diff);
+    663              // uncomment this to test. it's too noisy to do each time and
+    664              // not useful to do once in a while, since it's random.
+    665              //emberAfSimpleMeteringClusterPrintln("TM instantaneous demand:%x %x %x",
+    666              //                                    instantaneousDemand[0],
+    667              //                                    instantaneousDemand[1],
+    668              //                                    instantaneousDemand[2]);
+    669              emberAfWriteAttribute(endpoint,
+    670                                    ZCL_SIMPLE_METERING_CLUSTER_ID,
+    671                                    ZCL_INSTANTANEOUS_DEMAND_ATTRIBUTE_ID,
+    672                                    CLUSTER_MASK_SERVER,
+    673                                    instantaneousDemand,
+    674                                    ZCL_INT24S_ATTRIBUTE_TYPE);
+    675            }
+    676            // need to do this whether or not hours in operation is selected, so
+    677            // battery life counter still works properly
+    678            (*hourCounter)++; // this function called every second
+    679          
+    680          }
+    681          
+    682          
+    683          
+    684          boolean emAfTestMeterGetProfiles(int8u intervalChannel,
+    685                                           int32u endTime,
+    686                                           int8u numberOfPeriods)
+    687          {
+    688          #if (EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES != 0)
+    689            // Get the current time
+    690            int32u intervalEndTime;
+    691            int32u ct;
+    692            int8u start, stop, dt, i, profilesReturned;
+    693            int8u profileIntervalPeriod = PROFILE_INTERVAL_PERIOD_TIMEFRAME;
+    694            int8u ep = emberAfCurrentCommand()->apsFrame->destinationEndpoint;
+    695            EmberAfStatus status = emberAfReadAttribute(ep,
+    696                          ZCL_SIMPLE_METERING_CLUSTER_ID,
+    697                          ZCL_CURRENT_PARTIAL_PROFILE_INTERVAL_START_TIME_DELIVERED_ATTRIBUTE_ID,
+    698                          CLUSTER_MASK_SERVER,
+    699                          (int8u*)&ct,
+    700                          4,
+    701                          &dt);
+    702            EmberAfAmiGetProfileStatus returnStatus;
+    703            // If we can read the last profile time, AND either the endTime requested is 0 OR it is greater than
+    704            // the oldest read time, we can handle this - otherwise we return failure 0x05.
+    705            if (status == EMBER_ZCL_STATUS_SUCCESS) {
+    706          
+    707              int32u lastValidInterval = (ct / PROFILE_INTERVAL_PERIOD_IN_SECONDS) * PROFILE_INTERVAL_PERIOD_IN_SECONDS;
+    708              int32u lastEndTime = (lastValidInterval >= (PROFILE_INTERVAL_PERIOD_IN_SECONDS * EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES)?
+    709                                    lastValidInterval - (PROFILE_INTERVAL_PERIOD_IN_SECONDS* EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES):
+    710                                      PROFILE_INTERVAL_PERIOD_IN_SECONDS);
+    711          emberAfSimpleMeteringClusterPrintln("lastValidInterval %u lastEndTime %u",lastValidInterval,lastEndTime);
+    712              if(endTime >= lastEndTime || endTime == 0) {
+    713          
+    714              int8u i;
+    715              for(i = 0; i < EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES; i++) {
+    716                if(endTime >= testMeterIntervalEndTimes[i]){
+    717                  start = i;
+    718                  break;
+    719                }
+    720              }
+    721              // start = ((endTime > 0 && endTime >lastEndTime ) ? EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES - ((endTime - lastEndTime) / PROFILE_INTERVAL_PERIOD_IN_SECONDS) -1 : 0);
+    722          
+    723              if(endTime == 0) start = 0;
+    724              //If the end time is far ahead of the lastEndTime interval, we want to start at the latest interval.
+    725              if(start > EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES) start = 0;
+    726          
+    727              emberAfSimpleMeteringClusterPrintln("ct-endtime%u, start%u ",(ct - endTime),start);
+    728          
+    729              //stop = (((MAX_PROFILE_INDEX - start) > numberOfPeriods) ? (start + numberOfPeriods - 1) : MAX_PROFILE_INDEX);
+    730              if(lastValidInterval< PROFILE_INTERVAL_PERIOD_IN_SECONDS && start == 0 && endTime > 0) {
+    731                stop = start;
+    732              } else {
+    733                stop = (lastValidInterval / PROFILE_INTERVAL_PERIOD_IN_SECONDS) - 1;
+    734              } 
+    735          
+    736              if(stop > EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES){
+    737                stop = EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES;
+    738              }
+    739              
+    740              emberAfSimpleMeteringClusterPrintln("end Time 0x%4x, lastValidInterval 0x%4x, start %u",endTime,lastValidInterval, start);
+    741              profilesReturned = (stop - start);
+    742          
+    743              if(profilesReturned > numberOfPeriods)
+    744                profilesReturned = numberOfPeriods;
+    745          
+    746              //DEBUG
+    747              intervalEndTime = testMeterIntervalEndTimes[start];
+    748              emberAfSimpleMeteringClusterPrintln("start: %x, stop: %x, preq: %x, pret, %x", start, stop, numberOfPeriods, profilesReturned);
+    749              emberAfSimpleMeteringClusterFlush();
+    750          
+    751              //Set the return Status
+    752              returnStatus = EMBER_ZCL_AMI_GET_PROFILE_STATUS_SUCCESS;
+    753          
+    754              if(intervalChannel > EMBER_ZCL_AMI_INTERVAL_CHANNEL_CONSUMPTION_RECEIVED)
+    755                returnStatus = EMBER_ZCL_AMI_GET_PROFILE_STATUS_UNDEFINED_INTERVAL_CHANNEL_REQUESTED;
+    756          
+    757              if(profilesReturned == 0) {
+    758                returnStatus = EMBER_ZCL_AMI_GET_PROFILE_STATUS_NO_INTERVALS_AVAILABLE_FOR_THE_REQUESTED_TIME;
+    759                profileIntervalPeriod = 0;
+    760                intervalEndTime = 0;
+    761              }
+    762          
+    763              emberAfFillCommandSimpleMeteringClusterGetProfileResponse(intervalEndTime,
+    764                              returnStatus,
+    765                              profileIntervalPeriod,
+    766                              profilesReturned,
+    767                              appResponseData,
+    768                              profilesReturned * 3);
+    769              appResponseData[1] = emberAfIncomingZclSequenceNumber;
+    770          
+    771              for (i = 0; i < profilesReturned; i++) {
+    772                int32u data = (0x00 << 24) | (testMeterProfiles[start + i][0] <<16) | (testMeterProfiles[start+i][1] << 8) | (testMeterProfiles[start+i][2]);
+    773                emberAfCopyInt24u(appResponseData, 10 + (i * 3), data);
+    774                emberAfSimpleMeteringClusterPrintln("i %u profile %x%x%x time %u",i,testMeterProfiles[start + i][0],testMeterProfiles[start + i][1],testMeterProfiles[start + i][2],testMeterIntervalEndTimes[start+i]);
+    775              }
+    776              appResponseLength = 10 + (3 * profilesReturned);
+    777          
+    778              emberAfSendResponse();
+    779          
+    780              emberAfSimpleMeteringClusterPrintln("get profile: 0x%x, 0x%4x, 0x%x",
+    781                    intervalChannel,
+    782                    endTime,
+    783                    numberOfPeriods);
+    784          
+    785              return TRUE;
+    786              }
+    787            }
+    788          #endif //(EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_PROFILES != 0)
+    789            //Otherwise we send back a failure
+    790          
+    791            emberAfFillCommandSimpleMeteringClusterGetProfileResponse(0x00000000,
+    792                                                                      0x05,
+    793                                                                      0,
+    794                                                                      0,
+    795                                                                      appResponseData,
+    796                                                                      0);
+    797            appResponseData[1] = emberAfIncomingZclSequenceNumber;
+    798            appResponseLength = 10;
+    799            emberAfSendResponse();
+    800            return TRUE;
+    801          }
+    802          
+    803          #else
+
+   \                                 In section .text, align 2, keep-with-next
+    804          void emAfTestMeterInit(int8u endpoint) {}
+   \                     emAfTestMeterInit: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    805          void emAfTestMeterTick(int8u endpoint) {}
+   \                     emAfTestMeterTick: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+    806          boolean emAfTestMeterGetProfiles(int8u intervalChannel,
+    807                   int32u endTime,
+    808                   int8u numberOfPeriods) {
+    809            return FALSE;
+   \                     emAfTestMeterGetProfiles: (+1)
+   \   00000000   0x2000             MOVS     R0,#+0
+   \   00000002   0x4770             BX       LR               ;; return
+    810          
+    811          }
+    812          #endif //EMBER_AF_PLUGIN_SIMPLE_METERING_SERVER_TEST_METER_ENABLE
+    813          
+    814          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   emAfTestMeterGetProfiles
+       0   emAfTestMeterInit
+       0   emAfTestMeterTick
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  emAfTestMeterGetProfiles
+       2  emAfTestMeterInit
+       2  emAfTestMeterTick
+
+ 
+ 8 bytes in section .text
+ 
+ 8 bytes of CODE memory
+
+Errors: none
+Warnings: none

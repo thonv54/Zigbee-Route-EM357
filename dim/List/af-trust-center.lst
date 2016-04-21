@@ -1,0 +1,509 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        22/Oct/2015  09:32:45
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\security\af-trust-center.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\security\af-trust-center.c
+#        -D DIMMER -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"af-trust-center.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\security\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\af-trust-center.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\af-trust-center.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\security\af-trust-center.c
+      1          // *****************************************************************************
+      2          // * trust-center.c
+      3          // *
+      4          // * Security code for a Trust Center node.
+      5          // *
+      6          // * Copyright 2009 by Ember Corporation. All rights reserved.              *80*
+      7          // *****************************************************************************
+      8          
+      9          #include "app/framework/include/af.h"
+     10          #define USE_REAL_SECURITY_PROTOTYPES
+     11          #include "app/framework/security/af-security.h"
+     12          #include "app/framework/util/af-main.h"
+     13          #include "app/util/source-route-common.h"
+     14          #include "app/framework/util/attribute-storage.h"
+     15          
+     16          #ifdef EMBER_AF_GENERATED_PLUGIN_TRUST_CENTER_JOIN_FUNCTION_DECLARATIONS
+     17            EMBER_AF_GENERATED_PLUGIN_TRUST_CENTER_JOIN_FUNCTION_DECLARATIONS
+     18          #endif
+     19          //------------------------------------------------------------------------------
+     20          // Globals
+     21          
+     22          #if defined(EMBER_AF_PRINT_SECURITY)
+     23            // Corresponds to the EmberJoinDecision status codes
+     24            static PGM_NO_CONST PGM_P joinDecisionText[] = {
+                                             ^
+Warning[Pe177]: variable "joinDecisionText" was declared but never referenced
+     25              EMBER_JOIN_DECISION_STRINGS
+     26            };
+     27          
+     28            // Corresponds to the EmberDeviceUpdate status codes
+     29            static PGM_NO_CONST PGM_P deviceUpdateText[] = {
+                                             ^
+Warning[Pe177]: variable "deviceUpdateText" was declared but never referenced
+     30              EMBER_DEVICE_UPDATE_STRINGS
+     31            };
+     32          
+     33          #endif // EMBER_AF_PRINT_APP
+     34          
+     35          static EmberStatus permitRequestingTrustCenterLinkKey(void);
+     36          static EmberStatus permitRequestingApplicationLinkKey(void);
+     37          
+     38          static EmberStatus setJoinPolicy(EmberJoinDecision decision);
+     39          
+     40          //------------------------------------------------------------------------------
+     41          
+
+   \                                 In section .text, align 2, keep-with-next
+     42          EmberStatus zaTrustCenterSetJoinPolicy(EmberJoinDecision decision)
+     43          {
+     44            // Call the platform specific method to do this.
+     45            return setJoinPolicy(decision);
+   \                     zaTrustCenterSetJoinPolicy: (+1)
+   \   00000000   0x....             LDR.N    R1,??DataTable2
+   \   00000002   0x7008             STRB     R0,[R1, #+0]
+   \   00000004   0x2000             MOVS     R0,#+0
+   \   00000006   0x4770             BX       LR               ;; return
+     46          }
+     47          
+
+   \                                 In section .text, align 2, keep-with-next
+     48          EmberStatus zaTrustCenterSecurityPolicyInit(void)
+     49          {
+   \                     zaTrustCenterSecurityPolicyInit: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     50            EmberStatus status = permitRequestingTrustCenterLinkKey();
+   \   00000002   0x.... 0x....      BL       emAfGetCurrentSecurityProfileData
+   \   00000006   0xB908             CBNZ.N   R0,??zaTrustCenterSecurityPolicyInit_0
+     51            if (status == EMBER_SUCCESS) {
+     52              status = permitRequestingApplicationLinkKey();
+     53            }
+     54            if (status != EMBER_SUCCESS) {
+     55              return status;
+   \                     ??zaTrustCenterSecurityPolicyInit_1: (+1)
+   \   00000008   0x2001             MOVS     R0,#+1
+   \   0000000A   0xBD02             POP      {R1,PC}
+     56            }
+   \                     ??zaTrustCenterSecurityPolicyInit_0: (+1)
+   \   0000000C   0x7A80             LDRB     R0,[R0, #+10]
+   \   0000000E   0x....             LDR.N    R1,??DataTable2_1
+   \   00000010   0x7008             STRB     R0,[R1, #+0]
+   \   00000012   0x.... 0x....      BL       emAfGetCurrentSecurityProfileData
+   \   00000016   0x2800             CMP      R0,#+0
+   \   00000018   0xD0F6             BEQ.N    ??zaTrustCenterSecurityPolicyInit_1
+   \   0000001A   0x7AC0             LDRB     R0,[R0, #+11]
+   \   0000001C   0x....             LDR.N    R1,??DataTable2_2
+   \   0000001E   0x7008             STRB     R0,[R1, #+0]
+     57          
+     58            // We always set the join policy to EMBER_USE_PRECONFIGURED_KEY
+     59            // even in the case where the joining device doesn't have one.  This
+     60            // is the safest thing to do.
+     61            // In cases where devices don't have a preconfigured key, the TC must be
+     62            // explicitly told to allow joining by calling the function below with
+     63            // EMBER_SEND_KEY_IN_THE_CLEAR.  Once the device finishes joining the TC 
+     64            // should set the policy back to EMBER_USE_PRECONFIGURED_KEY.
+     65            return setJoinPolicy(EMBER_USE_PRECONFIGURED_KEY);
+   \   00000020   0x2000             MOVS     R0,#+0
+   \   00000022   0x....             LDR.N    R1,??DataTable2
+   \   00000024   0x7008             STRB     R0,[R1, #+0]
+   \   00000026   0xBD02             POP      {R1,PC}          ;; return
+     66          }
+     67          
+
+   \                                 In section .text, align 2, keep-with-next
+     68          EmberStatus zaTrustCenterSecurityInit(boolean centralizedNetwork)
+     69          {
+   \                     zaTrustCenterSecurityInit: (+1)
+   \   00000000   0xB530             PUSH     {R4,R5,LR}
+   \   00000002   0xB08D             SUB      SP,SP,#+52
+   \   00000004   0x4604             MOV      R4,R0
+     70            EmberInitialSecurityState state;
+     71            EmberExtendedSecurityBitmask extended;
+     72            EmberStatus status;
+     73            const EmberAfSecurityProfileData *data = emAfGetCurrentSecurityProfileData();
+   \   00000006   0x.... 0x....      BL       emAfGetCurrentSecurityProfileData
+   \   0000000A   0x0005             MOVS     R5,R0
+     74          
+     75            if (data == NULL) {
+   \   0000000C   0xBF08             IT       EQ 
+     76              return EMBER_ERR_FATAL;
+   \   0000000E   0x2001             MOVEQ    R0,#+1
+   \   00000010   0xD030             BEQ.N    ??zaTrustCenterSecurityInit_0
+     77            }
+     78          
+     79            MEMSET(&state, 0, sizeof(EmberInitialSecurityState));
+   \   00000012   0x222C             MOVS     R2,#+44
+   \   00000014   0x2100             MOVS     R1,#+0
+   \   00000016   0xA801             ADD      R0,SP,#+4
+   \   00000018   0x.... 0x....      BL       halCommonMemSet
+     80            state.bitmask = data->tcBitmask;
+   \   0000001C   0x8868             LDRH     R0,[R5, #+2]
+   \   0000001E   0xF8AD 0x0004      STRH     R0,[SP, #+4]
+     81            extended = data->tcExtendedBitmask;
+     82            MEMMOVE(emberKeyContents(&state.preconfiguredKey),
+     83                    emberKeyContents(&data->preconfiguredKey),
+     84                    EMBER_ENCRYPTION_KEY_SIZE);
+   \   00000022   0x2210             MOVS     R2,#+16
+   \   00000024   0x88A8             LDRH     R0,[R5, #+4]
+   \   00000026   0xF8AD 0x0000      STRH     R0,[SP, #+0]
+   \   0000002A   0xF105 0x010C      ADD      R1,R5,#+12
+   \   0000002E   0xF10D 0x0006      ADD      R0,SP,#+6
+   \   00000032   0x.... 0x....      BL       halCommonMemMove
+     85          
+     86            // Random network key (highly recommended)
+     87            status = emberAfGenerateRandomKey(&(state.networkKey));
+   \   00000036   0xF10D 0x0016      ADD      R0,SP,#+22
+   \   0000003A   0x.... 0x....      BL       emberGenerateRandomKey
+     88            if (status != EMBER_SUCCESS) {
+   \   0000003E   0xB9C8             CBNZ.N   R0,??zaTrustCenterSecurityInit_0
+     89              return status;
+     90            }
+     91          
+     92            // Check for distributed network.
+     93            if (!centralizedNetwork)
+   \   00000040   0xB92C             CBNZ.N   R4,??zaTrustCenterSecurityInit_1
+     94              state.bitmask |= EMBER_DISTRIBUTED_TRUST_CENTER_MODE;
+   \   00000042   0xF8BD 0x0004      LDRH     R0,[SP, #+4]
+   \   00000046   0xF040 0x0002      ORR      R0,R0,#0x2
+   \   0000004A   0xF8AD 0x0004      STRH     R0,[SP, #+4]
+     95          
+     96          #if defined ZA_CLI_FULL
+     97            // These functions will only be called if the full CLI is enabled and key 
+     98            // values have been previously set on the CLI via the "changekey" command.
+     99            getLinkKeyFromCli(&(state.preconfiguredKey));
+    100            getNetworkKeyFromCli(&(state.networkKey));
+    101          #endif
+    102          
+    103            emberAfSecurityInitCallback(&state, &extended, TRUE); // trust center?
+   \                     ??zaTrustCenterSecurityInit_1: (+1)
+   \   0000004E   0x2201             MOVS     R2,#+1
+   \   00000050   0xA900             ADD      R1,SP,#+0
+   \   00000052   0xA801             ADD      R0,SP,#+4
+   \   00000054   0x.... 0x....      BL       emberAfSecurityInitCallback
+    104          
+    105            emberAfSecurityPrintln("set state to: 0x%2x", state.bitmask);
+    106            status = emberSetInitialSecurityState(&state);
+   \   00000058   0xA801             ADD      R0,SP,#+4
+   \   0000005A   0x.... 0x....      BL       emberSetInitialSecurityState
+    107            if (status != EMBER_SUCCESS) {
+   \   0000005E   0xB948             CBNZ.N   R0,??zaTrustCenterSecurityInit_0
+    108              emberAfSecurityPrintln("security init TC: 0x%x", status);
+    109              return status;
+    110            }
+    111          
+    112            // Don't need to check on the status here, emberSetExtendedSecurityBitmask
+    113            // always returns EMBER_SUCCESS.
+    114            emberAfSecurityPrintln("set extended security to: 0x%2x", extended);
+    115            emberSetExtendedSecurityBitmask(extended);
+   \   00000060   0xF8BD 0x0000      LDRH     R0,[SP, #+0]
+   \   00000064   0x.... 0x....      BL       emberSetExtendedSecurityBitmask
+    116          
+    117            status = zaTrustCenterSecurityPolicyInit();
+   \   00000068   0x.... 0x....      BL       zaTrustCenterSecurityPolicyInit
+    118            if (status != EMBER_SUCCESS) {
+   \   0000006C   0xB910             CBNZ.N   R0,??zaTrustCenterSecurityInit_0
+    119              return status;
+    120            }
+    121          
+    122            emAfClearLinkKeyTable();
+   \   0000006E   0x.... 0x....      BL       emAfClearLinkKeyTable
+    123          
+    124            return EMBER_SUCCESS;
+   \   00000072   0x2000             MOVS     R0,#+0
+   \                     ??zaTrustCenterSecurityInit_0: (+1)
+   \   00000074   0xB00D             ADD      SP,SP,#+52
+   \   00000076   0xBD30             POP      {R4,R5,PC}       ;; return
+    125          }
+    126          
+    127          static void securityJoinNotify(EmberNodeId newNodeId,
+    128                                         EmberEUI64 newNodeEui64,
+    129                                         EmberNodeId parentOfNewNode,
+    130                                         EmberDeviceUpdate status,
+    131                                         EmberJoinDecision decision)
+    132          {
+    133          
+    134            // Allow users of the framework an opportunity to see this notification.
+    135            emberAfTrustCenterJoinCallback(newNodeId, 
+    136                                           newNodeEui64, 
+    137                                           parentOfNewNode, 
+    138                                           status, 
+    139                                           decision);
+    140          
+    141          #ifdef EMBER_AF_GENERATED_PLUGIN_TRUST_CENTER_JOIN_FUNCTION_CALLS
+    142            EMBER_AF_GENERATED_PLUGIN_TRUST_CENTER_JOIN_FUNCTION_CALLS
+    143          #endif
+    144            
+    145          #if defined(EMBER_AF_PLUGIN_CONCENTRATOR)
+    146            if (parentOfNewNode != emberAfGetNodeId()) {
+    147              sourceRouteAddEntryWithCloserNextHop(newNodeId, parentOfNewNode);
+    148            }
+    149          #endif
+    150          
+    151          #if defined(EMBER_AF_PRINT_SECURITY)
+    152            emberAfSecurityPrintln("Trust Center Join Handler: status = %p, decision = %p (%x), shortid 0x%2x",
+    153                           deviceUpdateText[status],
+    154                           joinDecisionText[decision],
+    155                           decision,
+    156                           newNodeId);
+    157            emberAfSecurityFlush();
+    158          #endif
+    159          }
+    160          
+    161          //==============================================================================
+    162          // Platform Dependent Implementations
+    163          
+    164          #if defined (EZSP_HOST)
+    165          
+    166          static PGM_NO_CONST PGM_P ezspJoinPolicyText[] = {
+    167            "Allow Joins",
+    168            "Allow preconfigured key joins",
+    169            "Allow rejoins only",
+    170            "Disallow all joins and rejoins",
+    171            "Allow Joins, rejoins have link key",
+    172          };
+    173          
+    174          void ezspTrustCenterJoinHandler(EmberNodeId newNodeId,
+    175                                          EmberEUI64 newNodeEui64,
+    176                                          EmberDeviceUpdate status,
+    177                                          EmberJoinDecision policyDecision,
+    178                                          EmberNodeId parentOfNewNode)
+    179          {
+    180            securityJoinNotify(newNodeId,
+    181                               newNodeEui64,
+    182                               parentOfNewNode,
+    183                               status,
+    184                               policyDecision);
+    185          }
+    186          
+    187          static EmberStatus setJoinPolicy(EmberJoinDecision decision)
+    188          {
+    189            EzspDecisionId id;
+    190            if (decision == EMBER_USE_PRECONFIGURED_KEY) {
+    191              id = EZSP_ALLOW_PRECONFIGURED_KEY_JOINS;
+    192            } else if (decision == EMBER_SEND_KEY_IN_THE_CLEAR) {
+    193              id = EZSP_ALLOW_JOINS_REJOINS_HAVE_LINK_KEY;
+    194            } else {  // EMBER_DENY_JOIN or EMBER_NO_ACTION
+    195              id = EZSP_DISALLOW_ALL_JOINS_AND_REJOINS;
+    196            }
+    197            return emberAfSetEzspPolicy(EZSP_TRUST_CENTER_POLICY,
+    198                                        id,
+    199                                        "Trust Center Policy",
+    200                                        ezspJoinPolicyText[id]);
+    201          }
+    202          
+    203          static EmberStatus permitRequestingTrustCenterLinkKey(void)
+    204          {
+    205            const EmberAfSecurityProfileData *data = emAfGetCurrentSecurityProfileData();
+    206            if (data == NULL) {
+    207              return EMBER_ERR_FATAL;
+    208            }
+    209          
+    210            EzspDecisionId emberAfLinkKeyRequestPolicy;
+    211          #if defined(EMBER_AF_PLUGIN_NETWORK_COMMISSIONER)
+    212            emberAfLinkKeyRequestPolicy = EMBER_GENERATE_NEW_TC_LINK_KEY;
+    213          #else
+    214          emberAfLinkKeyRequestPolicy = data->tcLinkKeyRequestPolicy;
+    215          #endif
+    216            return emberAfSetEzspPolicy(EZSP_TC_KEY_REQUEST_POLICY,
+    217                                        emberAfLinkKeyRequestPolicy,
+    218                                        "TC Key Request",
+    219                                        (emberAfLinkKeyRequestPolicy
+    220                                         ==  EMBER_AF_ALLOW_TC_KEY_REQUESTS
+    221                                         ? "Allow"
+    222                                         : "Deny"));
+    223          }
+    224          
+    225          static EmberStatus permitRequestingApplicationLinkKey(void)
+    226          {
+    227            const EmberAfSecurityProfileData *data = emAfGetCurrentSecurityProfileData();
+    228            if (data == NULL) {
+    229              return EMBER_ERR_FATAL;
+    230            }
+    231            return emberAfSetEzspPolicy(EZSP_APP_KEY_REQUEST_POLICY,
+    232                                        data->appLinkKeyRequestPolicy,
+    233                                        "App. Key Request",
+    234                                        (data->appLinkKeyRequestPolicy
+    235                                         == EMBER_AF_ALLOW_APP_KEY_REQUESTS
+    236                                         ? "Allow"
+    237                                         : "Deny"));
+    238          }
+    239          
+    240          //------------------------------------------------------------------------------
+    241          // System-on-a-chip
+    242          
+    243          #else 
+    244          
+
+   \                                 In section .bss, align 1
+    245          static EmberJoinDecision defaultDecision = EMBER_USE_PRECONFIGURED_KEY;
+   \                     defaultDecision:
+   \   00000000                      DS8 1
+    246          
+
+   \                                 In section .text, align 2, keep-with-next
+    247          EmberJoinDecision emberTrustCenterJoinHandler(EmberNodeId newNodeId,
+    248                                                        EmberEUI64 newNodeEui64,
+    249                                                        EmberDeviceUpdate status,
+    250                                                        EmberNodeId parentOfNewNode)
+    251          {
+   \                     emberTrustCenterJoinHandler: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+   \   00000002   0x461C             MOV      R4,R3
+    252            EmberJoinDecision joinDecision = defaultDecision;
+   \   00000004   0x....             LDR.N    R3,??DataTable2
+   \   00000006   0x781D             LDRB     R5,[R3, #+0]
+    253          
+    254            if (status == EMBER_STANDARD_SECURITY_SECURED_REJOIN
+    255                || status == EMBER_DEVICE_LEFT
+    256                || status == EMBER_HIGH_SECURITY_SECURED_REJOIN) {
+   \   00000008   0x2A00             CMP      R2,#+0
+   \   0000000A   0xBF1C             ITT      NE 
+   \   0000000C   0x2A02             CMPNE    R2,#+2
+   \   0000000E   0x2A04             CMPNE    R2,#+4
+   \   00000010   0xD100             BNE.N    ??emberTrustCenterJoinHandler_0
+    257              joinDecision = EMBER_NO_ACTION;
+   \   00000012   0x2503             MOVS     R5,#+3
+    258            }
+    259          
+    260            securityJoinNotify(newNodeId,
+    261                               newNodeEui64,
+    262                               parentOfNewNode,
+    263                               status,
+    264                               joinDecision);
+   \                     ??emberTrustCenterJoinHandler_0: (+1)
+   \   00000014   0x4613             MOV      R3,R2
+   \   00000016   0x9500             STR      R5,[SP, #+0]
+   \   00000018   0x4622             MOV      R2,R4
+   \   0000001A   0x.... 0x....      BL       emberAfTrustCenterJoinCallback
+    265          
+    266            return joinDecision;
+   \   0000001E   0x4628             MOV      R0,R5
+   \   00000020   0xBD32             POP      {R1,R4,R5,PC}    ;; return
+    267          }
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2:
+   \   00000000   0x........         DC32     defaultDecision
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2_1:
+   \   00000000   0x........         DC32     emberTrustCenterLinkKeyRequestPolicy
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2_2:
+   \   00000000   0x........         DC32     emberAppLinkKeyRequestPolicy
+    268          
+    269          static EmberStatus setJoinPolicy(EmberJoinDecision decision)
+    270          {
+    271            defaultDecision = decision;
+    272            return EMBER_SUCCESS;
+    273          }
+    274          
+    275          static EmberStatus permitRequestingTrustCenterLinkKey(void)
+    276          {
+    277            const EmberAfSecurityProfileData *data = emAfGetCurrentSecurityProfileData();
+    278            if (data == NULL) {
+    279              return EMBER_ERR_FATAL;
+    280            }
+    281            emberTrustCenterLinkKeyRequestPolicy = data->tcLinkKeyRequestPolicy;
+    282          
+    283          #if defined(EMBER_AF_PLUGIN_NETWORK_COMMISSIONER)
+    284            // This should really be cleaned up.
+    285            emberTrustCenterLinkKeyRequestPolicy = EMBER_GENERATE_NEW_TC_LINK_KEY;
+    286          #endif
+    287          
+    288            return EMBER_SUCCESS;
+    289          }
+    290          
+    291          static EmberStatus permitRequestingApplicationLinkKey(void)
+    292          {
+    293            const EmberAfSecurityProfileData *data = emAfGetCurrentSecurityProfileData();
+    294            if (data == NULL) {
+    295              return EMBER_ERR_FATAL;
+    296            }
+    297            emberAppLinkKeyRequestPolicy = data->appLinkKeyRequestPolicy;
+    298            return EMBER_SUCCESS;
+    299          }
+    300          
+    301          #endif // EZSP_HOST
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      16   emberTrustCenterJoinHandler
+        16   -> emberAfTrustCenterJoinCallback
+      64   zaTrustCenterSecurityInit
+        64   -> emAfClearLinkKeyTable
+        64   -> emAfGetCurrentSecurityProfileData
+        64   -> emberAfSecurityInitCallback
+        64   -> emberGenerateRandomKey
+        64   -> emberSetExtendedSecurityBitmask
+        64   -> emberSetInitialSecurityState
+        64   -> halCommonMemMove
+        64   -> halCommonMemSet
+        64   -> zaTrustCenterSecurityPolicyInit
+       8   zaTrustCenterSecurityPolicyInit
+         8   -> emAfGetCurrentSecurityProfileData
+       0   zaTrustCenterSetJoinPolicy
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable2
+       4  ??DataTable2_1
+       4  ??DataTable2_2
+       1  defaultDecision
+      34  emberTrustCenterJoinHandler
+     120  zaTrustCenterSecurityInit
+      40  zaTrustCenterSecurityPolicyInit
+       8  zaTrustCenterSetJoinPolicy
+
+ 
+   1 byte  in section .bss
+ 214 bytes in section .text
+ 
+ 214 bytes of CODE memory
+   1 byte  of DATA memory
+
+Errors: none
+Warnings: 2

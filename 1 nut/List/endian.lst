@@ -1,0 +1,155 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        18/Apr/2016  13:01:27
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\hal\micro\generic\endian.c
+#    Command line =  
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\hal\micro\generic\endian.c" -D
+#        SWITCH_1_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"endian.c\"" -lC "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\" --diag_suppress Pa050 -o "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\" --debug --endian=little --cpu=Cortex-M3
+#        --no_path_in_file_macros --separate_cluster_for_initialized_variables
+#        -e --fpu=None --dlib_config "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        "D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\hal\micro\generic\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\"
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\endian.lst
+#    Object file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\endian.o
+#
+###############################################################################
+
+D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\hal\micro\generic\endian.c
+      1          /** @file hal/micro/generic/endian.c
+      2           *  @brief  Generic firmware source for Endian conversions.
+      3           *
+      4           * <!-- Author(s): Lee Taylor, lee@ember.com -->
+      5           * <!-- Copyright 2004-2009 by Ember Corporation. All rights reserved.   *80*-->   
+      6           */
+      7          
+      8          #include PLATFORM_HEADER
+      9          #include "hal/micro/endian.h"
+     10          
+     11          #if (!defined(EMBER_STACK_OWL_RX))
+     12          #include "stack/include/ember-types.h"
+     13          #endif /* EMBER_STACK_OWL_RX */
+     14          
+     15          // Endian conversion APIs.  
+     16          // Network byte order is big endian, so these APIs are only necessary on 
+     17          //  platforms which have a natural little endian byte order.  On big-endian
+     18          //  platforms, the APIs are macro'd away to nothing
+     19          
+     20          #ifndef NTOHS
+     21          // Network to Host Short
+     22          int16u NTOHS(int16u val)
+     23          {
+     24            int8u *fldPtr;
+     25          
+     26            fldPtr = (int8u *)&val;
+     27            return (HIGH_LOW_TO_INT(*fldPtr, *(fldPtr+1)));
+     28          }
+     29          #endif
+     30          
+     31          #ifndef NTOHL
+     32          // Network to Host Long
+     33          int32u NTOHL(int32u val)
+     34          {
+     35            int16u *fldPtr;
+     36            int16u field;
+     37            int16u field2;
+     38          
+     39            fldPtr = (int16u *)&val;
+     40            field = NTOHS(*fldPtr);
+     41            field2 = NTOHS(*(fldPtr+1));
+     42            return ((int32u)field << 16) | ((int32u)field2);
+     43          }
+     44          #endif
+     45          
+     46          
+     47          /* Swap byte order, e.g. LE to BE or BE to LE. 
+     48           * This function is used when working with 802.15.4 frames on 8051 MCUs. */
+
+   \                                 In section .text, align 2, keep-with-next
+     49          int32u SwapEndiannessInt32u(int32u val)
+     50          {
+   \                     SwapEndiannessInt32u: (+1)
+   \   00000000   0xB401             PUSH     {R0}
+   \   00000002   0xB081             SUB      SP,SP,#+4
+     51              int32u ret;
+     52          
+     53              ((int8u*)&ret)[0] = ((int8u*)&val)[3];
+   \   00000004   0xF89D 0x0007      LDRB     R0,[SP, #+7]
+   \   00000008   0xF88D 0x0000      STRB     R0,[SP, #+0]
+     54              ((int8u*)&ret)[1] = ((int8u*)&val)[2];
+   \   0000000C   0xF89D 0x0006      LDRB     R0,[SP, #+6]
+   \   00000010   0xF88D 0x0001      STRB     R0,[SP, #+1]
+     55              ((int8u*)&ret)[2] = ((int8u*)&val)[1];
+   \   00000014   0xF89D 0x0005      LDRB     R0,[SP, #+5]
+   \   00000018   0xF88D 0x0002      STRB     R0,[SP, #+2]
+     56              ((int8u*)&ret)[3] = ((int8u*)&val)[0];
+   \   0000001C   0xF89D 0x0004      LDRB     R0,[SP, #+4]
+   \   00000020   0xF88D 0x0003      STRB     R0,[SP, #+3]
+     57          
+     58              return ret;
+   \   00000024   0x9800             LDR      R0,[SP, #+0]
+   \   00000026   0xB002             ADD      SP,SP,#+8
+   \   00000028   0x4770             BX       LR               ;; return
+     59          }
+     60          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   SwapEndiannessInt32u
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      42  SwapEndiannessInt32u
+
+ 
+ 42 bytes in section .text
+ 
+ 42 bytes of CODE memory
+
+Errors: none
+Warnings: none

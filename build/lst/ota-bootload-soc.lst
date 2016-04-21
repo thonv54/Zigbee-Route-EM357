@@ -1,0 +1,119 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        31/Aug/2015  14:04:33
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-bootload\ota-bootload-soc.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-bootload\ota-bootload-soc.c
+#        -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"ota-bootload-soc.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-bootload\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\ota-bootload-soc.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ota-bootload-soc.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-bootload\ota-bootload-soc.c
+      1          // ****************************************************************************
+      2          // * ota-bootload-soc.c
+      3          // *
+      4          // * Routines for bootloading an SOC.
+      5          // * 
+      6          // * Copyright 2010 by Ember Corporation. All rights reserved.              *80*
+      7          // *****************************************************************************
+      8          
+      9          #include "app/framework/include/af.h"
+     10          
+     11          //------------------------------------------------------------------------------
+     12          // Globals
+     13          
+     14          //------------------------------------------------------------------------------
+     15          
+
+   \                                 In section .text, align 2, keep-with-next
+     16          int8u emberAfOtaBootloadCallback(const EmberAfOtaImageId* id,
+     17                                           int16u ncpUpgradeTagId)
+     18          {
+   \                     emberAfOtaBootloadCallback: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     19            halAppBootloaderInstallNewImage();
+   \   00000002   0x.... 0x....      BL       halAppBootloaderInstallNewImage
+     20          
+     21            emberAfCorePrintln("Bootloading failed!");
+   \   00000006   0x.... 0x....      ADR.W    R1,`?<Constant "Bootloading failed!">`
+   \   0000000A   0x2001             MOVS     R0,#+1
+   \   0000000C   0x.... 0x....      BL       emberAfPrintln
+     22          
+     23            // If we got here, it is a failure.
+     24            return 1;
+   \   00000010   0x2001             MOVS     R0,#+1
+   \   00000012   0xBD02             POP      {R1,PC}          ;; return
+     25          }
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant "Bootloading failed!">`:
+   \   00000000   0x42 0x6F          DC8 "Bootloading failed!"
+   \              0x6F 0x74    
+   \              0x6C 0x6F    
+   \              0x61 0x64    
+   \              0x69 0x6E    
+   \              0x67 0x20    
+   \              0x66 0x61    
+   \              0x69 0x6C    
+   \              0x65 0x64    
+   \              0x21 0x00    
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       8   emberAfOtaBootloadCallback
+         8   -> emberAfPrintln
+         8   -> halAppBootloaderInstallNewImage
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      20  ?<Constant "Bootloading failed!">
+      20  emberAfOtaBootloadCallback
+
+ 
+ 40 bytes in section .text
+ 
+ 40 bytes of CODE memory
+
+Errors: none
+Warnings: none

@@ -1,0 +1,560 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        31/Aug/2015  14:04:36
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-client\ota-client-signature-verify.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-client\ota-client-signature-verify.c
+#        -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"ota-client-signature-verify.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-client\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\ota-client-signature-verify.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ota-client-signature-verify.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-client\ota-client-signature-verify.c
+      1          // *****************************************************************************
+      2          // * ota-client-signature-verify.c
+      3          // *
+      4          // * Verification code for the ZigBee over-the-air bootload cluster.
+      5          // * This handles retrieving the stored application from storage,
+      6          // * calculating the message digest, and checking the signature.
+      7          // * 
+      8          // * Copyright 2010 by Ember Corporation. All rights reserved.              *80*
+      9          // *****************************************************************************
+     10          
+     11          #include "app/framework/include/af.h"
+     12          #include "callback.h"
+     13          
+     14          #if defined(EZSP_HOST)
+     15            #include "stack/include/ember-types.h"
+     16            #include "stack/include/error.h"
+     17            #include "hal/hal.h"
+     18            #include "app/util/ezsp/ezsp-protocol.h"
+     19            #include "app/util/ezsp/ezsp.h"
+     20            #include "stack/include/library.h"
+     21          #else
+     22            #include "stack/include/cbke-crypto-engine.h"
+     23            #include "stack/include/library.h"
+     24          #endif
+     25          
+     26          
+     27          #include "app/framework/security/crypto-state.h"
+     28          #include "app/framework/plugin/ota-common/ota.h"
+     29          #include "app/framework/plugin/ota-storage-common/ota-storage.h"
+     30          #include "app/framework/plugin/ota-client/ota-client.h"
+     31          #include "app/framework/plugin/ota-client-policy/ota-client-policy.h"
+     32          #include "ota-client-signature-verify.h"
+     33          
+     34          #if defined(EMBER_AF_PLUGIN_OTA_CLIENT_SIGNATURE_VERIFICATION_SUPPORT)
+     35          
+     36          
+     37          //------------------------------------------------------------------------------
+     38          // Globals
+     39          //------------------------------------------------------------------------------
+     40          
+     41          // The size of this buffer is based on the max size that EZSP can handle, 
+     42          // including framing.
+     43          // This MUST be a multiple of 16, because the emberAesMmmoHashUpdate()
+     44          // code requires this.
+     45          #define MAX_BLOCK_SIZE_FOR_HASH 96
+     46          
+     47          #define MAX_SIGNERS 3
+     48          static const int8u PGM_NO_CONST allowedSignerEuiBigEndian[MAX_SIGNERS][EUI64_SIZE] = {
+     49            EMBER_AF_PLUGIN_OTA_CLIENT_SIGNER_EUI0,
+     50            EMBER_AF_PLUGIN_OTA_CLIENT_SIGNER_EUI1,
+     51            EMBER_AF_PLUGIN_OTA_CLIENT_SIGNER_EUI2,
+     52          };
+     53          
+     54          #define SUBJECT_OFFSET EMBER_PUBLIC_KEY_SIZE
+     55          #define ISSUER_OFFSET (SUBJECT_OFFSET + EUI64_SIZE)
+     56          
+     57          #define DIGEST_CALCULATE_PRINT_UPDATE_RATE  5
+     58          
+     59          // TODO:  This is the data that we keep track of while verification is in
+     60          // progress.  It consumes a bit of RAM that is rarely used.  It would be
+     61          // ideal on the SOC to put this in an Ember message buffer.  However
+     62          // we must abstract the data storage since it needs to support both SOC and Host
+     63          // based apps.
+     64          static EmberAesMmoHashContext context;
+     65          static int32u currentOffset = 0;
+     66          
+     67          typedef enum {
+     68            DIGEST_CALCULATE_COMPLETE    = 0,
+     69            DIGEST_CALCULATE_IN_PROGRESS = 1,
+     70            DIGEST_CALCULATE_ERROR       = 2,
+     71          } DigestCalculateStatus;
+     72          
+     73          
+     74          //------------------------------------------------------------------------------
+     75          // Forward Declarations
+     76          //------------------------------------------------------------------------------
+     77          
+     78          
+     79          
+     80          #if defined (EZSP_HOST)
+     81          // External
+     82          void emberReverseMemCopy(int8u* dest, const int8u* src, int16u length);
+     83          
+     84          
+     85          // For now we declare these here, but they should be moved to a more appropriate
+     86          // header.
+     87          void emberAesMmoHashInit(EmberAesMmoHashContext* context);
+     88          EmberStatus emberAesMmoHashUpdate(EmberAesMmoHashContext* context,
+     89                                            int32u length,
+     90                                            const int8u* data);
+     91          EmberStatus emberAesMmoHashFinal(EmberAesMmoHashContext* context,
+     92                                           int32u length,
+     93                                           const int8u* finalData);
+     94          #endif // EZSP_HOST
+     95          
+     96          static boolean checkSigner(const int8u* bigEndianSignerEui64);
+     97          
+     98          static void dsaVerifyHandler(EmberStatus status);
+     99          
+    100          static DigestCalculateStatus calculateDigest(int16u maxHashCalculations,
+    101                                                       const EmberAfOtaImageId *id, 
+    102                                                       EmberMessageDigest* digest);
+    103          
+    104          //#define DEBUG_DIGEST_PRINT
+    105          #if defined(DEBUG_DIGEST_PRINT)
+    106            static void debugDigestPrint(const EmberAesMmoHashContext* context);
+    107          #else
+    108            #define debugDigestPrint(x)
+    109          #endif
+    110          
+    111          //------------------------------------------------------------------------------
+    112          // Functions
+    113          //------------------------------------------------------------------------------
+    114          
+    115          EmberAfImageVerifyStatus emAfOtaImageSignatureVerify(int16u maxHashCalculations,
+    116                                                               const EmberAfOtaImageId* id, 
+    117                                                               boolean newVerification)
+    118          {
+    119            // Smart Energy policy requires verification of the signature of the
+    120            // downloaded file.
+    121          
+    122            // We only support images that have the embedded certificate in them.
+    123            // However we validate that the certificate only comes from a signer that we
+    124            // know and trust by making sure the hardcoded EUI in the software matches 
+    125            // with the EUI in the certificate.
+    126            // The reason for supporting only images with embedded certificates is that
+    127            // it consumes less flash space to keep track of a signer EUI (8 bytes) 
+    128            // than to keep track of an entire signer ceritficate (48 bytes).
+    129            
+    130            // 1) Extract the certificate of the signer.
+    131            // 2) Verify the signer is known to us.
+    132            // 3) Calculate the message digest of the image.
+    133            // 4) Extract the signature of the image.
+    134            // 5) Validate the signature came from that signer
+    135          
+    136            EmberMessageDigest digest;
+    137            EmberCertificateData signerCert;
+    138            int32u dataLength;
+    139            int8u signatureTag[SIGNATURE_TAG_DATA_SIZE];
+    140            DigestCalculateStatus digestStatus;
+    141            
+    142            if (newVerification) {
+    143              otaPrintln("Client Verifying Signature.");
+    144              currentOffset = 0;
+    145            }
+    146          
+    147            if (EMBER_LIBRARY_PRESENT_MASK 
+    148                != (EMBER_LIBRARY_PRESENT_MASK
+    149                    & emberGetLibraryStatus(EMBER_CBKE_DSA_VERIFY_LIBRARY_ID))) {
+    150              // We treat this is as a validation error and not a
+    151              // EMBER_AF_OTA_NO_VERIFY_SUPPORT error because we want the software
+    152              // to halt the upgrade and discard the image.  If the software
+    153              // has been configured to perform signature verification then
+    154              // it should NOT accept images because it lacks the required
+    155              // libraries to validate them.  Instead, we want it to always fail to
+    156              // upgrade so that this error case can be detected and fixed by
+    157              // developers.
+    158              otaPrintln("Verify Error: No CBKE library present!");
+    159              return EMBER_AF_IMAGE_VERIFY_ERROR;
+    160            }
+    161          
+    162            if (EMBER_AF_OTA_STORAGE_SUCCESS
+    163                != emAfOtaStorageGetTagDataFromImage(id,
+    164                                                     OTA_TAG_ECDSA_SIGNING_CERTIFICATE,
+    165                                                     signerCert.contents,
+    166                                                     &dataLength,
+    167                                                     EMBER_CERTIFICATE_SIZE)
+    168                || dataLength != EMBER_CERTIFICATE_SIZE) {
+    169              otaPrintln("Verify Error: Could not obtain signing certificate from image.");
+    170              return EMBER_AF_IMAGE_VERIFY_ERROR;
+    171            }
+    172          
+    173            if (newVerification) {
+    174              otaPrintln("Signer Certificate:");
+    175              emberAfCoreFlush();
+    176              emberAfPrintCert(signerCert.contents);
+    177              emberAfCoreFlush();
+    178            }
+    179            
+    180            if (!checkSigner(signerCert.contents + SUBJECT_OFFSET)) {
+    181              otaPrint("Verify Error: Certificate EUI in image does not "
+    182                       "match any known signer EUI: ");
+    183              emberAfPrint8ByteBlocks(1,
+    184                                      signerCert.contents + SUBJECT_OFFSET,
+    185                                      FALSE);   // cr between blocks?
+    186              otaPrintln("");
+    187              return EMBER_AF_IMAGE_BAD;
+    188            }
+    189            
+    190            if (EMBER_AF_OTA_STORAGE_SUCCESS
+    191                != emAfOtaStorageGetTagDataFromImage(id,
+    192                                                     OTA_TAG_ECDSA_SIGNATURE,
+    193                                                     signatureTag,
+    194                                                     &dataLength,
+    195                                                     SIGNATURE_TAG_DATA_SIZE)
+    196                || dataLength != SIGNATURE_TAG_DATA_SIZE) {
+    197              otaPrintln("Verify Error: Could not obtain ECDSA signature from image!");
+    198              return EMBER_AF_IMAGE_BAD;
+    199            }
+    200          
+    201            // Verify that the signer's EUI64 in the signature tag is the same
+    202            // as the EUI64 in the certificate.  This makes sure no one can have
+    203            // a different device sign than is advertised in the "signer" field
+    204            // of the signature tag sub-element.
+    205            {
+    206              EmberEUI64 subjectFieldEui64LittleEndian;
+    207              emberReverseMemCopy(subjectFieldEui64LittleEndian,
+    208                                  signerCert.contents + SUBJECT_OFFSET,
+    209                                  EUI64_SIZE);
+    210              if (0 != MEMCOMPARE(subjectFieldEui64LittleEndian,
+    211                                  signatureTag,
+    212                                  EUI64_SIZE)) {
+    213                otaPrintln("Verify Error: Certificate EUI and signer EUI do not match!\n");
+    214                return EMBER_AF_IMAGE_BAD;
+    215              }
+    216            }
+    217          
+    218            if (newVerification) {
+    219              EmberCertificateData myCert;
+    220              if (EMBER_SUCCESS != emberGetCertificate(&myCert)) {
+    221                otaPrintln("Verify Error:  Could not extract my local certificate.");
+    222                return EMBER_AF_IMAGE_BAD;
+    223              }
+    224          
+    225              // This check ultimately prevents a Test Cert device from being used to
+    226              // sign images for a Production cert device.
+    227              // The CBKE DSA verify will fail later, but this prevents us from getting
+    228              // that far.
+    229              if (0 != MEMCOMPARE(myCert.contents + ISSUER_OFFSET,
+    230                                  signerCert.contents + ISSUER_OFFSET,
+    231                                  EUI64_SIZE)) {
+    232                otaPrintln("Verify Error:  Certificate issuer mismatch.");
+    233                return EMBER_AF_IMAGE_BAD;
+    234              }
+    235          
+    236              otaPrintln("Signature");
+    237              // This print is 6 bytes too long, but it doesn't matter.  It is just a print
+    238              // The 'emberAfPrintCert()' routines prints 48 bytes but the signature is only 42.
+    239              emberAfOtaBootloadClusterDebugExec(emberAfPrintCert(signatureTag + EUI64_SIZE));
+    240            }
+    241          
+    242            digestStatus = calculateDigest(maxHashCalculations, id, &digest);
+    243            if (digestStatus == DIGEST_CALCULATE_ERROR) {
+    244              otaPrintln("Digest calculate error.");
+    245              return EMBER_AF_IMAGE_VERIFY_ERROR;
+    246            } else if (digestStatus == DIGEST_CALCULATE_IN_PROGRESS) {
+    247              return EMBER_AF_IMAGE_VERIFY_IN_PROGRESS;
+    248            } // Else, DIGEST_CALCULATE_COMPLETE
+    249              //   Fall through
+    250          
+    251            if (EMBER_OPERATION_IN_PROGRESS
+    252                == emberDsaVerify(&digest,
+    253                                  &signerCert,
+    254                                  (EmberSignatureData*)(signatureTag + EUI64_SIZE))) {
+    255              // This indicates that the stack is going to do crypto operations so the
+    256              // application should hold off on normal message sending until that is
+    257              // complete.
+    258              emAfSetCryptoOperationInProgress();
+    259              return EMBER_AF_IMAGE_VERIFY_WAIT;
+    260            }
+    261          
+    262            return EMBER_AF_IMAGE_VERIFY_ERROR;
+    263          }
+    264          
+    265          static DigestCalculateStatus calculateDigest(int16u maxHashCalculations,
+    266                                                       const EmberAfOtaImageId *id, 
+    267                                                       EmberMessageDigest* digest)
+    268          {
+    269            EmberAfOtaStorageStatus status;
+    270            int32u imageSize;
+    271            int8u block[MAX_BLOCK_SIZE_FOR_HASH];
+    272            int32u readSize;
+    273            int32u dataLeftToRead;
+    274            int32u remainder = 0;
+    275            int16u iterations = 0;
+    276          
+    277            status
+    278              = emAfOtaStorageGetHeaderLengthAndImageSize(id, 
+    279                                                          NULL, // header length (don't care)
+    280                                                          &imageSize);
+    281            if (status) {
+    282              return DIGEST_CALCULATE_ERROR;
+    283            }
+    284          
+    285            dataLeftToRead = imageSize - EMBER_SIGNATURE_SIZE - currentOffset;
+    286            if (currentOffset == 0) {
+    287              otaPrintln("Starting new digest calculation");
+    288              emberAesMmoHashInit(&context);
+    289              emAfPrintPercentageSetStartAndEnd(0, dataLeftToRead);
+    290            }
+    291          
+    292            readSize = (dataLeftToRead < MAX_BLOCK_SIZE_FOR_HASH
+    293                        ? dataLeftToRead
+    294                        : MAX_BLOCK_SIZE_FOR_HASH);
+    295          
+    296            while (dataLeftToRead) {
+    297              int32u returnedLength;
+    298              if ((EMBER_AF_OTA_STORAGE_SUCCESS
+    299                   != emberAfOtaStorageReadImageDataCallback(id,
+    300                                                             currentOffset,
+    301                                                             readSize,
+    302                                                             block,
+    303                                                             &returnedLength))
+    304                  || (readSize != returnedLength)) {
+    305                return DIGEST_CALCULATE_ERROR;
+    306              }
+    307              if (readSize == MAX_BLOCK_SIZE_FOR_HASH) {
+    308                if (EMBER_SUCCESS != emberAesMmoHashUpdate(&context,
+    309                                                           MAX_BLOCK_SIZE_FOR_HASH,
+    310                                                           block)) {
+    311                  return DIGEST_CALCULATE_ERROR;
+    312                }
+    313          
+    314                debugDigestPrint(&context);
+    315          
+    316              } else {
+    317                remainder = readSize;
+    318              }
+    319          
+    320              currentOffset += readSize;
+    321              dataLeftToRead -= readSize;
+    322              readSize = (dataLeftToRead < MAX_BLOCK_SIZE_FOR_HASH
+    323                          ? dataLeftToRead
+    324                          : MAX_BLOCK_SIZE_FOR_HASH);
+    325              emAfPrintPercentageUpdate("Digest Calculate", 
+    326                                        DIGEST_CALCULATE_PRINT_UPDATE_RATE, 
+    327                                        currentOffset);
+    328              iterations++;
+    329              if (dataLeftToRead
+    330                  && maxHashCalculations != 0
+    331                  && iterations >= maxHashCalculations) {
+    332                // Bugzid: 12566.
+    333                // We don't return if there is no dataLeftToRead,
+    334                // since that means we are on the last calculation
+    335                // for the remainder.  The remainder is only stored
+    336                // on the stack so if we return, it will be wiped out
+    337                // for the next execution.
+    338                return DIGEST_CALCULATE_IN_PROGRESS;
+    339              }
+    340            }
+    341          
+    342            if (EMBER_SUCCESS != emberAesMmoHashFinal(&context,
+    343                                                      remainder,
+    344                                                      block)) {
+    345              return DIGEST_CALCULATE_ERROR;
+    346            }
+    347            currentOffset += remainder;
+    348            debugDigestPrint(&context);
+    349          
+    350            emAfPrintPercentageUpdate("Digest Calculate", 
+    351                                      DIGEST_CALCULATE_PRINT_UPDATE_RATE, 
+    352                                      currentOffset);
+    353          
+    354            MEMMOVE(digest->contents,
+    355                    context.result,
+    356                    EMBER_AES_HASH_BLOCK_SIZE);
+    357          
+    358            emberAfOtaBootloadClusterFlush();
+    359            otaPrintln("Calculated Digest: ");
+    360            emberAfPrintZigbeeKey(digest->contents);
+    361            otaPrintln("");
+    362          
+    363            return DIGEST_CALCULATE_COMPLETE;
+    364          }
+    365          
+    366          static void print8BytePgmData(PGM_PU data)
+    367          {
+    368            // Ideally I want to use a convenience function like emberAfPrint8ByteBlocks
+    369            // to print the eui64 but I can't because on the AVR the variable
+    370            // 'allowedSignerEuiBigEndian' has memory attributes that the function
+    371            // emberAfPrint8ByteBlocks doesn't have.  It would cause enormous pain
+    372            // to fix this for all our platforms.  So Instead we just use a local
+    373            // print routine.
+    374            otaPrintln("%X %X %X %X %X %X %X %X",
+    375                       data[0],
+    376                       data[1],
+    377                       data[2],
+    378                       data[3],
+    379                       data[4],
+    380                       data[5],
+    381                       data[6],
+    382                       data[7]);
+    383            emberAfCoreFlush();
+    384          }
+    385          
+    386          static boolean checkSigner(const int8u* bigEndianSignerEui64)
+    387          {
+    388            int8u i;
+    389            for (i = 0; i < MAX_SIGNERS; i++) {
+    390              int8u j;
+    391              boolean nullEui64 = TRUE;
+    392          //    otaPrint("Considering Signer EUI: ");
+    393          //    print8BytePgmData(allowedSignerEuiBigEndian[i]);
+    394              for (j = 0; nullEui64 && j < EUI64_SIZE; j++) {
+    395                if (allowedSignerEuiBigEndian[i][j] != 0) {
+    396                  nullEui64 = FALSE;
+    397                }
+    398              }
+    399              if (nullEui64) {
+    400                continue;
+    401              }
+    402          
+    403              if (0 == MEMPGMCOMPARE(bigEndianSignerEui64,
+    404                                     allowedSignerEuiBigEndian[i],
+    405                                     EUI64_SIZE)) {
+    406                return TRUE;
+    407              }
+    408            }
+    409            return FALSE;
+    410          }
+    411          
+    412          void emAfOtaClientSignatureVerifyPrintSigners(void)
+    413          {
+    414            int8u i;
+    415            emberAfCoreFlush();
+    416            otaPrintln("Allowed Signers of images, big endian (NULL EUI64 is invalid)");
+    417            emberAfCoreFlush();
+    418            for (i = 0; i < MAX_SIGNERS; i++) {
+    419              emberAfCoreFlush();
+    420              otaPrint("%d: ", i);
+    421              print8BytePgmData(allowedSignerEuiBigEndian[i]);
+    422            }
+    423          }
+    424          
+    425          #if defined DEBUG_DIGEST_PRINT
+    426          static void debugDigestPrint(const EmberAesMmoHashContext* context)
+    427          {
+    428            emberAfOtaBootloadClusterPrint("Current Digest for length 0x%4X: ",
+    429                                           context->length);
+    430            emberAfPrintZigbeeKey(context->result);
+    431          }
+    432          #endif 
+    433          
+    434          static void dsaVerifyHandler(EmberStatus status)
+    435          {
+    436            otaPrintln("DSA Verify returned: 0x%x (%p)", 
+    437                       status,
+    438                       (status == EMBER_SUCCESS
+    439                        ? "Success"
+    440                        : (status == EMBER_SIGNATURE_VERIFY_FAILURE
+    441                           ? "Invalid Signature" 
+    442                           : "ERROR")));
+    443          
+    444            // This notes that the stack is done doing crypto and has
+    445            // resumed normal operations.  The application's normal
+    446            // behavior will no longer be held off.
+    447            emAfCryptoOperationComplete();
+    448          
+    449            // Any error status is treated as an image verification failure.
+    450            // One could argue that we could retry an operation after a transient
+    451            // failure (out of buffers) but for now we don't.
+    452            emAfOtaVerifyStoredDataFinish(status == EMBER_SUCCESS
+    453                                          ? EMBER_AF_IMAGE_GOOD
+    454                                          : EMBER_AF_IMAGE_BAD);
+    455                                      
+    456          }
+    457          
+    458          #if defined (EZSP_HOST)
+    459          
+    460            void ezspDsaVerifyHandler(EmberStatus status)
+    461            {
+    462              dsaVerifyHandler(status);
+    463            }
+    464          
+    465          #else
+    466          
+    467            void emberDsaVerifyHandler(EmberStatus status)
+    468            {
+    469              dsaVerifyHandler(status);
+    470            }
+    471          
+    472          #endif
+    473          
+    474          //------------------------------------------------------------------------------
+    475          #else //  !defined(EMBER_AF_PLUGIN_OTA_CLIENT_SIGNATURE_VERIFICATION_SUPPORT)
+    476          
+
+   \                                 In section .text, align 2, keep-with-next
+    477          EmberAfImageVerifyStatus emAfOtaImageSignatureVerify(int16u maxHashCalculations,
+    478                                                               const EmberAfOtaImageId* id, 
+    479                                                               boolean newVerification)
+    480          {
+    481            return EMBER_AF_NO_IMAGE_VERIFY_SUPPORT;
+   \                     emAfOtaImageSignatureVerify: (+1)
+   \   00000000   0x2006             MOVS     R0,#+6
+   \   00000002   0x4770             BX       LR               ;; return
+    482          }
+    483          
+    484          #endif 
+    485          
+    486          //------------------------------------------------------------------------------
+    487          
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   emAfOtaImageSignatureVerify
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  emAfOtaImageSignatureVerify
+
+ 
+ 4 bytes in section .text
+ 
+ 4 bytes of CODE memory
+
+Errors: none
+Warnings: none

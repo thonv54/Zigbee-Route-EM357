@@ -1,0 +1,4 @@
+em3xx_convert (Version 4.5.1.0 build 88)
+
+ERROR: Could not open image file 'E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\2 nut\Exe\2 nut.s37'
+DONE

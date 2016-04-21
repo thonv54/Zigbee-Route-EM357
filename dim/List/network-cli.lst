@@ -1,0 +1,563 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        22/Oct/2015  09:33:46
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\cli\network-cli.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\cli\network-cli.c -D DIMMER
+#        -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"network-cli.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\cli\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\network-cli.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\network-cli.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\cli\network-cli.c
+      1          // File: network-cli.c
+      2          //
+      3          // Copyright 2009 by Ember Corporation. All rights reserved.                *80*
+      4          
+      5          #include "app/framework/include/af.h"
+      6          #include "app/framework/util/af-main.h"
+      7          #include "app/util/serial/command-interpreter2.h"
+      8          #include "app/util/zigbee-framework/zigbee-device-common.h"
+      9          #include "network-cli.h"
+     10          
+     11          //------------------------------------------------------------------------------
+     12          
+     13          void networkJoinCommand(void);
+     14          void networkRejoinCommand(void);
+     15          void networkFormCommand(void);
+     16          void networkExtendedPanIdCommand(void);
+     17          void networkLeaveCommand(void);
+     18          void networkPermitJoinCommand(void);
+     19          void findJoinableNetworkCommand(void);
+     20          void findUnusedPanIdCommand(void);
+     21          void networkChangeChannelCommand(void);
+     22          void networkSetCommand(void);
+     23          void networkIdCommand(void);
+     24          
+     25          // TODO: gate this again when we have the mechanism for doing so
+     26          // with the generated CLI
+     27          //#if defined(EMBER_AF_TC_SWAP_OUT_TEST)
+     28            void networkInitCommand(void);
+     29          //#endif
+     30          
+     31          /**
+     32           * @addtogroup cli
+     33           * @{
+     34           */
+     35          /**
+     36           * @brief 
+     37           *        <b>network form &lt;channel&gt; &lt;power> &lt;panid></b>
+     38           *        - <i>Form a network on a given channel, with a given Tx Power and Pan Id.</i>
+     39           *           - <i>channel - int8u. The channel on which to form the network.</i>
+     40           *           - <i>power   - int8s. One byte signed value indicating the TX power 
+     41           *                                 That the radio should be set to.</i>
+     42           *           - <i>panId   - int16u. The Pan Id on which to form the network.</i> 
+     43           * 
+     44           *        <b>network join &lt;channel&gt; &lt;power&gt; &lt;panid&gt;</b>
+     45           *        - <i>Join a network on a given channel, with a given TX Power and Pan Id.</i>
+     46           *           - <i>channel - int8u. The channel on which to join the network.</i>
+     47           *           - <i>power   - int8s. One byte signed value indicating the TX power 
+     48           *                                 That the radio should be set to.</i>
+     49           *           - <i>panId   - int16u. The Pan Id on which to join the network.</i>
+     50           *
+     51           *        <b>network rejoin &lt;encrypted&gt;</b>
+     52           *        - <i>Find and rejoin the previous network the device was connected to.</i>
+     53           *           - <i>encrypted - int8u. A single byte boolean 0 or 1 indicating
+     54           *                            whether or not the rejoin should be done with encryption.</i>
+     55           *
+     56           *        <b>network leave</b>
+     57           *        - <i>Leave the current network that the device is connected to.</i>
+     58           *
+     59           *        <b>network pjoin &lt;seconds&gt;</b>
+     60           *        - <i>Turn permit joining on for the amount of time indicated.</i>
+     61           *           - <i>seconds - int8u. A single byte indicating how long the device
+     62           *                         should have permit joining turn on for. A value of
+     63           *                         0xff turns permit join of indefinitely.</i>
+     64           *
+     65           *        <b>network broad-pjoin &lt;seconds&gt;</b>
+     66           *        - <i>Turn permit joining on for the amount of time indicated AND
+     67           *             broadcast a ZDO Mgmt Permit Joining request to all routers.
+     68           *           - <i>seconds - int8u. A single byte indicating how long the device
+     69           *                         should have permit joining turn on for. A value of
+     70           *                         0xff turns permit join of indefinitely.</i>
+     71           *
+     72           *        <b>network extpanid &lt;bytes&gt;</b>
+     73           *        - <i>Write the extended pan id of the device.</i>
+     74           *           - <i>bytes - byte array. An array of bytes which represent
+     75           *                        the extended pan id for the device.</i>
+     76           *
+     77           *        <b>network find unused</b>
+     78           *        - <i>Begins a search for an unused Channel and Pan Id. Will automatically
+     79           *             form a network on the first unused Channel and Pan Id it finds.</i>
+     80           * 
+     81           *        <b>network find joinable</b>
+     82           *        - <i>Begins a search for a joinable network. Will automatically
+     83           *             attempt to join the first network it finds.</i>
+     84           */
+     85          #define EMBER_AF_DOXYGEN_CLI__NETWORK_COMMANDS
+     86          /** @} END addtogroup */
+     87          
+     88          #ifndef EMBER_AF_GENERATE_CLI
+     89          
+     90          // form and join library ocmmands.
+     91          static EmberCommandEntry findCommands[] = {
+     92            {"joinable", findJoinableNetworkCommand, "" },
+     93            {"unused",   findUnusedPanIdCommand, "" },
+     94            { NULL },
+     95          };
+     96          EmberCommandEntry networkCommands[] = {
+     97            {"form", networkFormCommand, "usv"},
+     98            {"join", networkJoinCommand, "usv"},
+     99            {"rejoin", networkRejoinCommand, "uw"},
+    100            {"leave", networkLeaveCommand, ""},
+    101            {"pjoin", networkPermitJoinCommand, "u"},
+    102            {"broad-pjoin", networkPermitJoinCommand, "u"},
+    103            {"extpanid", networkExtendedPanIdCommand, "b"},
+    104            {"find", NULL, (PGM_P)findCommands},
+    105          
+    106            emberCommandEntryAction("id",
+    107                                    networkIdCommand,
+    108                                    "",
+    109                                    "Print the current network IDs"),
+    110          
+    111            {"change-channel", networkChangeChannelCommand, "u"},
+    112          
+    113          #if defined(EMBER_AF_TC_SWAP_OUT_TEST)
+    114            // Do not document this command.
+    115            {"init", networkInitCommand, "" },
+    116          #endif
+    117          
+    118            {"set", networkSetCommand, "u"},
+    119          
+    120            { NULL }
+    121          };
+    122          
+    123          #endif // EMBER_AF_GENERATE_CLI
+    124          
+
+   \                                 In section .bss, align 1
+    125          int8u emAfCliNetworkIndex = EMBER_AF_DEFAULT_NETWORK_INDEX;
+   \                     emAfCliNetworkIndex:
+   \   00000000                      DS8 1
+    126          
+    127          //------------------------------------------------------------------------------
+    128          
+
+   \                                 In section .text, align 2, keep-with-next
+    129          void initNetworkParams(EmberNetworkParameters *networkParams)
+    130          {
+   \                     initNetworkParams: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+   \   00000002   0x4604             MOV      R4,R0
+    131            MEMSET(networkParams, 0, sizeof(EmberNetworkParameters));
+   \   00000004   0x2218             MOVS     R2,#+24
+   \   00000006   0x2100             MOVS     R1,#+0
+   \   00000008   0x.... 0x....      BL       halCommonMemSet
+    132            emberAfGetFormAndJoinExtendedPanIdCallback(networkParams->extendedPanId);
+   \   0000000C   0x4620             MOV      R0,R4
+   \   0000000E   0x.... 0x....      BL       emberAfGetFormAndJoinExtendedPanIdCallback
+    133            networkParams->radioChannel = (int8u)emberUnsignedCommandArgument(0);
+   \   00000012   0x.... 0x....      BL       ?Subroutine0
+   \                     ??CrossCallReturnLabel_5: (+1)
+   \   00000016   0x72E0             STRB     R0,[R4, #+11]
+    134            networkParams->radioTxPower = (int8s)emberSignedCommandArgument(1);
+   \   00000018   0x2001             MOVS     R0,#+1
+   \   0000001A   0x.... 0x....      BL       emberSignedCommandArgument
+   \   0000001E   0x72A0             STRB     R0,[R4, #+10]
+    135            networkParams->panId = (int16u)emberUnsignedCommandArgument(2);
+   \   00000020   0x2002             MOVS     R0,#+2
+   \   00000022   0x.... 0x....      BL       emberUnsignedCommandArgument
+   \   00000026   0x8120             STRH     R0,[R4, #+8]
+    136          }
+   \   00000028   0xBD10             POP      {R4,PC}          ;; return
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine0: (+1)
+   \   00000000   0x2000             MOVS     R0,#+0
+   \   00000002   0x.... 0x....      B.W      emberUnsignedCommandArgument
+    137          
+    138          // network join <channel> <power> <panid>
+
+   \                                 In section .text, align 2, keep-with-next
+    139          void networkJoinCommand(void)
+    140          {
+   \                     networkJoinCommand: (+1)
+   \   00000000   0xB500             PUSH     {LR}
+   \   00000002   0xB087             SUB      SP,SP,#+28
+    141            EmberStatus status;
+    142            EmberNetworkParameters networkParams;
+    143            initNetworkParams(&networkParams);
+   \   00000004   0xA800             ADD      R0,SP,#+0
+   \   00000006   0x.... 0x....      BL       initNetworkParams
+    144            status = emberAfJoinNetwork(&networkParams);
+   \   0000000A   0xA800             ADD      R0,SP,#+0
+   \   0000000C   0x.... 0x....      BL       emberAfJoinNetwork
+    145            UNUSED_VAR(status);
+    146            emberAfAppPrintln("%p 0x%x", "join", status);
+    147          }
+   \   00000010   0xB007             ADD      SP,SP,#+28
+   \   00000012   0xBD00             POP      {PC}             ;; return
+    148          
+    149          // network rejoin <haveCurrentNetworkKey:1> 
+
+   \                                 In section .text, align 2, keep-with-next
+    150          void networkRejoinCommand(void)
+    151          {
+   \                     networkRejoinCommand: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    152            boolean haveCurrentNetworkKey = (boolean)emberUnsignedCommandArgument(0);
+   \   00000002   0x.... 0x....      BL       ?Subroutine0
+    153            EmberStatus status = emberFindAndRejoinNetworkWithReason(haveCurrentNetworkKey,
+    154                                                                     EMBER_ALL_802_15_4_CHANNELS_MASK,
+    155                                                                     EMBER_AF_REJOIN_DUE_TO_CLI_COMMAND);
+   \                     ??CrossCallReturnLabel_4: (+1)
+   \   00000006   0xE8BD 0x4008      POP      {R3,LR}
+   \   0000000A   0x22A2             MOVS     R2,#+162
+   \   0000000C   0x....             LDR.N    R1,??DataTable2  ;; 0x7fff800
+   \   0000000E   0xB2C0             UXTB     R0,R0
+   \   00000010   0x.... 0x....      B.W      emberFindAndRejoinNetworkWithReason
+    156            emberAfAppPrintln("%p 0x%x", "rejoin", status);
+    157          }
+    158          
+
+   \                                 In section .text, align 2, keep-with-next
+    159          void networkRejoinDiffDeviceTypeCommand(void)
+    160          {
+   \                     networkRejoinDiffDeviceTypeCommand: (+1)
+   \   00000000   0xB538             PUSH     {R3-R5,LR}
+    161            boolean haveCurrentNetworkKey = (int8u)emberUnsignedCommandArgument(0);
+   \   00000002   0x.... 0x....      BL       ?Subroutine0
+   \                     ??CrossCallReturnLabel_3: (+1)
+   \   00000006   0x4604             MOV      R4,R0
+    162            int32u channelMask = (int32u)emberUnsignedCommandArgument(1);
+   \   00000008   0x2001             MOVS     R0,#+1
+   \   0000000A   0x.... 0x....      BL       emberUnsignedCommandArgument
+   \   0000000E   0x4605             MOV      R5,R0
+    163            int8u emberNodeType = (int8u)emberUnsignedCommandArgument(2); 
+   \   00000010   0x2002             MOVS     R0,#+2
+   \   00000012   0x.... 0x....      BL       emberUnsignedCommandArgument
+    164            EmberStatus status = emberFindAndRejoinNetworkWithNodeType(haveCurrentNetworkKey,
+    165                                                                       channelMask,
+    166                                                                       emberNodeType);
+   \   00000016   0xB2C2             UXTB     R2,R0
+   \   00000018   0x4629             MOV      R1,R5
+   \   0000001A   0xB2E0             UXTB     R0,R4
+   \   0000001C   0xE8BD 0x4038      POP      {R3-R5,LR}
+   \   00000020   0x.... 0x....      B.W      emberFindAndRejoinNetworkWithNodeType
+    167            emberAfAppPrintln("%p 0x%x", "rejoinDiffDeviceType", status);
+    168          }
+    169          
+    170          // network form <channel> <power> <panid>
+
+   \                                 In section .text, align 2, keep-with-next
+    171          void networkFormCommand(void)
+    172          {
+    173          #ifdef EMBER_AF_HAS_COORDINATOR_NETWORK
+    174            EmberStatus status;
+    175            EmberNetworkParameters networkParams;
+    176            initNetworkParams(&networkParams);
+    177            status = emberAfFormNetwork(&networkParams);
+    178            emberAfAppPrintln("%p 0x%x", "form", status);
+    179            emberAfAppFlush();
+    180          #else
+    181            emberAfAppPrintln("only coordinators can form");
+    182          #endif
+    183          }
+   \                     networkFormCommand: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+    184          
+    185          // network extpanid <8 BYTES>
+
+   \                                 In section .text, align 2, keep-with-next
+    186          void networkExtendedPanIdCommand(void)
+    187          {
+   \                     networkExtendedPanIdCommand: (+1)
+   \   00000000   0xB500             PUSH     {LR}
+   \   00000002   0xB083             SUB      SP,SP,#+12
+    188            int8u extendedPanId[EXTENDED_PAN_ID_SIZE];
+    189            emberCopyBigEndianEui64Argument(0, extendedPanId);
+   \   00000004   0xA900             ADD      R1,SP,#+0
+   \   00000006   0x2000             MOVS     R0,#+0
+   \   00000008   0x.... 0x....      BL       emberCopyBigEndianEui64Argument
+    190            emberAfSetFormAndJoinExtendedPanIdCallback(extendedPanId);
+   \   0000000C   0xA800             ADD      R0,SP,#+0
+   \   0000000E   0x.... 0x....      BL       emberAfSetFormAndJoinExtendedPanIdCallback
+    191            emberAfAppPrint("ext. PAN ID: ");
+    192            emberAfAppDebugExec(emberAfPrintBigEndianEui64(extendedPanId));
+    193            emberAfAppPrintln("");
+    194          }
+   \   00000012   0xBD07             POP      {R0-R2,PC}       ;; return
+    195          
+    196          // network leave
+
+   \                                 In section .text, align 2, keep-with-next
+    197          void networkLeaveCommand(void)
+    198          {
+    199            EmberStatus status;
+    200            status = emberLeaveNetwork();
+   \                     networkLeaveCommand: (+1)
+   \   00000000   0x.... 0x....      B.W      emberLeaveNetwork
+    201            UNUSED_VAR(status);
+    202            emberAfAppPrintln("%p 0x%x", "leave",  status);
+    203          }
+    204          
+    205          // network pjoin <time>
+    206          // network broad-pjoin <time>
+
+   \                                 In section .text, align 2, keep-with-next
+    207          void networkPermitJoinCommand(void)
+    208          {
+   \                     networkPermitJoinCommand: (+1)
+   \   00000000   0xB510             PUSH     {R4,LR}
+    209            int8u duration = (int8u)emberUnsignedCommandArgument(0);
+   \   00000002   0x.... 0x....      BL       ?Subroutine0
+   \                     ??CrossCallReturnLabel_2: (+1)
+   \   00000006   0x4604             MOV      R4,R0
+    210            emAfPermitJoin(duration,
+    211                           ('b' 
+    212                            == emberStringCommandArgument(-1,
+    213                                                          NULL)[0]));  // broadcast permit join?
+   \   00000008   0x2100             MOVS     R1,#+0
+   \   0000000A   0xF04F 0x30FF      MOV      R0,#-1
+   \   0000000E   0x.... 0x....      BL       emberStringCommandArgument
+   \   00000012   0x7800             LDRB     R0,[R0, #+0]
+   \   00000014   0x2862             CMP      R0,#+98
+   \   00000016   0xBF0C             ITE      EQ 
+   \   00000018   0x2101             MOVEQ    R1,#+1
+   \   0000001A   0x2100             MOVNE    R1,#+0
+   \   0000001C   0xB2E0             UXTB     R0,R4
+   \   0000001E   0xE8BD 0x4010      POP      {R4,LR}
+   \   00000022   0x.... 0x....      B.W      emAfPermitJoin
+    214          }
+    215          
+
+   \                                 In section .text, align 2, keep-with-next
+    216          void findJoinableNetworkCommand(void)
+    217          {
+    218            EmberStatus status = emberAfStartSearchForJoinableNetwork();
+   \                     findJoinableNetworkCommand: (+1)
+   \   00000000   0x.... 0x....      B.W      emberAfStartSearchForJoinableNetworkCallback
+    219            emberAfCorePrintln("find joinable: 0x%X", status);
+    220          }
+    221          
+
+   \                                 In section .text, align 2, keep-with-next
+    222          void findUnusedPanIdCommand(void)
+    223          {
+    224            EmberStatus status = emberAfFindUnusedPanIdAndForm();
+   \                     findUnusedPanIdCommand: (+1)
+   \   00000000   0x.... 0x....      B.W      emberAfFindUnusedPanIdAndFormCallback
+    225            emberAfCorePrintln("find unused: 0x%X", status);
+    226          }
+    227          
+
+   \                                 In section .text, align 2, keep-with-next
+    228          void networkChangeChannelCommand(void)
+    229          {
+   \                     networkChangeChannelCommand: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    230            int8u channel = (int8u)emberUnsignedCommandArgument(0);
+   \   00000002   0x.... 0x....      BL       ?Subroutine0
+    231            EmberStatus status = emberChannelChangeRequest(channel);
+   \                     ??CrossCallReturnLabel_1: (+1)
+   \   00000006   0x2101             MOVS     R1,#+1
+   \   00000008   0xE8BD 0x5000      POP      {R12,LR}
+   \   0000000C   0x4081             LSLS     R1,R1,R0
+   \   0000000E   0x2300             MOVS     R3,#+0
+   \   00000010   0x22FE             MOVS     R2,#+254
+   \   00000012   0xF64F 0x70FF      MOVW     R0,#+65535
+   \   00000016   0x.... 0x....      B.W      emberEnergyScanRequest
+    232            emberAfAppPrintln("Changing to channel %d: 0x%X",
+    233                              channel,
+    234                              status);
+    235          }
+    236          
+    237          // TODO: put gating back in after we have a mechanism in place to do so
+    238          // for the generated CLI
+    239          //#if defined(EMBER_AF_TC_SWAP_OUT_TEST)
+
+   \                                 In section .text, align 2, keep-with-next
+    240          void networkInitCommand(void)
+    241          {
+   \                     networkInitCommand: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    242            EmberNetworkInitStruct networkInitStruct = { 
+    243              EMBER_AF_CUSTOM_NETWORK_INIT_OPTIONS   // EmberNetworkInitBitmask value
+    244            };
+   \   00000002   0x.... 0x....      ADR.W    R0,`?<Constant {0}>`
+   \   00000006   0x6800             LDR      R0,[R0, #+0]
+   \   00000008   0x9000             STR      R0,[SP, #+0]
+    245            EmberStatus status = emberNetworkInitExtended(&networkInitStruct);
+   \   0000000A   0xA800             ADD      R0,SP,#+0
+   \   0000000C   0x.... 0x....      BL       emberNetworkInitExtended
+    246            emberAfAppPrintln("Network Init returned: 0x%X", status);
+    247          }
+   \   00000010   0xBD01             POP      {R0,PC}          ;; return
+    248          //#endif
+    249          
+
+   \                                 In section .text, align 2, keep-with-next
+    250          void networkSetCommand(void)
+    251          {
+   \                     networkSetCommand: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    252            int8u index = (int8u)emberUnsignedCommandArgument(0);
+    253            if (EMBER_SUPPORTED_NETWORKS <= index) {
+   \   00000002   0x.... 0x....      BL       ?Subroutine0
+   \                     ??CrossCallReturnLabel_0: (+1)
+   \   00000006   0xB2C0             UXTB     R0,R0
+   \   00000008   0xB908             CBNZ.N   R0,??networkSetCommand_0
+    254              emberAfCorePrintln("invalid network index");
+    255              return;
+    256            }
+    257            emAfCliNetworkIndex = index;
+   \   0000000A   0x....             LDR.N    R1,??DataTable2_1
+   \   0000000C   0x7008             STRB     R0,[R1, #+0]
+    258          }
+   \                     ??networkSetCommand_0: (+1)
+   \   0000000E   0xBD01             POP      {R0,PC}          ;; return
+    259          
+
+   \                                 In section .text, align 2, keep-with-next
+    260          void networkIdCommand(void)
+    261          {
+   \                     networkIdCommand: (+1)
+   \   00000000   0xB500             PUSH     {LR}
+   \   00000002   0xB083             SUB      SP,SP,#+12
+    262            EmberEUI64 eui64;
+    263            emberAfGetEui64(eui64);
+   \   00000004   0xA800             ADD      R0,SP,#+0
+   \   00000006   0x.... 0x....      BL       emberAfGetEui64
+    264            emberAfCorePrint("Short ID: 0x%2X, EUI64: ", emberAfGetNodeId());
+    265            emberAfPrintBigEndianEui64(eui64);
+   \   0000000A   0xA800             ADD      R0,SP,#+0
+   \   0000000C   0x.... 0x....      BL       emberAfPrintBigEndianEui64
+    266            emberAfCorePrintln(", Pan ID: 0x%2X", emberAfGetPanId());
+    267          }
+   \   00000010   0xBD07             POP      {R0-R2,PC}       ;; return
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2:
+   \   00000000   0x07FFF800         DC32     0x7fff800
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable2_1:
+   \   00000000   0x........         DC32     emAfCliNetworkIndex
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     `?<Constant {0}>`:
+   \   00000000   0x0000             DC16 0
+   \   00000002   0x00 0x00          DC8 0, 0
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   findJoinableNetworkCommand
+         0   -> emberAfStartSearchForJoinableNetworkCallback
+       0   findUnusedPanIdCommand
+         0   -> emberAfFindUnusedPanIdAndFormCallback
+       8   initNetworkParams
+         8   -> emberAfGetFormAndJoinExtendedPanIdCallback
+         8   -> emberSignedCommandArgument
+         8   -> emberUnsignedCommandArgument
+         8   -> halCommonMemSet
+       8   networkChangeChannelCommand
+         0   -> emberEnergyScanRequest
+         8   -> emberUnsignedCommandArgument
+      16   networkExtendedPanIdCommand
+        16   -> emberAfSetFormAndJoinExtendedPanIdCallback
+        16   -> emberCopyBigEndianEui64Argument
+       0   networkFormCommand
+      16   networkIdCommand
+        16   -> emberAfGetEui64
+        16   -> emberAfPrintBigEndianEui64
+       8   networkInitCommand
+         8   -> emberNetworkInitExtended
+      32   networkJoinCommand
+        32   -> emberAfJoinNetwork
+        32   -> initNetworkParams
+       0   networkLeaveCommand
+         0   -> emberLeaveNetwork
+       8   networkPermitJoinCommand
+         0   -> emAfPermitJoin
+         8   -> emberStringCommandArgument
+         8   -> emberUnsignedCommandArgument
+       8   networkRejoinCommand
+         0   -> emberFindAndRejoinNetworkWithReason
+         8   -> emberUnsignedCommandArgument
+      16   networkRejoinDiffDeviceTypeCommand
+         0   -> emberFindAndRejoinNetworkWithNodeType
+        16   -> emberUnsignedCommandArgument
+       8   networkSetCommand
+         8   -> emberUnsignedCommandArgument
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ?<Constant {0}>
+       4  ??DataTable2
+       4  ??DataTable2_1
+       6  ?Subroutine0
+       1  emAfCliNetworkIndex
+       4  findJoinableNetworkCommand
+       4  findUnusedPanIdCommand
+      42  initNetworkParams
+      26  networkChangeChannelCommand
+      20  networkExtendedPanIdCommand
+       2  networkFormCommand
+      18  networkIdCommand
+      18  networkInitCommand
+      20  networkJoinCommand
+       4  networkLeaveCommand
+      38  networkPermitJoinCommand
+      20  networkRejoinCommand
+      36  networkRejoinDiffDeviceTypeCommand
+      16  networkSetCommand
+
+ 
+   1 byte  in section .bss
+ 286 bytes in section .text
+ 
+ 286 bytes of CODE memory
+   1 byte  of DATA memory
+
+Errors: none
+Warnings: none

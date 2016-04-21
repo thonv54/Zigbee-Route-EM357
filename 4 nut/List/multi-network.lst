@@ -1,0 +1,556 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        18/Apr/2016  12:59:35
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\util\multi-network.c
+#    Command line =  
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\util\multi-network.c"
+#        -D SWITCH_4_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"multi-network.c\"" -lC "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\List\" --diag_suppress Pa050 -o "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\Obj\" --debug --endian=little --cpu=Cortex-M3
+#        --no_path_in_file_macros --separate_cluster_for_initialized_variables
+#        -e --fpu=None --dlib_config "C:\Program Files (x86)\IAR
+#        Systems\Embedded Workbench 7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        "D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\util\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\" -I
+#        "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\"
+#        -I "D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\"
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\List\multi-network.lst
+#    Object file  =  
+#        D:\Work
+#        Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\4
+#        nut\Obj\multi-network.o
+#
+###############################################################################
+
+D:\Work Space\Silabs\Zigbee\EmberZNet5.6.0-GA\app\framework\util\multi-network.c
+      1          // *******************************************************************
+      2          // * multi-network.c
+      3          // *
+      4          // *
+      5          // * Copyright 2014 Silicon Laboratories, Inc.                              *80*
+      6          // *******************************************************************
+      7          
+      8          #include "app/framework/include/af.h"
+      9          
+
+   \                                 In section .bss, align 4
+     10          PGM EmAfNetworkType *emAfCurrentNetworkType = NULL;
+   \                     emAfCurrentNetworkType:
+   \   00000000                      DS8 4
+     11          PGM EmAfZigbeeProNetwork *emAfCurrentZigbeeProNetwork = NULL;
+   \                     emAfCurrentZigbeeProNetwork:
+   \   00000004                      DS8 4
+     12          
+     13          //#define NETWORK_INDEX_DEBUG
+     14          #if defined(EMBER_TEST) || defined(NETWORK_INDEX_DEBUG)
+     15            #define NETWORK_INDEX_ASSERT(x) assert(x)
+     16          #else
+     17            #define NETWORK_INDEX_ASSERT(x)
+     18          #endif
+     19          
+     20          #if EMBER_SUPPORTED_NETWORKS == 1
+
+   \                                 In section .text, align 2, keep-with-next
+     21          EmberStatus emAfInitializeNetworkIndexStack(void)
+     22          {
+     23            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == 0);
+     24            NETWORK_INDEX_ASSERT(EMBER_AF_DEFAULT_NETWORK_INDEX == 0);
+     25            emAfCurrentNetworkType = &emAfNetworkTypes[0];
+   \                     emAfInitializeNetworkIndexStack: (+1)
+   \   00000000   0x....             LDR.N    R0,??DataTable1
+   \   00000002   0x....             LDR.N    R1,??DataTable1_1
+   \   00000004   0x6001             STR      R1,[R0, #+0]
+     26            emAfCurrentZigbeeProNetwork = &emAfZigbeeProNetworks[0];
+   \   00000006   0x....             LDR.N    R1,??DataTable1_2
+   \   00000008   0x6041             STR      R1,[R0, #+4]
+     27            return EMBER_SUCCESS;
+   \   0000000A   0x2000             MOVS     R0,#+0
+   \   0000000C   0x4770             BX       LR               ;; return
+     28          }
+     29          
+
+   \                                 In section .text, align 2, keep-with-next
+     30          EmberStatus emberAfPushNetworkIndex(int8u networkIndex)
+     31          {
+     32            NETWORK_INDEX_ASSERT(networkIndex == 0);
+     33            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == 0);
+     34            return (networkIndex == 0 ? EMBER_SUCCESS : EMBER_INVALID_CALL);
+   \                     emberAfPushNetworkIndex: (+1)
+   \   00000000   0xB100             CBZ.N    R0,??emberAfPushNetworkIndex_0
+   \   00000002   0x2070             MOVS     R0,#+112
+   \                     ??emberAfPushNetworkIndex_0: (+1)
+   \   00000004   0x4770             BX       LR               ;; return
+     35          }
+     36          
+
+   \                                 In section .text, align 2, keep-with-next
+     37          EmberStatus emberAfPushCallbackNetworkIndex(void)
+     38          {
+     39            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == 0);
+     40            NETWORK_INDEX_ASSERT(emberGetCallbackNetwork() == 0);
+     41            return EMBER_SUCCESS;
+   \                     emberAfPushCallbackNetworkIndex: (+1)
+   \   00000000   0x2000             MOVS     R0,#+0
+   \   00000002   0x4770             BX       LR               ;; return
+     42          }
+     43          
+
+   \                                 In section .text, align 2, keep-with-next
+     44          EmberStatus emberAfPushEndpointNetworkIndex(int8u endpoint)
+     45          {
+   \                     emberAfPushEndpointNetworkIndex: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     46            int8u networkIndex = emberAfNetworkIndexFromEndpoint(endpoint);
+     47            NETWORK_INDEX_ASSERT(networkIndex != 0xFF);
+     48            if (networkIndex == 0xFF) {
+   \   00000002   0x.... 0x....      BL       emberAfNetworkIndexFromEndpoint
+   \   00000006   0x28FF             CMP      R0,#+255
+   \   00000008   0xD101             BNE.N    ??emberAfPushEndpointNetworkIndex_0
+     49              return EMBER_INVALID_ENDPOINT;
+   \   0000000A   0x20A3             MOVS     R0,#+163
+   \   0000000C   0xBD02             POP      {R1,PC}
+     50            }
+     51            NETWORK_INDEX_ASSERT(networkIndex == 0);
+     52            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == 0);
+     53            return EMBER_SUCCESS;
+   \                     ??emberAfPushEndpointNetworkIndex_0: (+1)
+   \   0000000E   0x2000             MOVS     R0,#+0
+   \   00000010   0xBD02             POP      {R1,PC}          ;; return
+     54          }
+     55          
+
+   \                                 In section .text, align 2, keep-with-next
+     56          EmberStatus emberAfPopNetworkIndex(void)
+     57          {
+     58            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == 0);
+     59            return EMBER_SUCCESS;
+   \                     emberAfPopNetworkIndex: (+1)
+   \   00000000   0x2000             MOVS     R0,#+0
+   \   00000002   0x4770             BX       LR               ;; return
+     60          }
+     61          
+
+   \                                 In section .text, align 2, keep-with-next
+     62          void emAfAssertNetworkIndexStackIsEmpty(void)
+     63          {
+     64            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == 0);
+     65          }
+   \                     emAfAssertNetworkIndexStackIsEmpty: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+     66          
+
+   \                                 In section .text, align 2, keep-with-next
+     67          int8u emberAfPrimaryEndpointForNetworkIndex(int8u networkIndex)
+     68          {
+     69            NETWORK_INDEX_ASSERT(networkIndex == 0);
+     70            return (networkIndex == 0 ? emberAfPrimaryEndpoint() : 0xFF);
+   \                     emberAfPrimaryEndpointForNetworkIndex: (+1)
+   \   00000000   0xB900             CBNZ.N   R0,??emberAfPrimaryEndpointForNetworkIndex_0
+   \   00000002   0x....             B.N      ?Subroutine0
+   \                     ??emberAfPrimaryEndpointForNetworkIndex_0: (+1)
+   \   00000004   0x20FF             MOVS     R0,#+255
+   \   00000006   0x4770             BX       LR               ;; return
+     71          }
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine0: (+1)
+   \   00000000   0x....             LDR.N    R0,??DataTable1_3
+   \   00000002   0x7800             LDRB     R0,[R0, #+0]
+   \   00000004   0x4770             BX       LR
+     72          
+
+   \                                 In section .text, align 2, keep-with-next
+     73          int8u emberAfPrimaryEndpointForCurrentNetworkIndex(void)
+   \                     emberAfPrimaryEndpointForCurrentNetworkIndex: (+1)
+   \   00000000   0xBF00             Nop      
+     74          {
+     75            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == 0);
+     76            return emberAfPrimaryEndpoint();
+   \   00000002                      REQUIRE ?Subroutine0
+   \   00000002                      ;; // Fall through to label ?Subroutine0
+     77          }
+     78          
+
+   \                                 In section .text, align 2, keep-with-next
+     79          int8u emberAfNetworkIndexFromEndpoint(int8u endpoint)
+     80          {
+   \                     emberAfNetworkIndexFromEndpoint: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     81            int8u index = emberAfIndexFromEndpoint(endpoint);
+     82            NETWORK_INDEX_ASSERT(index != 0xFF);
+     83            if (index == 0xFF) {
+   \   00000002   0x.... 0x....      BL       emberAfIndexFromEndpoint
+   \   00000006   0x28FF             CMP      R0,#+255
+   \   00000008   0xBF18             IT       NE 
+     84              return 0xFF;
+     85            }
+     86            NETWORK_INDEX_ASSERT(emberAfNetworkIndexFromEndpointIndex(index) == 0);
+     87            return 0;
+   \   0000000A   0x2000             MOVNE    R0,#+0
+   \   0000000C   0xBD02             POP      {R1,PC}          ;; return
+     88          }
+     89          
+
+   \                                 In section .text, align 2, keep-with-next
+     90          void emberAfNetworkEventControlSetInactive(EmberEventControl *controls)
+     91          {
+     92            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == 0);
+     93            emberEventControlSetInactive(controls[0]);
+   \                     emberAfNetworkEventControlSetInactive: (+1)
+   \   00000000   0x2100             MOVS     R1,#+0
+   \   00000002   0x7001             STRB     R1,[R0, #+0]
+     94          }
+   \   00000004   0x4770             BX       LR               ;; return
+     95          
+
+   \                                 In section .text, align 2, keep-with-next
+     96          boolean emberAfNetworkEventControlGetActive(EmberEventControl *controls)
+     97          {
+     98            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == 0);
+     99            return emberEventControlGetActive(controls[0]);
+   \                     emberAfNetworkEventControlGetActive: (+1)
+   \   00000000   0x7800             LDRB     R0,[R0, #+0]
+   \   00000002   0xB100             CBZ.N    R0,??emberAfNetworkEventControlGetActive_0
+   \   00000004   0x2001             MOVS     R0,#+1
+   \                     ??emberAfNetworkEventControlGetActive_0: (+1)
+   \   00000006   0x4770             BX       LR               ;; return
+    100          }
+    101          
+
+   \                                 In section .text, align 2, keep-with-next
+    102          void emberAfNetworkEventControlSetActive(EmberEventControl *controls)
+    103          {
+    104            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == 0);
+    105            emberEventControlSetActive(controls[0]);
+   \                     emberAfNetworkEventControlSetActive: (+1)
+   \   00000000   0x.... 0x....      B.W      emEventControlSetActive
+    106          }
+    107          
+
+   \                                 In section .text, align 2, keep-with-next
+    108          EmberStatus emberAfNetworkEventControlSetDelayMS(EmberEventControl *controls,
+    109                                                           int32u delayMs)
+    110          {
+    111            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == 0);
+    112            return emberAfEventControlSetDelayMS(&controls[0], delayMs);
+   \                     emberAfNetworkEventControlSetDelayMS: (+1)
+   \   00000000   0x.... 0x....      B.W      emberAfEventControlSetDelayMS
+    113          }
+    114          
+
+   \                                 In section .text, align 2, keep-with-next
+    115          EmberStatus emberAfNetworkEventControlSetDelayQS(EmberEventControl *controls,
+    116                                                           int32u delayQs)
+    117          {
+    118            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == 0);
+    119            return emberAfEventControlSetDelayQS(&controls[0], delayQs);
+   \                     emberAfNetworkEventControlSetDelayQS: (+1)
+   \   00000000   0x.... 0x....      B.W      emberAfEventControlSetDelayQS
+    120          }
+    121          
+
+   \                                 In section .text, align 2, keep-with-next
+    122          EmberStatus emberAfNetworkEventControlSetDelayMinutes(EmberEventControl *controls,
+    123                                                                int16u delayM)
+    124          {
+    125            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == 0);
+    126            return emberAfEventControlSetDelayMinutes(&controls[0], delayM);
+   \                     emberAfNetworkEventControlSetDelayMinutes: (+1)
+   \   00000000   0x.... 0x....      B.W      emberAfEventControlSetDelayMinutes
+    127          }
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable1:
+   \   00000000   0x........         DC32     emAfCurrentNetworkType
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable1_1:
+   \   00000000   0x........         DC32     emAfNetworkTypes
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable1_2:
+   \   00000000   0x........         DC32     emAfZigbeeProNetworks
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable1_3:
+   \   00000000   0x........         DC32     emAfEndpoints
+    128          
+    129          #else
+    130          
+    131          // We use two bits to describe a network index and sixteen bits to store our
+    132          // stack of network indices.  This limits us to a maximum of four networks
+    133          // indices and a maximum of eight in our stack.  We also remember one default
+    134          // network that we resort to when our stack is empty.
+    135          static int16u networkIndexStack = 0;
+    136          static int8u networkIndices = 0;
+    137          #define NETWORK_INDEX_BITS       2
+    138          #define NETWORK_INDEX_MAX        (1 << NETWORK_INDEX_BITS)
+    139          #define NETWORK_INDEX_MASK       (NETWORK_INDEX_MAX - 1)
+    140          #define NETWORK_INDEX_STACK_SIZE (sizeof(networkIndexStack) * 8 / NETWORK_INDEX_BITS)
+    141          
+    142          static EmberStatus setCurrentNetwork(void)
+    143          {
+    144            EmberStatus status;
+    145            int8u networkIndex = (networkIndices == 0
+    146                                  ? EMBER_AF_DEFAULT_NETWORK_INDEX
+    147                                  : networkIndexStack & NETWORK_INDEX_MASK);
+    148            status = emberSetCurrentNetwork(networkIndex);
+    149            NETWORK_INDEX_ASSERT(status == EMBER_SUCCESS);
+    150            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == networkIndex);
+    151            if (status == EMBER_SUCCESS) {
+    152              emAfCurrentNetworkType = &emAfNetworkTypes[networkIndex];
+    153              if (emAfNetworkTypes[networkIndex] == EM_AF_NETWORK_TYPE_ZIGBEE_PRO) {
+    154                int8u i, proNetworkIndex = 0;
+    155                for (i = 0; i < networkIndex; i++) {
+    156                  if (emAfNetworkTypes[i] == EM_AF_NETWORK_TYPE_ZIGBEE_PRO) {
+    157                    proNetworkIndex++;
+    158                  }
+    159                }
+    160                emAfCurrentZigbeeProNetwork = &emAfZigbeeProNetworks[proNetworkIndex];
+    161              } else {
+    162                emAfCurrentZigbeeProNetwork = NULL;
+    163              }
+    164            }
+    165            return status;
+    166          }
+    167          
+    168          EmberStatus emAfInitializeNetworkIndexStack(void)
+    169          {
+    170            EmberStatus status;
+    171            NETWORK_INDEX_ASSERT(networkIndices == 0);
+    172            if (networkIndices != 0) {
+    173              return EMBER_INVALID_CALL;
+    174            }
+    175            status = setCurrentNetwork();
+    176            NETWORK_INDEX_ASSERT(status == EMBER_SUCCESS);
+    177            NETWORK_INDEX_ASSERT(networkIndices == 0);
+    178            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == EMBER_AF_DEFAULT_NETWORK_INDEX);
+    179            return status;
+    180          }
+    181          
+    182          EmberStatus emberAfPushNetworkIndex(int8u networkIndex)
+    183          {
+    184            EmberStatus status;
+    185            NETWORK_INDEX_ASSERT(networkIndex < NETWORK_INDEX_MAX);
+    186            if (NETWORK_INDEX_MAX <= networkIndex) {
+    187              return EMBER_INDEX_OUT_OF_RANGE;
+    188            }
+    189            NETWORK_INDEX_ASSERT(networkIndices < NETWORK_INDEX_STACK_SIZE);
+    190            if (NETWORK_INDEX_STACK_SIZE <= networkIndices) {
+    191              return EMBER_TABLE_FULL;
+    192            }
+    193            networkIndexStack <<= NETWORK_INDEX_BITS;
+    194            networkIndexStack |= networkIndex;
+    195            networkIndices++;
+    196            status = setCurrentNetwork();
+    197            NETWORK_INDEX_ASSERT(status == EMBER_SUCCESS);
+    198            NETWORK_INDEX_ASSERT(0 < networkIndices);
+    199            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == networkIndex);
+    200            return status;
+    201          }
+    202          
+    203          EmberStatus emberAfPushCallbackNetworkIndex(void)
+    204          {
+    205            EmberStatus status = emberAfPushNetworkIndex(emberGetCallbackNetwork());
+    206            NETWORK_INDEX_ASSERT(status == EMBER_SUCCESS);
+    207            NETWORK_INDEX_ASSERT(0 < networkIndices);
+    208            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == emberGetCallbackNetwork());
+    209            return status;
+    210          }
+    211          
+    212          EmberStatus emberAfPushEndpointNetworkIndex(int8u endpoint)
+    213          {
+    214            EmberStatus status;
+    215            int8u networkIndex = emberAfNetworkIndexFromEndpoint(endpoint);
+    216            NETWORK_INDEX_ASSERT(networkIndex != 0xFF);
+    217            if (networkIndex == 0xFF) {
+    218              return EMBER_INVALID_ENDPOINT;
+    219            }
+    220            status = emberAfPushNetworkIndex(networkIndex);
+    221            NETWORK_INDEX_ASSERT(status == EMBER_SUCCESS);
+    222            NETWORK_INDEX_ASSERT(0 < networkIndices);
+    223            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == networkIndex);
+    224            return status;
+    225          }
+    226          
+    227          EmberStatus emberAfPopNetworkIndex(void)
+    228          {
+    229            EmberStatus status;
+    230            NETWORK_INDEX_ASSERT(0 < networkIndices);
+    231            if (networkIndices == 0) {
+    232              return EMBER_INVALID_CALL;
+    233            }
+    234            networkIndexStack >>= NETWORK_INDEX_BITS;
+    235            networkIndices--;
+    236            status = setCurrentNetwork();
+    237            NETWORK_INDEX_ASSERT(status == EMBER_SUCCESS);
+    238            return status;
+    239          }
+    240          
+    241          void emAfAssertNetworkIndexStackIsEmpty(void)
+    242          {
+    243            NETWORK_INDEX_ASSERT(networkIndices == 0);
+    244            NETWORK_INDEX_ASSERT(emberGetCurrentNetwork() == EMBER_AF_DEFAULT_NETWORK_INDEX);
+    245          }
+    246          
+    247          int8u emberAfPrimaryEndpointForNetworkIndex(int8u networkIndex)
+    248          {
+    249            int8u i;
+    250            NETWORK_INDEX_ASSERT(networkIndex < NETWORK_INDEX_MAX);
+    251            for (i = 0; i < emberAfEndpointCount(); i++) {
+    252              if (emberAfNetworkIndexFromEndpointIndex(i) == networkIndex) {
+    253                return emberAfEndpointFromIndex(i);
+    254              }
+    255            }
+    256            return 0xFF;
+    257          }
+    258          
+    259          int8u emberAfPrimaryEndpointForCurrentNetworkIndex(void)
+    260          {
+    261            return emberAfPrimaryEndpointForNetworkIndex(emberGetCurrentNetwork());
+    262          }
+    263          
+    264          int8u emberAfNetworkIndexFromEndpoint(int8u endpoint)
+    265          {
+    266            int8u index = emberAfIndexFromEndpoint(endpoint);
+    267            NETWORK_INDEX_ASSERT(index != 0xFF);
+    268            return (index == 0xFF ? 0xFF : emberAfNetworkIndexFromEndpointIndex(index));
+    269          }
+    270          
+    271          void emberAfNetworkEventControlSetInactive(EmberEventControl *controls)
+    272          {
+    273            EmberEventControl *control = controls + emberGetCurrentNetwork();
+    274            emberEventControlSetInactive(*control);
+    275          }
+    276          
+    277          boolean emberAfNetworkEventControlGetActive(EmberEventControl *controls)
+    278          {
+    279            EmberEventControl *control = controls + emberGetCurrentNetwork();
+    280            return emberEventControlGetActive(*control);
+    281          }
+    282          
+    283          void emberAfNetworkEventControlSetActive(EmberEventControl *controls)
+    284          {
+    285            EmberEventControl *control = controls + emberGetCurrentNetwork();
+    286            emberEventControlSetActive(*control);
+    287          }
+    288          
+    289          EmberStatus emberAfNetworkEventControlSetDelayMS(EmberEventControl *controls,
+    290                                                           int32u delayMs)
+    291          {
+    292            EmberEventControl *control = controls + emberGetCurrentNetwork();
+    293            return emberAfEventControlSetDelayMS(control, delayMs);
+    294          }
+    295          
+    296          EmberStatus emberAfNetworkEventControlSetDelayQS(EmberEventControl *controls,
+    297                                                           int32u delayQs)
+    298          {
+    299            EmberEventControl *control = controls + emberGetCurrentNetwork();
+    300            return emberAfEventControlSetDelayQS(control, delayQs);
+    301          }
+    302          
+    303          EmberStatus emberAfNetworkEventControlSetDelayMinutes(EmberEventControl *controls,
+    304                                                                int16u delayM)
+    305          {
+    306            EmberEventControl *control = controls + emberGetCurrentNetwork();
+    307            return emberAfEventControlSetDelayMinutes(control, delayM);
+    308          }
+    309          
+    310          #endif
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   emAfAssertNetworkIndexStackIsEmpty
+       0   emAfInitializeNetworkIndexStack
+       0   emberAfNetworkEventControlGetActive
+       0   emberAfNetworkEventControlSetActive
+         0   -> emEventControlSetActive
+       0   emberAfNetworkEventControlSetDelayMS
+         0   -> emberAfEventControlSetDelayMS
+       0   emberAfNetworkEventControlSetDelayMinutes
+         0   -> emberAfEventControlSetDelayMinutes
+       0   emberAfNetworkEventControlSetDelayQS
+         0   -> emberAfEventControlSetDelayQS
+       0   emberAfNetworkEventControlSetInactive
+       8   emberAfNetworkIndexFromEndpoint
+         8   -> emberAfIndexFromEndpoint
+       0   emberAfPopNetworkIndex
+       0   emberAfPrimaryEndpointForCurrentNetworkIndex
+       0   emberAfPrimaryEndpointForNetworkIndex
+       0   emberAfPushCallbackNetworkIndex
+       8   emberAfPushEndpointNetworkIndex
+         8   -> emberAfNetworkIndexFromEndpoint
+       0   emberAfPushNetworkIndex
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable1
+       4  ??DataTable1_1
+       4  ??DataTable1_2
+       4  ??DataTable1_3
+       6  ?Subroutine0
+       2  emAfAssertNetworkIndexStackIsEmpty
+       8  emAfCurrentNetworkType
+          emAfCurrentZigbeeProNetwork
+      14  emAfInitializeNetworkIndexStack
+       8  emberAfNetworkEventControlGetActive
+       4  emberAfNetworkEventControlSetActive
+       4  emberAfNetworkEventControlSetDelayMS
+       4  emberAfNetworkEventControlSetDelayMinutes
+       4  emberAfNetworkEventControlSetDelayQS
+       6  emberAfNetworkEventControlSetInactive
+      14  emberAfNetworkIndexFromEndpoint
+       4  emberAfPopNetworkIndex
+       2  emberAfPrimaryEndpointForCurrentNetworkIndex
+       8  emberAfPrimaryEndpointForNetworkIndex
+       4  emberAfPushCallbackNetworkIndex
+      18  emberAfPushEndpointNetworkIndex
+       6  emberAfPushNetworkIndex
+
+ 
+   8 bytes in section .bss
+ 124 bytes in section .text
+ 
+ 124 bytes of CODE memory
+   8 bytes of DATA memory
+
+Errors: none
+Warnings: none

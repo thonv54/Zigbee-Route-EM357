@@ -1,0 +1,454 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        31/Aug/2015  14:04:34
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-client\ota-client-page-request.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-client\ota-client-page-request.c
+#        -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D
+#        PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"ota-client-page-request.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-client\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\ota-client-page-request.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ota-client-page-request.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\ota-client\ota-client-page-request.c
+      1          // *****************************************************************************
+      2          // * ota-client-page-request.c
+      3          // *
+      4          // * Zigbee Over-the-air bootload cluster for upgrading firmware and 
+      5          // * downloading device specific file.
+      6          // * This file handles the page request feature for the client.
+      7          // * 
+      8          // * Copyright 2010 by Ember Corporation. All rights reserved.              *80*
+      9          // *****************************************************************************
+     10          
+     11          #include "app/framework/include/af.h"
+     12          #include "app/framework/plugin/ota-common/ota.h"
+     13          #include "ota-client-page-request.h"
+     14          #include "ota-client.h"
+     15          
+     16          // This is by no means a super flexible implementation of page requests.
+     17          // The problem we have to try to solve is how to reasonably keep track
+     18          // of lots of blocks of data that could vary in size.
+     19          
+     20          // The client needs to know how many blocks are going to be sent by the server
+     21          // so that it can keep track of ones it missed.  However the server
+     22          // is the one that ultimately dictates the size.  Therefore we only support a
+     23          // server that uses the same block size as we suggest to it (via the page
+     24          // request).  To insure that the server doesn't change the block size
+     25          // on us (due to source routing), we ask for smaller blocks than the 
+     26          // 50 byte maximum we know can fit in an Image Block Response packet without
+     27          // a source route.
+     28          
+     29          // Also 32-bit divide and modulus can be expensive (e.g. on the XAP) so wherever
+     30          // possible we try to use 16-bit math instead.
+     31          
+     32          #if defined(EMBER_AF_PLUGIN_OTA_CLIENT_USE_PAGE_REQUEST)
+     33          
+     34          //------------------------------------------------------------------------------
+     35          // Globals
+     36          
+     37          #if EM_AF_PAGE_REQUEST_BLOCK_SIZE != 32
+     38            // The code only works with this block size
+     39            #error "EM_AF_PAGE_REQUEST_BLOCK_SIZE MUST BE 32"
+     40          #endif
+     41          
+     42          #define BITS_PER_BITMASK 16
+     43          
+     44          #if defined (PAGE_REQUEST_TEST)
+     45            static int16u PAGE_SIZE = EMBER_AF_PLUGIN_OTA_CLIENT_PAGE_REQUEST_SIZE;
+     46            static int16u MAX_BLOCKS_IN_PAGE = 1024 / EM_AF_PAGE_REQUEST_BLOCK_SIZE;
+     47          
+     48            static int16u BITMASK_COUNT;
+     49          
+     50            // Set the bitmask count to the largest possible size for initialization
+     51            // of the blocksReceivedBitmask array.  We will dynamically set the
+     52            // BITMASK_COUNT for testing only.
+     53            #define BITMASK_COUNT_CONST (4096 / 16)
+     54          
+     55          #else
+     56          
+     57            // Supported page sizes:  1024, 2048, and 4096
+     58            // These are the only ones we test.
+     59            #define PAGE_SIZE EMBER_AF_PLUGIN_OTA_CLIENT_PAGE_REQUEST_SIZE
+     60          
+     61            #define MAX_BLOCKS_IN_PAGE (PAGE_SIZE / EM_AF_PAGE_REQUEST_BLOCK_SIZE)
+     62            #define BITMASK_COUNT (MAX_BLOCKS_IN_PAGE / 16\
+     63                                   + ((PAGE_SIZE % BITS_PER_BITMASK == 0) \
+     64                                      ? 0                                 \
+     65                                      : 1))
+     66            #define BITMASK_COUNT_CONST BITMASK_COUNT
+     67          #endif
+     68          
+     69          static int16u blocksReceivedBitmask[BITMASK_COUNT_CONST];
+     70          static EmAfPageRequestClientStatus pageRequestStatus = EM_AF_NO_PAGE_REQUEST;
+     71          static int32u pageRequestOffset = 0;
+     72          
+     73          // For the last page, the number of blocks may be less than MAX_BLOCKS_IN_PAGE
+     74          static int16u blocksInThisPage;
+     75          
+     76          #define handlingPageRequest() (pageRequestStatus != EM_AF_NO_PAGE_REQUEST)
+     77          
+     78          // #define EXTRA_DEBUG_PRINTING
+     79          #if defined (EXTRA_DEBUG_PRINTING) || defined(EMBER_SCRIPTED_TEST)
+     80            #define EXTRA_DEBUG(x) do { x; } while (0)
+     81          #else
+     82            #define EXTRA_DEBUG(X)
+     83          #endif
+     84          
+     85          // It doesn't seem to add a lot of benefit in exposing this formally in 
+     86          // AppBuilder.  However if it matters, it can be overriden.
+     87          // Normally it is always set in this file.
+     88          #if !defined(PAGE_REQUEST_MISSED_PACKET_DELAY_MS)
+     89            #define PAGE_REQUEST_MISSED_PACKET_DELAY_MS 10L
+     90          #endif
+     91          
+     92          #define EMBER_AF_PLUGIN_OTA_CLIENT_PAGE_REQUEST_TIMEOUT_MS \
+     93            (EMBER_AF_PLUGIN_OTA_CLIENT_PAGE_REQUEST_TIMEOUT_SECONDS * MILLISECOND_TICKS_PER_SECOND)
+     94          
+     95          //------------------------------------------------------------------------------
+     96          // Functions
+     97          
+     98          int32u emAfInitPageRequestClient(int32u offsetForPageRequest, 
+     99                                           int32u totalImageSize)
+    100          {
+    101            int8u i;
+    102            for (i = 0; i < BITMASK_COUNT; i++) { 
+    103             blocksReceivedBitmask[i] = 0;
+    104            }
+    105            pageRequestOffset = offsetForPageRequest;
+    106          
+    107            if (offsetForPageRequest + PAGE_SIZE > totalImageSize) {
+    108              int16u remainingSize = (int16u)(totalImageSize - offsetForPageRequest);
+    109              blocksInThisPage = remainingSize / EM_AF_PAGE_REQUEST_BLOCK_SIZE;
+    110              blocksInThisPage += ((remainingSize % EM_AF_PAGE_REQUEST_BLOCK_SIZE == 0)
+    111                                   ? 0
+    112                                   : 1);
+    113            } else {
+    114              blocksInThisPage = MAX_BLOCKS_IN_PAGE;
+    115            }
+    116            pageRequestStatus = EM_AF_WAITING_PAGE_REQUEST_REPLIES;
+    117            return EMBER_AF_PLUGIN_OTA_CLIENT_PAGE_REQUEST_TIMEOUT_MS;
+    118          }
+    119          
+    120          EmAfPageRequestClientStatus emAfGetCurrentPageRequestStatus(void)
+    121          {
+    122            return pageRequestStatus;
+    123          }
+    124          
+    125          void emAfPageRequestTimerExpired(void)
+    126          {
+    127            if (pageRequestStatus == EM_AF_WAITING_PAGE_REQUEST_REPLIES) {
+    128              otaPrintln("Page request timer expired.  Checking for missed blocks."); 
+    129              pageRequestStatus = EM_AF_RETRY_MISSED_PACKETS;
+    130            }
+    131          }
+    132          
+    133          int32u emAfGetPageSize(void)
+    134          {
+    135            return PAGE_SIZE;
+    136          }
+    137          
+    138          int32u emAfGetPageRequestMissedPacketDelayMs(void)
+    139          {
+    140            return PAGE_REQUEST_MISSED_PACKET_DELAY_MS;
+    141          }
+    142          
+    143          static void convertBitNumberToBitmask(int16u absoluteBitNumber,
+    144                                                int8u* bitmaskIndex,
+    145                                                int16u* mask)
+    146          {
+    147            int16u relativeBitPosition;
+    148            *bitmaskIndex = absoluteBitNumber / BITS_PER_BITMASK;
+    149            relativeBitPosition = (absoluteBitNumber - (*bitmaskIndex * BITS_PER_BITMASK));
+    150            *mask = 1 << relativeBitPosition;
+    151          }
+    152          
+    153          #if defined(__ICCARM__)
+    154          // Bug: 12578:  Workaround for IAR compiler bug
+    155          //   The IAR compiler 5.4 has a bug in it where high optimizations will
+    156          //   mistakenly remove a NULL pointer check when inside a FOR loop.   So we
+    157          //   turn off high optimizations for this function since it contains that kind
+    158          //   of code.
+    159          #pragma optimize=medium
+    160          #endif // defined(__ICCARM__)
+    161          static int16u numBlocksReceived(int32u* returnOffset)
+    162          {
+    163            int16u blockNumber;
+    164            int8u bitmaskIndex = 0;
+    165            int16u bitValue;
+    166            int16u blocksReceived = 0;
+    167            if (returnOffset) {
+    168              *returnOffset = pageRequestOffset;
+    169            }
+    170            for (blockNumber = 0; blockNumber < blocksInThisPage; blockNumber++) {
+    171              if ((blockNumber >= BITS_PER_BITMASK)
+    172                  && (blockNumber % BITS_PER_BITMASK == 0)) {
+    173                bitmaskIndex++;
+    174              }
+    175              bitValue = (blocksReceivedBitmask[bitmaskIndex] 
+    176                          >> (blockNumber % BITS_PER_BITMASK));
+    177              if ((bitValue & 0x0001) == 0) {
+    178                return blocksReceived;
+    179              }
+    180              if (returnOffset) {
+    181                *returnOffset += EM_AF_PAGE_REQUEST_BLOCK_SIZE;
+    182              }
+    183              blocksReceived++;
+    184            }
+    185            return blocksReceived;
+    186          }
+    187          
+    188          static boolean allBlocksReceived(int16u numReceived)
+    189          {
+    190            return (numReceived == blocksInThisPage);
+    191          }
+    192          
+    193          void emAfAbortPageRequest(void)
+    194          {
+    195            // Note:  Don't zero out the pageRequestOffset so it can be retrieved later.
+    196            pageRequestStatus = EM_AF_NO_PAGE_REQUEST;
+    197          }
+    198          
+    199          int32u emAfGetFinishedPageRequestOffset(void)
+    200          {
+    201            return pageRequestOffset + EMBER_AF_PLUGIN_OTA_CLIENT_PAGE_REQUEST_SIZE;
+    202          }
+    203          
+    204          EmAfPageRequestClientStatus emAfNoteReceivedBlockForPageRequestClient(int32u offset)
+    205          {
+    206            int16u mask;
+    207            int16u smallOffset;
+    208            int8u bitmaskIndex;
+    209            int16u absoluteBitNumber;
+    210            if (!handlingPageRequest()) {
+    211              return EM_AF_PAGE_REQUEST_ERROR;
+    212            }
+    213            if (offset < pageRequestOffset) {
+    214              //    otaPrintln("Received offset 0x%4X is less than current page request offset 0x%4X, ignoring.",
+    215              //               offset,
+    216              //               pageRequestOffset);
+    217              // We ignore this because we may receive blocks out of order, from other retries, etc.
+    218              return EM_AF_BLOCK_ALREADY_RECEIVED;
+    219            }
+    220            offset -= pageRequestOffset;
+    221            
+    222            // To avoid 32-bit divide and modulus, since they are expensive on the XAP,
+    223            // we cast into 16-bit.  Our page size is assumed to be a 16-bit number
+    224            // so this is fine.
+    225            smallOffset = (int16u)offset;
+    226          
+    227            if (smallOffset % EM_AF_PAGE_REQUEST_BLOCK_SIZE != 0) {
+    228              otaPrintln("ERROR: Block offset for page request is not a multiple of %d",
+    229                         EM_AF_PAGE_REQUEST_BLOCK_SIZE);
+    230              return EM_AF_PAGE_REQUEST_ERROR;
+    231            }
+    232            absoluteBitNumber = smallOffset / EM_AF_PAGE_REQUEST_BLOCK_SIZE;
+    233          
+    234            convertBitNumberToBitmask(absoluteBitNumber, &bitmaskIndex, &mask);
+    235            if ((blocksReceivedBitmask[bitmaskIndex] & mask)) {
+    236              EXTRA_DEBUG(otaPrintln("Already received block %d",
+    237                                     absoluteBitNumber + 1));
+    238              return EM_AF_BLOCK_ALREADY_RECEIVED;
+    239            }
+    240            EXTRA_DEBUG(otaPrintln("Received block %d of %d in page request",
+    241                                   absoluteBitNumber + 1,
+    242                                   blocksInThisPage));
+    243            
+    244            blocksReceivedBitmask[bitmaskIndex] |= mask;
+    245          
+    246            if (allBlocksReceived(numBlocksReceived(NULL))) {
+    247              EXTRA_DEBUG(otaPrintln("All blocks received.  Page request complete."));
+    248              emAfAbortPageRequest();
+    249              return EM_AF_PAGE_REQUEST_COMPLETE;
+    250            }
+    251            
+    252            return pageRequestStatus;
+    253          }
+    254          
+    255          EmAfPageRequestClientStatus emAfNextMissedBlockRequestOffset(int32u* nextOffset)
+    256          {
+    257            int16u blocksReceived;
+    258            if (pageRequestStatus != EM_AF_RETRY_MISSED_PACKETS) {
+    259              return EM_AF_PAGE_REQUEST_ERROR;
+    260            }
+    261          
+    262            blocksReceived = numBlocksReceived(nextOffset);
+    263            if (allBlocksReceived(blocksReceived)) {
+    264              pageRequestStatus = EM_AF_PAGE_REQUEST_COMPLETE;
+    265            } else if (blocksReceived == 0) {
+    266              // If we didn't get ANY blocks after a page request, odds are the
+    267              // OTA server is unreachable.  No point in retrying.
+    268              otaPrintln("All blocks missed.  Server seems unreachable.  Giving up.");
+    269              emAfAbortPageRequest();
+    270              return EM_AF_PAGE_REQUEST_ERROR;
+    271            }
+    272            return pageRequestStatus;
+    273          }
+    274          
+    275          boolean emAfHandlingPageRequestClient(void)
+    276          {
+    277            return handlingPageRequest();
+    278          }
+    279          
+    280          //------------------------------------------------------------------------------
+    281          
+    282          #else  // !defined(EMBER_AF_PLUGIN_OTA_CLIENT_PAGE_REQUEST_SUPPORT)
+    283          
+
+   \                                 In section .text, align 2, keep-with-next
+    284          int32u emAfInitPageRequestClient(int32u offsetForPageRequest, 
+    285                                           int32u totalImageSize)
+    286          {
+    287            return 0;
+   \                     emAfInitPageRequestClient: (+1)
+   \   00000000   0x2000             MOVS     R0,#+0
+   \   00000002   0x4770             BX       LR               ;; return
+    288          }
+    289          
+
+   \                                 In section .text, align 2, keep-with-next
+    290          boolean emAfHandlingPageRequestClient(void)
+    291          {
+    292            return FALSE;
+   \                     emAfHandlingPageRequestClient: (+1)
+   \   00000000   0x2000             MOVS     R0,#+0
+   \   00000002   0x4770             BX       LR               ;; return
+    293          }
+    294          
+
+   \                                 In section .text, align 2, keep-with-next
+    295          void emAfPageRequestTimerExpired(void)
+    296          {}
+   \                     emAfPageRequestTimerExpired: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+    297          
+
+   \                                 In section .text, align 2, keep-with-next
+    298          EmAfPageRequestClientStatus emAfNoteReceivedBlockForPageRequestClient(int32u offset)
+    299          {
+    300            return EM_AF_PAGE_REQUEST_ERROR;
+   \                     emAfNoteReceivedBlockForPageRequestClient: (+1)
+   \   00000000   0x20FF             MOVS     R0,#+255
+   \   00000002   0x4770             BX       LR               ;; return
+    301          }
+    302          
+
+   \                                 In section .text, align 2, keep-with-next
+    303          EmAfPageRequestClientStatus emAfNextMissedBlockRequestOffset(int32u* nextOffset)
+    304          {
+    305            return EM_AF_PAGE_REQUEST_ERROR;
+   \                     emAfNextMissedBlockRequestOffset: (+1)
+   \   00000000   0x20FF             MOVS     R0,#+255
+   \   00000002   0x4770             BX       LR               ;; return
+    306          }
+    307          
+
+   \                                 In section .text, align 2, keep-with-next
+    308          EmAfPageRequestClientStatus emAfGetCurrentPageRequestStatus(void)
+    309          {
+    310            return EM_AF_NO_PAGE_REQUEST;
+   \                     emAfGetCurrentPageRequestStatus: (+1)
+   \   00000000   0x2000             MOVS     R0,#+0
+   \   00000002   0x4770             BX       LR               ;; return
+    311          }
+    312          
+
+   \                                 In section .text, align 2, keep-with-next
+    313          int32u emAfGetPageRequestMissedPacketDelayMs(void)
+    314          {
+    315            return 0;
+   \                     emAfGetPageRequestMissedPacketDelayMs: (+1)
+   \   00000000   0x2000             MOVS     R0,#+0
+   \   00000002   0x4770             BX       LR               ;; return
+    316          }
+    317          
+
+   \                                 In section .text, align 2, keep-with-next
+    318          int32u emAfGetFinishedPageRequestOffset(void)
+    319          {
+    320            return 0;
+   \                     emAfGetFinishedPageRequestOffset: (+1)
+   \   00000000   0x2000             MOVS     R0,#+0
+   \   00000002   0x4770             BX       LR               ;; return
+    321          }
+    322          
+
+   \                                 In section .text, align 2, keep-with-next
+    323          void emAfAbortPageRequest(void)
+    324          {
+    325          }
+   \                     emAfAbortPageRequest: (+1)
+   \   00000000   0x4770             BX       LR               ;; return
+    326          
+    327          #endif // EMBER_AF_PLUGIN_OTA_CLIENT_USE_PAGE_REQUEST
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   emAfAbortPageRequest
+       0   emAfGetCurrentPageRequestStatus
+       0   emAfGetFinishedPageRequestOffset
+       0   emAfGetPageRequestMissedPacketDelayMs
+       0   emAfHandlingPageRequestClient
+       0   emAfInitPageRequestClient
+       0   emAfNextMissedBlockRequestOffset
+       0   emAfNoteReceivedBlockForPageRequestClient
+       0   emAfPageRequestTimerExpired
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       2  emAfAbortPageRequest
+       4  emAfGetCurrentPageRequestStatus
+       4  emAfGetFinishedPageRequestOffset
+       4  emAfGetPageRequestMissedPacketDelayMs
+       4  emAfHandlingPageRequestClient
+       4  emAfInitPageRequestClient
+       4  emAfNextMissedBlockRequestOffset
+       4  emAfNoteReceivedBlockForPageRequestClient
+       2  emAfPageRequestTimerExpired
+
+ 
+ 32 bytes in section .text
+ 
+ 32 bytes of CODE memory
+
+Errors: none
+Warnings: none

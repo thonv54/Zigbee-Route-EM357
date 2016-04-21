@@ -1,0 +1,1097 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        10/Sep/2015  08:59:55
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  E:\Zigbee\EmberZNet5.6.0-GA\app\framework\util\af-event.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\util\af-event.c -D NULL_BTL
+#        -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"af-event.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\util\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\lst\af-event.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\build\obj\af-event.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\util\af-event.c
+      1          // *****************************************************************************
+      2          // * af-event.c
+      3          // *
+      4          // * Application event code that is common to both the SOC and EZSP platforms.
+      5          // *
+      6          // * Copyright 2014 Silicon Laboratories, Inc.                              *80*
+      7          // *****************************************************************************
+      8          
+      9          #include PLATFORM_HEADER     // Micro and compiler specific typedefs and macros
+     10          #include "../include/af.h"
+     11          #include "callback.h"
+     12          #include "af-event.h"
+     13          #include "stack/include/error.h"
+     14          #include "../security/crypto-state.h"
+     15          #include "app/framework/util/service-discovery.h"
+     16          #ifdef EMBER_AF_PLUGIN_FRAGMENTATION
+     17          #include "app/framework/plugin/fragmentation/fragmentation.h"
+     18          #endif 
+     19          
+     20          #include "app/framework/plugin/test-harness/test-harness.h"
+     21          
+     22          #include "app/framework/util/attribute-storage.h"
+     23          
+     24          // *****************************************************************************
+     25          // Globals
+     26          
+     27          // Task ids used to run events through idling
+
+   \                                 In section .bss, align 1
+     28          EmberTaskId emAfTaskId;
+   \                     emAfTaskId:
+   \   00000000                      DS8 1
+     29          
+     30          #ifdef EMBER_AF_GENERATED_EVENT_CODE
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     clusterTickWrapper: (+1)
+   \   00000000   0xB570             PUSH     {R4-R6,LR}
+   \   00000002   0x4604             MOV      R4,R0
+   \   00000004   0x4616             MOV      R6,R2
+   \   00000006   0x460D             MOV      R5,R1
+   \   00000008   0x4630             MOV      R0,R6
+   \   0000000A   0x.... 0x....      BL       emberAfPushEndpointNetworkIndex
+   \   0000000E   0x2000             MOVS     R0,#+0
+   \   00000010   0x7020             STRB     R0,[R4, #+0]
+   \   00000012   0x4630             MOV      R0,R6
+   \   00000014   0x47A8             BLX      R5
+   \   00000016   0xE8BD 0x4070      POP      {R4-R6,LR}
+   \   0000001A   0x.... 0x....      B.W      emberAfPopNetworkIndex
+
+   \                                 In section .text, align 2, keep-with-next
+   \   __interwork __softfp void emberAfIdentifyClusterServerTickCallbackWrapperFunction1(void)
+   \                     emberAfIdentifyClusterServerTickCallbackWrapperFunction1: (+1)
+   \   00000000   0x2201             MOVS     R2,#+1
+   \   00000002   0x....             LDR.N    R1,??DataTable17
+   \   00000004   0x....             LDR.N    R0,??DataTable17_1
+   \   00000006   0x....             B.N      clusterTickWrapper
+
+   \                                 In section .text, align 2, keep-with-next
+   \   __interwork __softfp void emberAfIdentifyClusterServerTickCallbackWrapperFunction2(void)
+   \                     emberAfIdentifyClusterServerTickCallbackWrapperFunction2: (+1)
+   \   00000000   0x2202             MOVS     R2,#+2
+   \   00000002   0x....             LDR.N    R1,??DataTable17
+   \   00000004   0x....             LDR.N    R0,??DataTable17_2
+   \   00000006   0x....             B.N      clusterTickWrapper
+
+   \                                 In section .text, align 2, keep-with-next
+   \   __interwork __softfp void emberAfIdentifyClusterServerTickCallbackWrapperFunction3(void)
+   \                     emberAfIdentifyClusterServerTickCallbackWrapperFunction3: (+1)
+   \   00000000   0x2203             MOVS     R2,#+3
+   \   00000002   0x....             LDR.N    R1,??DataTable17
+   \   00000004   0x....             LDR.N    R0,??DataTable17_3
+   \   00000006   0x....             B.N      clusterTickWrapper
+
+   \                                 In section .text, align 2, keep-with-next
+     31            EMBER_AF_GENERATED_EVENT_CODE
+   \   __interwork __softfp void emberAfIdentifyClusterServerTickCallbackWrapperFunction4(void)
+   \                     emberAfIdentifyClusterServerTickCallbackWrapperFunction4: (+1)
+   \   00000000   0x2204             MOVS     R2,#+4
+   \   00000002   0x....             LDR.N    R1,??DataTable17
+   \   00000004   0x....             LDR.N    R0,??DataTable17_4
+   \   00000006   0x....             B.N      clusterTickWrapper
+
+   \                                 In section .bss, align 4
+   \   __absolute struct <unnamed> emberAfIdentifyClusterServerTickCallbackControl1
+   \                     emberAfIdentifyClusterServerTickCallbackControl1:
+   \   00000000                      DS8 8
+
+   \                                 In section .bss, align 4
+   \   __absolute struct <unnamed> emberAfIdentifyClusterServerTickCallbackControl2
+   \                     emberAfIdentifyClusterServerTickCallbackControl2:
+   \   00000000                      DS8 8
+
+   \                                 In section .bss, align 4
+   \   __absolute struct <unnamed> emberAfIdentifyClusterServerTickCallbackControl3
+   \                     emberAfIdentifyClusterServerTickCallbackControl3:
+   \   00000000                      DS8 8
+
+   \                                 In section .bss, align 4
+   \   __absolute struct <unnamed> emberAfIdentifyClusterServerTickCallbackControl4
+   \                     emberAfIdentifyClusterServerTickCallbackControl4:
+   \   00000000                      DS8 8
+     32          #endif //EMBER_AF_GENERATED_EVENT_CODE
+     33          
+     34          #if defined(EMBER_AF_GENERATED_EVENT_CONTEXT)
+
+   \                                 In section .data, align 4
+     35          int16u emAfAppEventContextLength = EMBER_AF_EVENT_CONTEXT_LENGTH;
+   \                     emAfAppEventContextLength:
+   \   00000000   0x0004             DC16 4
+   \   00000002   0x00 0x00          DC8 0, 0
+     36          EmberAfEventContext emAfAppEventContext[] = {
+   \                     emAfAppEventContext:
+   \   00000004   0x01 0x00          DC8 1, 0
+   \   00000006   0x0003             DC16 3
+   \   00000008   0x00 0x00          DC8 0, 0, 0, 0
+   \              0x00 0x00    
+   \   0000000C   0x........         DC32 emberAfIdentifyClusterServerTickCallbackControl1
+   \   00000010   0x02 0x00          DC8 2, 0
+   \   00000012   0x0003             DC16 3
+   \   00000014   0x00 0x00          DC8 0, 0, 0, 0
+   \              0x00 0x00    
+   \   00000018   0x........         DC32 emberAfIdentifyClusterServerTickCallbackControl2
+   \   0000001C   0x03 0x00          DC8 3, 0
+   \   0000001E   0x0003             DC16 3
+   \   00000020   0x00 0x00          DC8 0, 0, 0, 0
+   \              0x00 0x00    
+   \   00000024   0x........         DC32 emberAfIdentifyClusterServerTickCallbackControl3
+   \   00000028   0x04 0x00          DC8 4, 0
+   \   0000002A   0x0003             DC16 3
+   \   0000002C   0x00 0x00          DC8 0, 0, 0, 0
+   \              0x00 0x00    
+   \   00000030   0x........         DC32 emberAfIdentifyClusterServerTickCallbackControl4
+     37            EMBER_AF_GENERATED_EVENT_CONTEXT
+     38          };
+     39          #endif //EMBER_AF_GENERATED_EVENT_CONTEXT
+     40          
+
+   \                                 In section .data, align 4
+     41          PGM_P emAfEventStrings[] = {
+   \                     emAfEventStrings:
+   \   00000000   0x........         DC32 `?<Constant "Svc Disc NWK 0">`
+   \   00000004   0x........         DC32 `?<Constant "Identify Cluster Serv...">`
+   \   00000008   0x........         DC32 `?<Constant "Identify Cluster Serv...">_1`
+   \   0000000C   0x........         DC32 `?<Constant "Identify Cluster Serv...">_2`
+   \   00000010   0x........         DC32 `?<Constant "Identify Cluster Serv...">_3`
+   \   00000014   0x........         DC32 `?<Constant "Form and Join Library...">`
+   \   00000018   0x........         DC32 `?<Constant "Identify Feedback Plu...">`
+   \   0000001C   0x........         DC32 `?<Constant "Network Find Plugin Tick">`
+     42            EM_AF_SERVICE_DISCOVERY_EVENT_STRINGS
+     43          
+     44          #ifdef EMBER_AF_GENERATED_EVENTS
+     45            EMBER_AF_GENERATED_EVENT_STRINGS
+     46          #endif
+     47          
+     48          #ifdef EMBER_AF_PLUGIN_FRAGMENTATION
+     49            EMBER_AF_FRAGMENTATION_EVENT_STRINGS
+     50          #endif
+     51          
+     52            EMBER_AF_TEST_HARNESS_EVENT_STRINGS
+     53          };
+     54          
+
+   \                                 In section .text, align 4, keep-with-next
+     55          EmberEventData emAfEvents[] = {
+   \                     emAfEvents:
+   \   00000000   0x........         DC32 emAfServiceDiscoveryEventControls, emAfServiceDiscoveryComplete0
+   \              0x........   
+   \   00000008   0x........         DC32 emberAfIdentifyClusterServerTickCallbackControl1
+   \   0000000C   0x........         DC32 emberAfIdentifyClusterServerTickCallbackWrapperFunction1
+   \   00000010   0x........         DC32 emberAfIdentifyClusterServerTickCallbackControl2
+   \   00000014   0x........         DC32 emberAfIdentifyClusterServerTickCallbackWrapperFunction2
+   \   00000018   0x........         DC32 emberAfIdentifyClusterServerTickCallbackControl3
+   \   0000001C   0x........         DC32 emberAfIdentifyClusterServerTickCallbackWrapperFunction3
+   \   00000020   0x........         DC32 emberAfIdentifyClusterServerTickCallbackControl4
+   \   00000024   0x........         DC32 emberAfIdentifyClusterServerTickCallbackWrapperFunction4
+   \   00000028   0x........         DC32 emberAfPluginFormAndJoinCleanupEventControl
+   \   0000002C   0x........         DC32 emberAfPluginFormAndJoinCleanupEventHandler
+   \   00000030   0x........         DC32 emberAfPluginIdentifyFeedbackProvideFeedbackEventControl
+   \   00000034   0x........         DC32 emberAfPluginIdentifyFeedbackProvideFeedbackEventHandler
+   \   00000038   0x........         DC32 emberAfPluginNetworkFindTickEventControl
+   \   0000003C   0x........         DC32 emberAfPluginNetworkFindTickEventHandler, 0H, 0H
+   \              0x00000000   
+   \              0x00000000   
+     56            EM_AF_SERVICE_DISCOVERY_EVENTS
+     57          
+     58          #ifdef EMBER_AF_GENERATED_EVENTS
+     59            EMBER_AF_GENERATED_EVENTS
+     60          #endif
+     61          
+     62          #ifdef EMBER_AF_PLUGIN_FRAGMENTATION
+     63            EMBER_AF_FRAGMENTATION_EVENTS
+     64          #endif
+     65          
+     66            EMBER_KEY_ESTABLISHMENT_TEST_HARNESS_EVENT
+     67          
+     68            {NULL, NULL}
+     69          };
+     70          
+
+   \                                 In section .text, align 4, keep-with-next
+     71          PGM char emAfStackEventString[] = "Stack";
+   \                     emAfStackEventString:
+   \   00000000   0x53 0x74          DC8 "Stack"
+   \              0x61 0x63    
+   \              0x6B 0x00    
+   \   00000006   0x00 0x00          DC8 0, 0
+     72          
+     73          // *****************************************************************************
+     74          // Functions
+     75          
+     76          // A function used to initialize events for idling
+
+   \                                 In section .text, align 2, keep-with-next
+     77          void emAfInitEvents(void) 
+     78          {
+   \                     emAfInitEvents: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     79            emberTaskEnableIdling(TRUE);
+   \   00000002   0x2001             MOVS     R0,#+1
+   \   00000004   0x.... 0x....      BL       emTaskEnableIdling
+     80            emAfTaskId = emberTaskInit(emAfEvents);
+   \   00000008   0x.... 0x....      ADR.W    R0,emAfEvents
+   \   0000000C   0x.... 0x....      BL       emberTaskInit
+   \   00000010   0x....             LDR.N    R1,??DataTable17_5
+   \   00000012   0x7008             STRB     R0,[R1, #+0]
+     81          }
+   \   00000014   0xBD01             POP      {R0,PC}          ;; return
+     82          
+
+   \                                 In section .text, align 2, keep-with-next
+     83          void emberAfRunEvents(void) 
+     84          {
+   \                     emberAfRunEvents: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+     85            // Don't run events while crypto operation is in progress
+     86            // (BUGZID: 12127)
+     87            if (emAfIsCryptoOperationInProgress()) {
+   \   00000002   0x.... 0x....      BL       emAfGetCryptoStatus
+   \   00000006   0x2801             CMP      R0,#+1
+   \   00000008   0xD005             BEQ.N    ??emberAfRunEvents_0
+     88              // DEBUG Bugzid: 11944
+     89              emberAfCoreFlush();
+     90              return;
+     91            }
+     92            emberRunTask(emAfTaskId);
+   \   0000000A   0x....             LDR.N    R0,??DataTable17_5
+   \   0000000C   0x7800             LDRB     R0,[R0, #+0]
+   \   0000000E   0xE8BD 0x4002      POP      {R1,LR}
+   \   00000012   0x.... 0x....      B.W      emberRunTask
+   \                     ??emberAfRunEvents_0: (+1)
+   \   00000016   0xBD01             POP      {R0,PC}          ;; return
+     93          }
+     94          
+
+   \                                 In section .text, align 2, keep-with-next
+     95          PGM_P emberAfGetEventString(int8u index)
+     96          {
+     97            return (index == 0XFF
+     98                    ? emAfStackEventString
+     99                    : emAfEventStrings[index]);
+   \                     emberAfGetEventString: (+1)
+   \   00000000   0x28FF             CMP      R0,#+255
+   \   00000002   0xD102             BNE.N    ??emberAfGetEventString_0
+   \   00000004   0x.... 0x....      ADR.W    R0,emAfStackEventString
+   \   00000008   0x4770             BX       LR
+   \                     ??emberAfGetEventString_0: (+1)
+   \   0000000A   0x....             LDR.N    R1,??DataTable17_6
+   \   0000000C   0xF851 0x0020      LDR      R0,[R1, R0, LSL #+2]
+   \   00000010   0x4770             BX       LR               ;; return
+    100          }
+    101          
+
+   \                                 In section .text, align 2, keep-with-next
+    102          static EmberAfEventContext *findEventContext(int8u endpoint,
+    103                                                       EmberAfClusterId clusterId,
+    104                                                       boolean isClient)
+    105          {
+   \                     findEventContext: (+1)
+   \   00000000   0xB570             PUSH     {R4-R6,LR}
+    106          #if defined(EMBER_AF_GENERATED_EVENT_CONTEXT)
+    107            int8u i;
+    108            for (i = 0; i < emAfAppEventContextLength; i++) {
+   \   00000002   0x2400             MOVS     R4,#+0
+   \   00000004   0x....             LDR.N    R5,??DataTable17_7
+   \   00000006   0xE000             B.N      ??findEventContext_0
+   \                     ??findEventContext_1: (+1)
+   \   00000008   0x1C64             ADDS     R4,R4,#+1
+   \                     ??findEventContext_0: (+1)
+   \   0000000A   0x882E             LDRH     R6,[R5, #+0]
+   \   0000000C   0xB2E3             UXTB     R3,R4
+   \   0000000E   0x42B3             CMP      R3,R6
+   \   00000010   0xD20E             BCS.N    ??findEventContext_2
+    109              EmberAfEventContext *context = &(emAfAppEventContext[i]);
+   \   00000012   0xB2E4             UXTB     R4,R4
+   \   00000014   0x230C             MOVS     R3,#+12
+   \   00000016   0xFB03 0x5304      MLA      R3,R3,R4,R5
+    110              if (context->endpoint == endpoint
+    111                  && context->clusterId == clusterId
+    112                  && context->isClient == isClient) {
+   \   0000001A   0xF813 0x6F04      LDRB     R6,[R3, #+4]!
+   \   0000001E   0x4286             CMP      R6,R0
+   \   00000020   0xBF01             ITTTT    EQ 
+   \   00000022   0x885E             LDRHEQ   R6,[R3, #+2]
+   \   00000024   0x428E             CMPEQ    R6,R1
+   \   00000026   0x791E             LDRBEQ   R6,[R3, #+4]
+   \   00000028   0x4296             CMPEQ    R6,R2
+   \   0000002A   0xD1ED             BNE.N    ??findEventContext_1
+    113                return context;
+   \   0000002C   0x4618             MOV      R0,R3
+   \   0000002E   0xBD70             POP      {R4-R6,PC}
+    114              }
+    115            }
+    116          #endif //EMBER_AF_GENERATED_EVENT_CONTEXT
+    117            return NULL;
+   \                     ??findEventContext_2: (+1)
+   \   00000030   0x2000             MOVS     R0,#+0
+   \   00000032   0xBD70             POP      {R4-R6,PC}       ;; return
+    118          }
+    119          
+
+   \                                 In section .text, align 2, keep-with-next
+    120          EmberStatus emberAfEventControlSetDelayMS(EmberEventControl *control,
+    121                                                    int32u delayMs)
+    122          {
+   \                     emberAfEventControlSetDelayMS: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    123            if (delayMs == 0) {
+   \   00000002   0xB919             CBNZ.N   R1,??emberAfEventControlSetDelayMS_0
+    124              emberEventControlSetActive(*control);
+   \   00000004   0x.... 0x....      BL       emEventControlSetActive
+    125            } else if (delayMs <= EMBER_MAX_EVENT_CONTROL_DELAY_MS) {
+    126              emberEventControlSetDelayMS(*control, delayMs);
+    127            } else {
+    128              return EMBER_BAD_ARGUMENT;
+    129            }
+    130            return EMBER_SUCCESS;
+   \                     ??emberAfEventControlSetDelayMS_1: (+1)
+   \   00000008   0x2000             MOVS     R0,#+0
+   \   0000000A   0xBD02             POP      {R1,PC}          ;; return
+   \                     ??emberAfEventControlSetDelayMS_0: (+1)
+   \   0000000C   0xF111 0x4F00      CMN      R1,#-2147483648
+   \   00000010   0xD202             BCS.N    ??emberAfEventControlSetDelayMS_2
+   \   00000012   0x.... 0x....      BL       emEventControlSetDelayMS
+   \   00000016   0xE7F7             B.N      ??emberAfEventControlSetDelayMS_1
+   \                     ??emberAfEventControlSetDelayMS_2: (+1)
+   \   00000018   0x2002             MOVS     R0,#+2
+   \   0000001A   0xBD02             POP      {R1,PC}
+    131          }
+    132          
+
+   \                                 In section .text, align 2, keep-with-next
+    133          EmberStatus emberAfEventControlSetDelayQS(EmberEventControl *control,
+    134                                                    int32u delayQs)
+    135          {
+    136            if (delayQs <= EMBER_MAX_EVENT_CONTROL_DELAY_QS) {
+   \                     emberAfEventControlSetDelayQS: (+1)
+   \   00000000   0xF5B1 0x0F00      CMP      R1,#+8388608
+   \   00000004   0xBF3C             ITT      CC 
+    137              return emberAfEventControlSetDelayMS(control, delayQs << 8);
+   \   00000006   0x0209             LSLCC    R1,R1,#+8
+   \   00000008   0x.... 0x....      BCC.W    emberAfEventControlSetDelayMS
+    138            } else {
+    139              return EMBER_BAD_ARGUMENT;
+   \   0000000C   0x2002             MOVS     R0,#+2
+   \   0000000E   0x4770             BX       LR               ;; return
+    140            }
+    141          }
+    142          
+
+   \                                 In section .text, align 2, keep-with-next
+    143          EmberStatus emberAfEventControlSetDelayMinutes(EmberEventControl *control,
+    144                                                         int16u delayM)
+    145          {
+    146            if (delayM <= EMBER_MAX_EVENT_CONTROL_DELAY_MINUTES) {
+   \                     emberAfEventControlSetDelayMinutes: (+1)
+   \   00000000   0xF5B1 0x4F00      CMP      R1,#+32768
+   \   00000004   0xBF3C             ITT      CC 
+    147              return emberAfEventControlSetDelayMS(control, delayM << 16);
+   \   00000006   0x0409             LSLCC    R1,R1,#+16
+   \   00000008   0x.... 0x....      BCC.W    emberAfEventControlSetDelayMS
+    148            } else {
+    149              return EMBER_BAD_ARGUMENT;
+   \   0000000C   0x2002             MOVS     R0,#+2
+   \   0000000E   0x4770             BX       LR               ;; return
+    150            }
+    151          }
+    152          
+
+   \                                 In section .text, align 2, keep-with-next
+    153          EmberStatus emberAfScheduleTickExtended(int8u endpoint,
+    154                                                  EmberAfClusterId clusterId,
+    155                                                  boolean isClient,
+    156                                                  int32u delayMs,
+    157                                                  EmberAfEventPollControl pollControl,
+    158                                                  EmberAfEventSleepControl sleepControl)
+    159          {
+   \                     emberAfScheduleTickExtended: (+1)
+   \   00000000   0xB570             PUSH     {R4-R6,LR}
+   \   00000002   0x4604             MOV      R4,R0
+   \   00000004   0x461D             MOV      R5,R3
+    160            EmberAfEventContext *context = findEventContext(endpoint,
+    161                                                            clusterId,
+    162                                                            isClient);
+   \   00000006   0x.... 0x....      BL       findEventContext
+   \   0000000A   0x0006             MOVS     R6,R0
+    163          
+    164            // Disabled endpoints cannot schedule events.  This will catch the problem in
+    165            // simulation.
+    166            EMBER_TEST_ASSERT(emberAfEndpointIsEnabled(endpoint));
+    167          
+    168            if (context != NULL
+    169                && emberAfEndpointIsEnabled(endpoint)
+    170                && (emberAfEventControlSetDelayMS(context->eventControl, delayMs)
+    171                    == EMBER_SUCCESS)) {
+   \   0000000C   0xD00E             BEQ.N    ??emberAfScheduleTickExtended_0
+   \   0000000E   0x4620             MOV      R0,R4
+   \   00000010   0x.... 0x....      BL       emberAfEndpointIsEnabled
+   \   00000014   0xB150             CBZ.N    R0,??emberAfScheduleTickExtended_0
+   \   00000016   0x68B0             LDR      R0,[R6, #+8]
+   \   00000018   0x4629             MOV      R1,R5
+   \   0000001A   0x.... 0x....      BL       emberAfEventControlSetDelayMS
+   \   0000001E   0xB928             CBNZ.N   R0,??emberAfScheduleTickExtended_0
+    172              context->pollControl = pollControl;
+   \   00000020   0x9804             LDR      R0,[SP, #+16]
+   \   00000022   0x7170             STRB     R0,[R6, #+5]
+    173              context->sleepControl = sleepControl;
+   \   00000024   0x9805             LDR      R0,[SP, #+20]
+   \   00000026   0x71B0             STRB     R0,[R6, #+6]
+    174              return EMBER_SUCCESS;
+   \   00000028   0x2000             MOVS     R0,#+0
+   \   0000002A   0xBD70             POP      {R4-R6,PC}
+    175            }
+    176            return EMBER_BAD_ARGUMENT;
+   \                     ??emberAfScheduleTickExtended_0: (+1)
+   \   0000002C   0x2002             MOVS     R0,#+2
+   \   0000002E   0xBD70             POP      {R4-R6,PC}       ;; return
+    177          }
+    178          
+
+   \                                 In section .text, align 2, keep-with-next
+    179          EmberStatus emberAfScheduleClusterTick(int8u endpoint,
+    180                                                 EmberAfClusterId clusterId,
+    181                                                 boolean isClient,
+    182                                                 int32u delayMs,
+    183                                                 EmberAfEventSleepControl sleepControl)
+    184          {
+   \                     emberAfScheduleClusterTick: (+1)
+   \   00000000   0xB57C             PUSH     {R2-R6,LR}
+   \   00000002   0x9C06             LDR      R4,[SP, #+24]
+    185            return emberAfScheduleTickExtended(endpoint,
+    186                                               clusterId,
+    187                                               isClient,
+    188                                               delayMs,
+    189                                               (sleepControl == EMBER_AF_OK_TO_HIBERNATE
+    190                                                ? EMBER_AF_LONG_POLL
+    191                                                : EMBER_AF_SHORT_POLL),
+    192                                               (sleepControl == EMBER_AF_STAY_AWAKE
+    193                                                ? EMBER_AF_STAY_AWAKE
+    194                                                : EMBER_AF_OK_TO_SLEEP));
+   \   00000004   0x2C02             CMP      R4,#+2
+   \   00000006   0xBF08             IT       EQ 
+   \   00000008   0x2502             MOVEQ    R5,#+2
+   \   0000000A   0xD002             BEQ.N    ??emberAfScheduleClusterTick_0
+   \   0000000C   0x2500             MOVS     R5,#+0
+   \   0000000E   0x0026             MOVS     R6,R4
+   \   00000010   0xD000             BEQ.N    ??emberAfScheduleClusterTick_1
+   \                     ??emberAfScheduleClusterTick_0: (+1)
+   \   00000012   0x2601             MOVS     R6,#+1
+   \                     ??emberAfScheduleClusterTick_1: (+1)
+   \   00000014   0x9501             STR      R5,[SP, #+4]
+   \   00000016   0x9600             STR      R6,[SP, #+0]
+   \   00000018   0x.... 0x....      BL       emberAfScheduleTickExtended
+   \   0000001C   0xBD76             POP      {R1,R2,R4-R6,PC}  ;; return
+    195          }
+    196          
+
+   \                                 In section .text, align 2, keep-with-next
+    197          EmberStatus emberAfScheduleClientTickExtended(int8u endpoint,
+    198                                                        EmberAfClusterId clusterId,
+    199                                                        int32u delayMs,
+    200                                                        EmberAfEventPollControl pollControl,
+    201                                                        EmberAfEventSleepControl sleepControl)
+    202          {
+   \                     emberAfScheduleClientTickExtended: (+1)
+   \   00000000   0xB51C             PUSH     {R2-R4,LR}
+    203            return emberAfScheduleTickExtended(endpoint,
+    204                                               clusterId,
+    205                                               EMBER_AF_CLIENT_CLUSTER_TICK,
+    206                                               delayMs,
+    207                                               pollControl,
+    208                                               sleepControl);
+   \   00000002   0x9300             STR      R3,[SP, #+0]
+   \   00000004   0x4613             MOV      R3,R2
+   \   00000006   0x9C04             LDR      R4,[SP, #+16]
+   \   00000008   0x9401             STR      R4,[SP, #+4]
+   \   0000000A   0x2201             MOVS     R2,#+1
+   \   0000000C   0x....             B.N      ?Subroutine0
+    209          }
+
+   \                                 In section .text, align 2, keep-with-next
+   \                     ?Subroutine0: (+1)
+   \   00000000   0x.... 0x....      BL       emberAfScheduleTickExtended
+   \   00000004   0xBD16             POP      {R1,R2,R4,PC}    ;; return
+    210          
+
+   \                                 In section .text, align 2, keep-with-next
+    211          EmberStatus emberAfScheduleClientTick(int8u endpoint,
+    212                                                EmberAfClusterId clusterId,
+    213                                                int32u delayMs)
+    214          {
+   \                     emberAfScheduleClientTick: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    215            return emberAfScheduleClientTickExtended(endpoint,
+    216                                                     clusterId,
+    217                                                     delayMs,
+    218                                                     EMBER_AF_LONG_POLL,
+    219                                                     EMBER_AF_OK_TO_SLEEP);
+   \   00000002   0x2300             MOVS     R3,#+0
+   \   00000004   0x9300             STR      R3,[SP, #+0]
+   \   00000006   0x.... 0x....      BL       emberAfScheduleClientTickExtended
+   \   0000000A   0xBD02             POP      {R1,PC}          ;; return
+    220          }
+    221          
+
+   \                                 In section .text, align 2, keep-with-next
+    222          EmberStatus emberAfScheduleServerTickExtended(int8u endpoint,
+    223                                                        EmberAfClusterId clusterId,
+    224                                                        int32u delayMs,
+    225                                                        EmberAfEventPollControl pollControl,
+    226                                                        EmberAfEventSleepControl sleepControl)
+    227          {
+   \                     emberAfScheduleServerTickExtended: (+1)
+   \   00000000   0xB51C             PUSH     {R2-R4,LR}
+    228            return emberAfScheduleTickExtended(endpoint,
+    229                                               clusterId,
+    230                                               EMBER_AF_SERVER_CLUSTER_TICK,
+    231                                               delayMs,
+    232                                               pollControl,
+    233                                               sleepControl);
+   \   00000002   0x9300             STR      R3,[SP, #+0]
+   \   00000004   0x4613             MOV      R3,R2
+   \   00000006   0x9C04             LDR      R4,[SP, #+16]
+   \   00000008   0x9401             STR      R4,[SP, #+4]
+   \   0000000A   0x2200             MOVS     R2,#+0
+   \   0000000C                      REQUIRE ?Subroutine0
+   \   0000000C                      ;; // Fall through to label ?Subroutine0
+    234          }
+    235          
+
+   \                                 In section .text, align 2, keep-with-next
+    236          EmberStatus emberAfScheduleServerTick(int8u endpoint,
+    237                                                EmberAfClusterId clusterId,
+    238                                                int32u delayMs)
+    239          {
+   \                     emberAfScheduleServerTick: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    240            return emberAfScheduleServerTickExtended(endpoint,
+    241                                                     clusterId,
+    242                                                     delayMs,
+    243                                                     EMBER_AF_LONG_POLL,
+    244                                                     EMBER_AF_OK_TO_SLEEP);
+   \   00000002   0x2300             MOVS     R3,#+0
+   \   00000004   0x9300             STR      R3,[SP, #+0]
+   \   00000006   0x.... 0x....      BL       emberAfScheduleServerTickExtended
+   \   0000000A   0xBD02             POP      {R1,PC}          ;; return
+    245          }
+    246          
+
+   \                                 In section .text, align 2, keep-with-next
+    247          int32u emberAfMsToNextEventExtended(int32u maxMs, int8u* returnIndex)
+    248          {
+    249            return emberMsToNextEventExtended(emAfEvents, maxMs, returnIndex);
+   \                     emberAfMsToNextEventExtended: (+1)
+   \   00000000   0x460A             MOV      R2,R1
+   \   00000002   0x4601             MOV      R1,R0
+   \   00000004   0x.... 0x....      ADR.W    R0,emAfEvents
+   \   00000008   0x.... 0x....      B.W      emberMsToNextEventExtended
+    250          }
+    251          
+
+   \                                 In section .text, align 2, keep-with-next
+    252          int32u emberAfMsToNextEvent(int32u maxMs)
+    253          {
+    254            return emberAfMsToNextEventExtended(maxMs, NULL);
+   \                     emberAfMsToNextEvent: (+1)
+   \   00000000   0x2100             MOVS     R1,#+0
+   \   00000002   0x....             B.N      emberAfMsToNextEventExtended
+    255          }
+    256          
+
+   \                                 In section .text, align 2, keep-with-next
+    257          EmberStatus emberAfDeactivateClusterTick(int8u endpoint,
+    258                                                   EmberAfClusterId clusterId,
+    259                                                   boolean isClient)
+    260          {
+   \                     emberAfDeactivateClusterTick: (+1)
+   \   00000000   0xB580             PUSH     {R7,LR}
+    261            EmberAfEventContext *context = findEventContext(endpoint,
+    262                                                            clusterId,
+    263                                                            isClient);
+   \   00000002   0x.... 0x....      BL       findEventContext
+    264            if (context != NULL) {
+   \   00000006   0xB120             CBZ.N    R0,??emberAfDeactivateClusterTick_0
+    265              emberEventControlSetInactive((*(context->eventControl)));
+   \   00000008   0x6880             LDR      R0,[R0, #+8]
+   \   0000000A   0x2100             MOVS     R1,#+0
+   \   0000000C   0x7001             STRB     R1,[R0, #+0]
+    266              return EMBER_SUCCESS;
+   \   0000000E   0x2000             MOVS     R0,#+0
+   \   00000010   0xBD02             POP      {R1,PC}
+    267            }
+    268            return EMBER_BAD_ARGUMENT;
+   \                     ??emberAfDeactivateClusterTick_0: (+1)
+   \   00000012   0x2002             MOVS     R0,#+2
+   \   00000014   0xBD02             POP      {R1,PC}          ;; return
+    269          }
+    270          
+
+   \                                 In section .text, align 2, keep-with-next
+    271          EmberStatus emberAfDeactivateClientTick(int8u endpoint,
+    272                                                  EmberAfClusterId clusterId)
+    273          {
+    274            return emberAfDeactivateClusterTick(endpoint,
+    275                                                clusterId,
+    276                                                EMBER_AF_CLIENT_CLUSTER_TICK);
+   \                     emberAfDeactivateClientTick: (+1)
+   \   00000000   0x2201             MOVS     R2,#+1
+   \   00000002   0x....             B.N      emberAfDeactivateClusterTick
+    277          }
+    278          
+
+   \                                 In section .text, align 2, keep-with-next
+    279          EmberStatus emberAfDeactivateServerTick(int8u endpoint,
+    280                                                  EmberAfClusterId clusterId)
+    281          {
+    282            return emberAfDeactivateClusterTick(endpoint,
+    283                                                clusterId,
+    284                                                EMBER_AF_SERVER_CLUSTER_TICK);
+   \                     emberAfDeactivateServerTick: (+1)
+   \   00000000   0x2200             MOVS     R2,#+0
+   \   00000002   0x....             B.N      emberAfDeactivateClusterTick
+    285          }
+    286          
+    287          #define MS_TO_QS(ms)    ((ms) >> 8)
+    288          #define MS_TO_MIN(ms)   ((ms) >> 16)
+    289          #define QS_TO_MS(qs)    ((qs) << 8)
+    290          #define MIN_TO_MS(min) ((min) << 16)
+    291          
+    292          // Used to calculate the duration and unit used by the host to set the sleep timer
+
+   \                                 In section .text, align 2, keep-with-next
+    293          void emAfGetTimerDurationAndUnitFromMS(int32u durationMs,
+    294                                                 int16u *duration,
+    295                                                 EmberEventUnits *units)
+    296          {
+    297            if (durationMs <= MAX_TIMER_UNITS_HOST) {
+   \                     emAfGetTimerDurationAndUnitFromMS: (+1)
+   \   00000000   0xF5B0 0x4F00      CMP      R0,#+32768
+   \   00000004   0xBF38             IT       CC 
+    298              *duration = (int16u)durationMs;
+    299              *units = EMBER_EVENT_MS_TIME;
+   \   00000006   0x2301             MOVCC    R3,#+1
+   \   00000008   0xD30D             BCC.N    ??emAfGetTimerDurationAndUnitFromMS_0
+    300            } else if (MS_TO_QS(durationMs) <= MAX_TIMER_UNITS_HOST) {
+   \   0000000A   0x0A03             LSRS     R3,R0,#+8
+   \   0000000C   0xF5B3 0x4F00      CMP      R3,#+32768
+   \   00000010   0xD202             BCS.N    ??emAfGetTimerDurationAndUnitFromMS_1
+    301              *duration = (int16u)(MS_TO_QS(durationMs));
+   \   00000012   0x4618             MOV      R0,R3
+    302              *units = EMBER_EVENT_QS_TIME;
+   \   00000014   0x2302             MOVS     R3,#+2
+   \   00000016   0xE006             B.N      ??emAfGetTimerDurationAndUnitFromMS_0
+    303            } else {
+    304              *duration = (MS_TO_MIN(durationMs) <= MAX_TIMER_UNITS_HOST
+    305                           ? (int16u)(MS_TO_MIN(durationMs))
+    306                           : MAX_TIMER_UNITS_HOST);
+   \                     ??emAfGetTimerDurationAndUnitFromMS_1: (+1)
+   \   00000018   0x0C00             LSRS     R0,R0,#+16
+   \   0000001A   0xF5B0 0x4F00      CMP      R0,#+32768
+   \   0000001E   0xBF28             IT       CS 
+   \   00000020   0xF647 0x70FF      MOVWCS   R0,#+32767
+    307              *units = EMBER_EVENT_MINUTE_TIME;
+   \   00000024   0x2303             MOVS     R3,#+3
+   \                     ??emAfGetTimerDurationAndUnitFromMS_0: (+1)
+   \   00000026   0x8008             STRH     R0,[R1, #+0]
+   \   00000028   0x7013             STRB     R3,[R2, #+0]
+    308            }
+    309          }
+   \   0000002A   0x4770             BX       LR               ;; return
+    310          
+
+   \                                 In section .text, align 2, keep-with-next
+    311          int32u emAfGetMSFromTimerDurationAndUnit(int16u duration,
+    312                                                   EmberEventUnits units)
+    313          {
+    314            int32u ms;
+    315            if (units == EMBER_EVENT_MS_TIME) {
+   \                     emAfGetMSFromTimerDurationAndUnit: (+1)
+   \   00000000   0x2901             CMP      R1,#+1
+   \   00000002   0xD00D             BEQ.N    ??emAfGetMSFromTimerDurationAndUnit_0
+    316              ms = duration;
+    317            } else if (units == EMBER_EVENT_QS_TIME) {
+   \   00000004   0x2902             CMP      R1,#+2
+   \   00000006   0xD101             BNE.N    ??emAfGetMSFromTimerDurationAndUnit_1
+    318              ms = QS_TO_MS(duration);
+   \   00000008   0x0200             LSLS     R0,R0,#+8
+   \   0000000A   0x4770             BX       LR
+    319            } else if (units == EMBER_EVENT_MINUTE_TIME) {
+   \                     ??emAfGetMSFromTimerDurationAndUnit_1: (+1)
+   \   0000000C   0x2903             CMP      R1,#+3
+   \   0000000E   0xD101             BNE.N    ??emAfGetMSFromTimerDurationAndUnit_2
+    320              ms = MIN_TO_MS(duration);
+   \   00000010   0x0400             LSLS     R0,R0,#+16
+   \   00000012   0x4770             BX       LR
+    321            } else if (units == EMBER_EVENT_ZERO_DELAY) {
+   \                     ??emAfGetMSFromTimerDurationAndUnit_2: (+1)
+   \   00000014   0x2904             CMP      R1,#+4
+   \   00000016   0xD101             BNE.N    ??emAfGetMSFromTimerDurationAndUnit_3
+    322              ms = 0;
+   \   00000018   0x2000             MOVS     R0,#+0
+   \   0000001A   0x4770             BX       LR
+    323            } else {
+    324              ms = MAX_INT32U_VALUE;
+   \                     ??emAfGetMSFromTimerDurationAndUnit_3: (+1)
+   \   0000001C   0xF04F 0x30FF      MOV      R0,#-1
+    325            }
+    326            return ms;
+   \                     ??emAfGetMSFromTimerDurationAndUnit_0: (+1)
+   \   00000020   0x4770             BX       LR               ;; return
+    327          }
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable17:
+   \   00000000   0x........         DC32     emberAfIdentifyClusterServerTickCallback
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable17_1:
+   \   00000000   0x........         DC32     emberAfIdentifyClusterServerTickCallbackControl1
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable17_2:
+   \   00000000   0x........         DC32     emberAfIdentifyClusterServerTickCallbackControl2
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable17_3:
+   \   00000000   0x........         DC32     emberAfIdentifyClusterServerTickCallbackControl3
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable17_4:
+   \   00000000   0x........         DC32     emberAfIdentifyClusterServerTickCallbackControl4
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable17_5:
+   \   00000000   0x........         DC32     emAfTaskId
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable17_6:
+   \   00000000   0x........         DC32     emAfEventStrings
+
+   \                                 In section .text, align 4, keep-with-next
+   \                     ??DataTable17_7:
+   \   00000000   0x........         DC32     emAfAppEventContextLength
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "Svc Disc NWK 0">`:
+   \   00000000   0x53 0x76          DC8 "Svc Disc NWK 0"
+   \              0x63 0x20    
+   \              0x44 0x69    
+   \              0x73 0x63    
+   \              0x20 0x4E    
+   \              0x57 0x4B    
+   \              0x20 0x30    
+   \              0x00         
+   \   0000000F   0x00               DC8 0
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "Identify Cluster Serv...">`:
+   \   00000000   0x49 0x64          DC8 "Identify Cluster Server EP 1"
+   \              0x65 0x6E    
+   \              0x74 0x69    
+   \              0x66 0x79    
+   \              0x20 0x43    
+   \              0x6C 0x75    
+   \              0x73 0x74    
+   \              0x65 0x72    
+   \              0x20 0x53    
+   \              0x65 0x72    
+   \              0x76 0x65    
+   \              0x72 0x20    
+   \              0x45 0x50    
+   \              0x20 0x31    
+   \              0x00         
+   \   0000001D   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "Identify Cluster Serv...">_1`:
+   \   00000000   0x49 0x64          DC8 "Identify Cluster Server EP 2"
+   \              0x65 0x6E    
+   \              0x74 0x69    
+   \              0x66 0x79    
+   \              0x20 0x43    
+   \              0x6C 0x75    
+   \              0x73 0x74    
+   \              0x65 0x72    
+   \              0x20 0x53    
+   \              0x65 0x72    
+   \              0x76 0x65    
+   \              0x72 0x20    
+   \              0x45 0x50    
+   \              0x20 0x32    
+   \              0x00         
+   \   0000001D   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "Identify Cluster Serv...">_2`:
+   \   00000000   0x49 0x64          DC8 "Identify Cluster Server EP 3"
+   \              0x65 0x6E    
+   \              0x74 0x69    
+   \              0x66 0x79    
+   \              0x20 0x43    
+   \              0x6C 0x75    
+   \              0x73 0x74    
+   \              0x65 0x72    
+   \              0x20 0x53    
+   \              0x65 0x72    
+   \              0x76 0x65    
+   \              0x72 0x20    
+   \              0x45 0x50    
+   \              0x20 0x33    
+   \              0x00         
+   \   0000001D   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "Identify Cluster Serv...">_3`:
+   \   00000000   0x49 0x64          DC8 "Identify Cluster Server EP 4"
+   \              0x65 0x6E    
+   \              0x74 0x69    
+   \              0x66 0x79    
+   \              0x20 0x43    
+   \              0x6C 0x75    
+   \              0x73 0x74    
+   \              0x65 0x72    
+   \              0x20 0x53    
+   \              0x65 0x72    
+   \              0x76 0x65    
+   \              0x72 0x20    
+   \              0x45 0x50    
+   \              0x20 0x34    
+   \              0x00         
+   \   0000001D   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "Form and Join Library...">`:
+   \   00000000   0x46 0x6F          DC8 "Form and Join Library Plugin Cleanup"
+   \              0x72 0x6D    
+   \              0x20 0x61    
+   \              0x6E 0x64    
+   \              0x20 0x4A    
+   \              0x6F 0x69    
+   \              0x6E 0x20    
+   \              0x4C 0x69    
+   \              0x62 0x72    
+   \              0x61 0x72    
+   \              0x79 0x20    
+   \              0x50 0x6C    
+   \              0x75 0x67    
+   \              0x69 0x6E    
+   \              0x20 0x43    
+   \              0x6C 0x65    
+   \              0x61 0x6E    
+   \              0x75 0x70    
+   \              0x00         
+   \   00000025   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "Identify Feedback Plu...">`:
+   \   00000000   0x49 0x64          DC8 "Identify Feedback Plugin ProvideFeedback"
+   \              0x65 0x6E    
+   \              0x74 0x69    
+   \              0x66 0x79    
+   \              0x20 0x46    
+   \              0x65 0x65    
+   \              0x64 0x62    
+   \              0x61 0x63    
+   \              0x6B 0x20    
+   \              0x50 0x6C    
+   \              0x75 0x67    
+   \              0x69 0x6E    
+   \              0x20 0x50    
+   \              0x72 0x6F    
+   \              0x76 0x69    
+   \              0x64 0x65    
+   \              0x46 0x65    
+   \              0x65 0x64    
+   \              0x62 0x61    
+   \              0x63 0x6B    
+   \              0x00         
+   \   00000029   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   \                                 In section .rodata, align 4, keep-with-next
+   \                     `?<Constant "Network Find Plugin Tick">`:
+   \   00000000   0x4E 0x65          DC8 "Network Find Plugin Tick"
+   \              0x74 0x77    
+   \              0x6F 0x72    
+   \              0x6B 0x20    
+   \              0x46 0x69    
+   \              0x6E 0x64    
+   \              0x20 0x50    
+   \              0x6C 0x75    
+   \              0x67 0x69    
+   \              0x6E 0x20    
+   \              0x54 0x69    
+   \              0x63 0x6B    
+   \              0x00         
+   \   00000019   0x00 0x00          DC8 0, 0, 0
+   \              0x00         
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      16   clusterTickWrapper
+        16   -- Indirect call
+         0   -> emberAfPopNetworkIndex
+        16   -> emberAfPushEndpointNetworkIndex
+       0   emAfGetMSFromTimerDurationAndUnit
+       0   emAfGetTimerDurationAndUnitFromMS
+       8   emAfInitEvents
+         8   -> emTaskEnableIdling
+         8   -> emberTaskInit
+       0   emberAfDeactivateClientTick
+         0   -> emberAfDeactivateClusterTick
+       8   emberAfDeactivateClusterTick
+         8   -> findEventContext
+       0   emberAfDeactivateServerTick
+         0   -> emberAfDeactivateClusterTick
+       8   emberAfEventControlSetDelayMS
+         8   -> emEventControlSetActive
+         8   -> emEventControlSetDelayMS
+       0   emberAfEventControlSetDelayMinutes
+         0   -> emberAfEventControlSetDelayMS
+       0   emberAfEventControlSetDelayQS
+         0   -> emberAfEventControlSetDelayMS
+       0   emberAfGetEventString
+       0   emberAfIdentifyClusterServerTickCallbackWrapperFunction1
+         0   -> clusterTickWrapper
+       0   emberAfIdentifyClusterServerTickCallbackWrapperFunction2
+         0   -> clusterTickWrapper
+       0   emberAfIdentifyClusterServerTickCallbackWrapperFunction3
+         0   -> clusterTickWrapper
+       0   emberAfIdentifyClusterServerTickCallbackWrapperFunction4
+         0   -> clusterTickWrapper
+       0   emberAfMsToNextEvent
+         0   -> emberAfMsToNextEventExtended
+       0   emberAfMsToNextEventExtended
+         0   -> emberMsToNextEventExtended
+       8   emberAfRunEvents
+         8   -> emAfGetCryptoStatus
+         0   -> emberRunTask
+       8   emberAfScheduleClientTick
+         8   -> emberAfScheduleClientTickExtended
+      16   emberAfScheduleClientTickExtended
+        16   -> emberAfScheduleTickExtended
+      24   emberAfScheduleClusterTick
+        24   -> emberAfScheduleTickExtended
+       8   emberAfScheduleServerTick
+         8   -> emberAfScheduleServerTickExtended
+      16   emberAfScheduleServerTickExtended
+        16   -> emberAfScheduleTickExtended
+      16   emberAfScheduleTickExtended
+        16   -> emberAfEndpointIsEnabled
+        16   -> emberAfEventControlSetDelayMS
+        16   -> findEventContext
+      16   findEventContext
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+      40  ?<Constant "Form and Join Library...">
+      32  ?<Constant "Identify Cluster Serv...">
+      32  ?<Constant "Identify Cluster Serv...">_1
+      32  ?<Constant "Identify Cluster Serv...">_2
+      32  ?<Constant "Identify Cluster Serv...">_3
+      44  ?<Constant "Identify Feedback Plu...">
+      28  ?<Constant "Network Find Plugin Tick">
+      16  ?<Constant "Svc Disc NWK 0">
+       4  ??DataTable17
+       4  ??DataTable17_1
+       4  ??DataTable17_2
+       4  ??DataTable17_3
+       4  ??DataTable17_4
+       4  ??DataTable17_5
+       4  ??DataTable17_6
+       4  ??DataTable17_7
+       6  ?Subroutine0
+      30  clusterTickWrapper
+      52  emAfAppEventContextLength
+          emAfAppEventContext
+      32  emAfEventStrings
+      72  emAfEvents
+      34  emAfGetMSFromTimerDurationAndUnit
+      44  emAfGetTimerDurationAndUnitFromMS
+      22  emAfInitEvents
+       8  emAfStackEventString
+       1  emAfTaskId
+       4  emberAfDeactivateClientTick
+      22  emberAfDeactivateClusterTick
+       4  emberAfDeactivateServerTick
+      28  emberAfEventControlSetDelayMS
+      16  emberAfEventControlSetDelayMinutes
+      16  emberAfEventControlSetDelayQS
+      18  emberAfGetEventString
+       8  emberAfIdentifyClusterServerTickCallbackControl1
+       8  emberAfIdentifyClusterServerTickCallbackControl2
+       8  emberAfIdentifyClusterServerTickCallbackControl3
+       8  emberAfIdentifyClusterServerTickCallbackControl4
+       8  emberAfIdentifyClusterServerTickCallbackWrapperFunction1
+       8  emberAfIdentifyClusterServerTickCallbackWrapperFunction2
+       8  emberAfIdentifyClusterServerTickCallbackWrapperFunction3
+       8  emberAfIdentifyClusterServerTickCallbackWrapperFunction4
+       4  emberAfMsToNextEvent
+      12  emberAfMsToNextEventExtended
+      24  emberAfRunEvents
+      12  emberAfScheduleClientTick
+      14  emberAfScheduleClientTickExtended
+      30  emberAfScheduleClusterTick
+      12  emberAfScheduleServerTick
+      12  emberAfScheduleServerTickExtended
+      48  emberAfScheduleTickExtended
+      52  findEventContext
+
+ 
+  33 bytes in section .bss
+  84 bytes in section .data
+ 256 bytes in section .rodata
+ 608 bytes in section .text
+ 
+ 608 bytes of CODE  memory
+ 256 bytes of CONST memory
+ 117 bytes of DATA  memory
+
+Errors: none
+Warnings: none

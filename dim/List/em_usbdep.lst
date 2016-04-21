@@ -1,0 +1,375 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        22/Oct/2015  09:33:11
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\em_usbdep.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\em_usbdep.c -D
+#        DIMMER -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"em_usbdep.c\"" -lC
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\
+#        --diag_suppress Pa050 -o
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\ --debug
+#        --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\List\em_usbdep.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\dim\Obj\em_usbdep.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\hal\micro\cortexm3\usb\em_usbdep.c
+      1          /**************************************************************************//**
+      2           * @file
+      3           * @brief USB protocol stack library, USB device endpoint handlers.
+      4           * @author Nathaniel Ting
+      5           * @version 3.20.3
+      6           * <!-- Copyright 2013 by Silicon Laboratories. All rights reserved.     *80*-->
+      7           *****************************************************************************/
+      8          
+      9          #include PLATFORM_HEADER
+     10          #include "stack/include/ember.h"
+     11          #include "hal/hal.h"
+     12          
+     13          #if defined(CORTEXM3_EM35X_USB)
+     14          #include "em_usb.h"
+     15          #include "em_usbhal.h"
+     16          #include "em_usbtypes.h"
+     17          #include "em_usbd.h"
+     18          
+     19          /** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
+     20          
+     21          /*
+     22           * USBDEP_Ep0Handler() is called each time a packet has been transmitted
+     23           * or recieved on the default endpoint.
+     24           * A state machine navigate us through the phases of a control transfer
+     25           * according to "chapter 9" in the USB spec.
+     26           */
+     27          void USBDEP_Ep0Handler( USBD_Device_TypeDef *device )
+     28          {
+     29            int status;
+     30            USBD_Ep_TypeDef *ep;
+     31            static bool statusIn;
+     32            static uint32_t xferred;
+     33            static USB_XferCompleteCb_TypeDef callback;
+     34            ep = &device->ep[ 0 ];
+     35            
+     36            #ifdef USB_DEBUG_EP0
+     37            DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "ep->state = ");
+     38            #endif
+     39           
+     40          
+     41            switch ( ep->state )
+     42            {
+     43              case D_EP_IDLE:
+     44                ep->remaining = 0;
+     45                ep->zlp = 0;
+     46                callback = NULL;
+     47                statusIn = false;
+     48                #ifdef USB_DEBUG_EP0
+     49                DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "IDLE\r\n");
+     50                #endif
+     51          
+     52                if (*EPOUTBUFSIZE[0] == 0)
+     53                {
+     54          
+     55                  #ifdef USB_DEBUG_EP0
+     56                  DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "0 byte ack\r\n");
+     57                  #endif
+     58                  break;
+     59                }
+     60                status = USBDCH9_SetupCmd( device );
+     61          
+     62                if ( status == USB_STATUS_REQ_ERR )
+     63                {
+     64                  // ignore error for now since this can be triggered by requests we don't
+     65                  // need to handle
+     66                  ep->in = true;
+     67                  USBDHAL_StallEp( ep );              /* Stall Ep0 IN                 */
+     68                  ep->in = false;                     /* OUT for next SETUP           */
+     69                  // USBDHAL_StallEp( ep );              /* Stall Ep0 OUT                */
+     70                  USBDHAL_ReenableEp0Setup( device ); /* Prepare for next SETUP packet*/
+     71                }
+     72                else /* ( Status == USB_STATUS_OK ) */
+     73                {
+     74                  if ( (ep->state == D_EP_RECEIVING) || (ep->state == D_EP_TRANSMITTING) )
+     75                  {
+     76                    callback = ep->xferCompleteCb;
+     77                  }
+     78          
+     79                  if ( ep->state != D_EP_RECEIVING )
+     80                  {
+     81                    // enable with care. since setup involves lots of transfers, the debug
+     82                    // buffer will fill up very quickly.
+     83                    // #ifdef USB_DEBUG_EP0
+     84                    // DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "ep->remaining = %d\r\n",ep->remaining);
+     85                    // #endif
+     86          
+     87                    if ( ep->remaining )
+     88                    {
+     89                      /* Data will be sent to host, check if a ZLP must be appended */
+     90                      if ( ( ep->remaining < device->setup->wLength ) &&
+     91                           ( ep->remaining % ep->packetSize == 0    )    )
+     92                      {
+     93                        ep->zlp = 1;
+     94                      }
+     95                    }
+     96                    else
+     97                    {
+     98                      /* Prepare for next SETUP packet*/
+     99                      USBDHAL_ReenableEp0Setup( device );
+    100          
+    101                      /* No data stage, a ZLP may have been sent. If not, send one */
+    102                      if ( ep->zlp == 0 )
+    103                      {
+    104                        #ifdef USB_DEBUG_EP0
+    105                        DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "no ack\r\n");
+    106                        #endif
+    107                        ep->state = D_EP_IDLE;
+    108                        USBD_Write( 0, NULL, 0, NULL );             /* ACK to host */
+    109                        ep->state = D_EP_STATUS;
+    110                      }
+    111                      else
+    112                      {
+    113                        ep->state = D_EP_IDLE;
+    114                        ep->in = false;                      /* OUT for next SETUP */
+    115                      }
+    116                    }
+    117                  }
+    118                }
+    119                break; //D_EP_IDLE
+    120              case D_EP_RECEIVING:
+    121                if ( ep->remaining )
+    122                {
+    123                  ep->in = false;
+    124                  USBD_ReArmEp0( ep );
+    125                }
+    126                else
+    127                {
+    128                  status = USB_STATUS_OK;
+    129                  if ( callback != NULL )
+    130                  {
+    131                    status = callback( USB_STATUS_OK, ep->xferred, 0 );
+    132                    callback = NULL;
+    133                  }
+    134          
+    135                  if ( status != USB_STATUS_OK )
+    136                  {
+    137                    ep->in = true;
+    138                    USBDHAL_StallEp( ep );              /* Stall Ep0 IN                */
+    139                    ep->in = false;                     /* OUT for next SETUP          */
+    140                    USBDHAL_StallEp( ep );              /* Stall Ep0 OUT               */
+    141                    USBDHAL_StartEp0Setup( dev );       /* Prepare for next SETUP pkt. */
+    142                    ep->state = D_EP_IDLE;
+    143                  }
+    144                  else
+    145                  {
+    146          
+    147                    USBDHAL_StartEp0Setup( dev );      /* Prepare for next SETUP packet*/
+    148                    ep->state = D_EP_IDLE;             /* USBD_Write() sets state back */
+    149                                                       /* to EP_TRANSMITTING           */
+    150                    USBD_Write( 0, NULL, 0, NULL );
+    151                    ep->state = D_EP_STATUS;
+    152                  }
+    153                }
+    154                break;
+    155              case D_EP_TRANSMITTING:
+    156                #ifdef USB_DEBUG_EP0
+    157                DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "TX\r\n");
+    158                #endif
+    159                if ( ep->remaining )
+    160                {
+    161                  /* There is more data to transmit */
+    162                  USBD_ReArmEp0( ep );
+    163          
+    164          
+    165                  // enable with care. since setup involves lots of transfers, the debug
+    166                  // buffer will fill up very quickly.
+    167                  // #ifdef USB_DEBUG_EP0
+    168                  // DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "ep->remaining = %d\r\n",ep->remaining);
+    169                  // #endif
+    170                }
+    171                else
+    172                {
+    173                  #ifdef USB_DEBUG_EP0
+    174                  DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "TX done\r\n");
+    175                  #endif
+    176                  /* All data transferred, is a ZLP packet needed ? */
+    177                  if ( ep->zlp == 1 )
+    178                  {
+    179                    #ifdef USB_DEBUG_EP0
+    180                    DEBUG_BUFFER += sprintf(DEBUG_BUFFER,"ack\r\n");
+    181                    #endif
+    182                    xferred   = ep->xferred;
+    183                    ep->state = D_EP_IDLE;          /* USBD_Write() sets state back */
+    184                                                    /* to EP_TRANSMITTING           */
+    185                    USBD_Write( 0, NULL, 0, NULL ); /* Send ZLP                     */
+    186                    ep->zlp = 2;
+    187                  }
+    188                  else
+    189                  {
+    190                    if ( ep->zlp == 0 )
+    191                    {
+    192                      xferred = ep->xferred;
+    193                      ep->zlp = 1;
+    194                    }
+    195          
+    196          
+    197                    // host will send ack, which will be handled by hardware
+    198                    // ep->state = D_EP_IDLE;
+    199                    // USBD_Read( 0, NULL, 0, NULL );  /* Get ZLP packet (ACK) from host */
+    200                    statusIn = true;
+    201                    ep->state = D_EP_STATUS;
+    202                  }
+    203                }
+    204                break;
+    205              case D_EP_STATUS:
+    206                #ifdef USB_DEBUG_EP0
+    207                DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "STATUS\r\n");
+    208                #endif
+    209                if ( statusIn )
+    210                {
+    211                  USBDHAL_ReenableEp0Setup( device );
+    212                }
+    213          
+    214                if ( callback != NULL )
+    215                {
+    216                  callback( USB_STATUS_OK, xferred, 0 );
+    217                }
+    218          
+    219                ep->state = D_EP_IDLE;
+    220                ep->in = false;                     /* OUT for next SETUP */
+    221                break;
+    222              }
+    223          }
+    224          
+    225          void USBDEP_EpHandler( uint8_t epAddr )
+    226          {
+    227            USB_XferCompleteCb_TypeDef callback;
+    228            
+    229            USBD_Ep_TypeDef *ep = USBD_GetEpFromAddr( epAddr );
+    230          
+    231            #if defined(USB_DEBUG_READ) || defined(USB_DEBUG_WRITE) || defined(USB_DEBUG_EP)
+    232            DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "EP%dHandler\tep->state = %d\r\n",ep->num,ep->state);
+    233            #endif
+    234          
+    235          
+    236            if ( ep->state == D_EP_TRANSMITTING ) 
+    237            {
+    238              #ifdef USB_DEBUG_EP
+    239              DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "ep->xferred=%d \tep->remaining = %d\r\n",ep->xferred, ep->remaining);
+    240              #endif
+    241              if ( ep->remaining )
+    242              {
+    243                // int8u txSize = (ep->remaining > ep->packetSize) ? ep->packetSize : ep->remaining;
+    244                /* There is more data to transmit */
+    245                USBD_ArmEp( ep );
+    246                // ep->buf += ep->xferred;
+    247                // ep->buf += txSize;
+    248              }
+    249              else // Done transmitting
+    250              {
+    251                // Put ep back into idle state
+    252                ep->state = D_EP_IDLE;
+    253          
+    254                // If there's a callback, call it
+    255                if ( ep->xferCompleteCb )
+    256                {
+    257                  callback = ep->xferCompleteCb;
+    258                  ep->xferCompleteCb = NULL;
+    259                  callback( USB_STATUS_OK, ep->xferred, ep->remaining );
+    260                }
+    261                #if EM_SERIAL3_ENABLED
+    262                  halInternalStartUartTx(3);
+    263                #endif
+    264              }
+    265            }
+    266            else if ( ep->state == D_EP_RECEIVING )
+    267            {
+    268              #ifdef USB_DEBUG_EP
+    269              DEBUG_BUFFER += sprintf(DEBUG_BUFFER, "ep->remaining = %d\r\n",ep->remaining);
+    270              #endif
+    271          
+    272              if ( ep->remaining )
+    273              {
+    274                /* Short Packet */
+    275                if (ep->packetSize>(ep->remaining + *EPOUTBUFSIZE[ep->num]))
+    276                {
+    277                  
+    278                  
+    279                  if ( ep->xferCompleteCb )
+    280                  {
+    281                    callback = ep->xferCompleteCb;
+    282                    ep->xferCompleteCb = NULL;
+    283                    callback( USB_STATUS_TIMEOUT, ep->xferred, ep->remaining );
+    284                  }
+    285                }
+    286                else
+    287                {
+    288                  /* There is more data to transmit */
+    289                  USBD_ArmEp( ep );
+    290                  ep->buf += *EPOUTBUFSIZE[ep->num];  // move buffer pointer
+    291                }
+    292                
+    293              }
+    294              
+    295              else
+    296              {
+    297                // Put ep back into idle state
+    298                ep->state = D_EP_IDLE;
+    299                // If there's a callback, call it
+    300                if ( ep->xferCompleteCb )
+    301                {
+    302                  callback = ep->xferCompleteCb;
+    303                  ep->xferCompleteCb = NULL;
+    304                  callback( USB_STATUS_OK, ep->xferred, ep->remaining );
+    305                }
+    306              }
+    307            }
+    308            else
+    309            {
+    310              // EpHandler should only be called if the endpoint is in use
+    311              // ep->state set in read/write
+    312              // assert( 0 );
+    313            }
+    314          }
+    315          
+    316          /** @endcond */
+    317          
+    318          #endif //CORTEXM3_EM35X_USB
+    319          
+
+
+ 
+
+ 
+
+
+Errors: none
+Warnings: none

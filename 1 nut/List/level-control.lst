@@ -1,0 +1,834 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V7.10.1.6676/W32 for ARM        12/Sep/2015  09:00:56
+# Copyright 1999-2014 IAR Systems AB.
+#
+#    Cpu mode     =  thumb
+#    Endian       =  little
+#    Source file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\level-control\level-control.c
+#    Command line =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\level-control\level-control.c
+#        -D SWITCH_1_BUTTON -D NULL_BTL -D CORTEXM3 -D CORTEXM3_EMBER_MICRO -D
+#        CORTEXM3_EM357 -D PHY_EM3XX -D
+#        "APPLICATION_TOKEN_HEADER=\"app/framework/util/tokens.h\"" -D
+#        "ATTRIBUTE_STORAGE_CONFIGURATION=\"app/builder/ZigbeeRoute/ZigbeeRoute_endpoint_config.h\""
+#        -D "BOARD_HEADER=\"app\builder\ZigbeeRoute\ZigbeeRoute_board.h\"" -D
+#        "CONFIGURATION_HEADER=\"app/framework/util/config.h\"" -D
+#        "GENERATED_TOKEN_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute_tokens.h\""
+#        -D "PLATFORM_HEADER=\"hal/micro/cortexm3/compiler/iar.h\"" -D
+#        "ZA_GENERATED_HEADER=\"app/builder/ZigbeeRoute/ZigbeeRoute.h\"" -D
+#        "__SOURCEFILE__=\"level-control.c\"" -lC
+#        "E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1 nut\List\"
+#        --diag_suppress Pa050 -o
+#        "E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1 nut\Obj\"
+#        --debug --endian=little --cpu=Cortex-M3 --no_path_in_file_macros
+#        --separate_cluster_for_initialized_variables -e --fpu=None
+#        --dlib_config "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        7.0\arm\INC\c\DLib_Config_Normal.h" -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\level-control\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\ -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\framework\include\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\app\util\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\stack\
+#        -I E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\
+#        -I
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\..\..\..\hal\..\
+#        -Ohz --use_c++_inline
+#    List file    =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\List\level-control.lst
+#    Object file  =  
+#        E:\Zigbee\EmberZNet5.6.0-GA\app\builder\ZigbeeRoute\1
+#        nut\Obj\level-control.o
+#
+###############################################################################
+
+E:\Zigbee\EmberZNet5.6.0-GA\app\framework\plugin\level-control\level-control.c
+      1          // *******************************************************************
+      2          // * level-control.c
+      3          // *
+      4          // *
+      5          // * Copyright 2014 Silicon Laboratories, Inc.                              *80*
+      6          // *******************************************************************
+      7          
+      8          // this file contains all the common includes for clusters in the util
+      9          #include "app/framework/include/af.h"
+     10          
+     11          // clusters specific header
+     12          #include "level-control.h"
+     13          
+     14          #ifdef EMBER_AF_PLUGIN_ZLL_LEVEL_CONTROL_SERVER
+     15            #include "app/framework/plugin/zll-level-control-server/zll-level-control-server.h"
+     16          #endif //EMBER_AF_PLUGIN_ZLL_LEVEL_CONTROL_SERVER
+     17          
+     18          #if (EMBER_AF_PLUGIN_LEVEL_CONTROL_RATE == 0)
+     19            #define FASTEST_TRANSITION_TIME_MS 0
+     20          #else
+     21            #define FASTEST_TRANSITION_TIME_MS (MILLISECOND_TICKS_PER_SECOND / EMBER_AF_PLUGIN_LEVEL_CONTROL_RATE)
+     22          #endif
+     23          
+     24          #ifdef EMBER_AF_PLUGIN_ZLL_LEVEL_CONTROL_SERVER
+     25            #define MIN_LEVEL EMBER_AF_PLUGIN_ZLL_LEVEL_CONTROL_SERVER_MINIMUM_LEVEL
+     26            #define MAX_LEVEL EMBER_AF_PLUGIN_ZLL_LEVEL_CONTROL_SERVER_MAXIMUM_LEVEL
+     27          #else
+     28            #define MIN_LEVEL EMBER_AF_PLUGIN_LEVEL_CONTROL_MINIMUM_LEVEL
+     29            #define MAX_LEVEL EMBER_AF_PLUGIN_LEVEL_CONTROL_MAXIMUM_LEVEL
+     30          #endif
+     31          
+     32          #define INVALID_STORED_LEVEL 0xFF
+     33          
+     34          typedef struct {
+     35            int8u commandId;
+     36            int8u moveToLevel;
+     37            boolean increasing;
+     38            boolean useOnLevel;
+     39            int8u onLevel;
+     40            int8u storedLevel;
+     41            int32u eventDurationMs;
+     42            int32u transitionTimeMs;
+     43            int32u elapsedTimeMs;
+     44          } EmberAfLevelControlState;
+     45          
+     46          static EmberAfLevelControlState stateTable[EMBER_AF_LEVEL_CONTROL_CLUSTER_SERVER_ENDPOINT_COUNT];
+                                                            ^
+Error[Pe020]: identifier "EMBER_AF_LEVEL_CONTROL_CLUSTER_SERVER_ENDPOINT_COUNT"
+          is undefined
+     47          
+     48          static EmberAfLevelControlState *getState(int8u endpoint);
+     49          
+     50          static void moveToLevelHandler(int8u commandId,
+     51                                         int8u level,
+     52                                         int16u transitionTimeDs,
+     53                                         int8u storedLevel);
+     54          static void moveHandler(int8u commandId, int8u moveMode, int8u rate);
+     55          static void stepHandler(int8u commandId,
+     56                                  int8u stepMode,
+     57                                  int8u stepSize,
+     58                                  int16u transitionTimeDs);
+     59          static void stopHandler(int8u commandId);
+     60          
+     61          static void setOnOffValue(int8u endpoint, boolean onOff);
+     62          static void writeRemainingTime(int8u endpoint, int16u remainingTimeMs);
+     63          
+     64          static void schedule(int8u endpoint, int32u delayMs)
+     65          {
+     66            emberAfScheduleServerTickExtended(endpoint,
+     67                                              ZCL_LEVEL_CONTROL_CLUSTER_ID,
+     68                                              delayMs,
+     69                                              EMBER_AF_LONG_POLL,
+     70                                              EMBER_AF_OK_TO_SLEEP);
+     71          }
+     72          
+     73          static void deactivate(int8u endpoint)
+     74          {
+     75            emberAfDeactivateServerTick(endpoint, ZCL_LEVEL_CONTROL_CLUSTER_ID);
+     76          }
+     77          
+     78          static EmberAfLevelControlState *getState(int8u endpoint)
+     79          {
+     80            int8u ep = emberAfFindClusterServerEndpointIndex(endpoint,
+     81                                                             ZCL_LEVEL_CONTROL_CLUSTER_ID);
+     82            return (ep == 0xFF ? NULL : &stateTable[ep]);
+     83          }
+     84          
+     85          void emberAfLevelControlClusterServerInitCallback(int8u endpoint)
+     86          {
+     87          }
+     88          
+     89          void emberAfLevelControlClusterServerTickCallback(int8u endpoint)
+     90          {
+     91            EmberAfLevelControlState *state = getState(endpoint);
+     92            EmberAfStatus status;
+     93            int8u currentLevel;
+     94          
+     95            if (state == NULL) {
+     96              return;
+     97            }
+     98          
+     99            state->elapsedTimeMs += state->eventDurationMs;
+    100          
+    101          #ifdef EMBER_AF_PLUGIN_ZLL_LEVEL_CONTROL_SERVER
+    102            if (emberAfPluginZllLevelControlServerIgnoreMoveToLevelMoveStepStop(endpoint,
+    103                                                                                state->commandId)) {
+    104              return;
+    105            }
+    106          #endif
+    107          
+    108            // Read the attribute; print error message and return if it can't be read
+    109            status = emberAfReadServerAttribute(endpoint,
+    110                                                ZCL_LEVEL_CONTROL_CLUSTER_ID,
+    111                                                ZCL_CURRENT_LEVEL_ATTRIBUTE_ID,
+    112                                                (int8u *)&currentLevel,
+    113                                                sizeof(currentLevel));
+    114            if (status != EMBER_ZCL_STATUS_SUCCESS) {
+    115              emberAfLevelControlClusterPrintln("ERR: reading current level %x", status);
+    116              writeRemainingTime(endpoint, 0);
+    117              return;
+    118            }
+    119          
+    120            emberAfLevelControlClusterPrint("Event: move from %d", currentLevel);
+    121          
+    122            // adjust by the proper amount, either up or down
+    123            if (state->increasing) {
+    124              assert(currentLevel < MAX_LEVEL);
+                     ^
+Error[Pe020]: identifier "EMBER_AF_PLUGIN_LEVEL_CONTROL_MAXIMUM_LEVEL" is
+          undefined
+    125              assert(currentLevel < state->moveToLevel);
+    126              currentLevel++;
+    127            } else {
+    128              assert(MIN_LEVEL < currentLevel);
+                     ^
+Error[Pe020]: identifier "EMBER_AF_PLUGIN_LEVEL_CONTROL_MINIMUM_LEVEL" is
+          undefined
+    129              assert(state->moveToLevel < currentLevel);
+    130              currentLevel--;
+    131            }
+    132          
+    133            emberAfLevelControlClusterPrint(" to %d ", currentLevel);
+    134            emberAfLevelControlClusterPrintln("(diff %c1)",
+    135                                              state->increasing ? '+' : '-');
+    136          
+    137            status = emberAfWriteServerAttribute(endpoint,
+    138                                                 ZCL_LEVEL_CONTROL_CLUSTER_ID,
+    139                                                 ZCL_CURRENT_LEVEL_ATTRIBUTE_ID,
+    140                                                 (int8u *)&currentLevel,
+    141                                                 ZCL_INT8U_ATTRIBUTE_TYPE);
+    142            if (status != EMBER_ZCL_STATUS_SUCCESS) {
+    143              emberAfLevelControlClusterPrintln("ERR: writing current level %x", status);
+    144              writeRemainingTime(endpoint, 0);
+    145              return;
+    146            }
+    147          
+    148            // The level has changed, so the scene is no longer valid.
+    149            if (emberAfContainsServer(endpoint, ZCL_SCENES_CLUSTER_ID)) {
+    150              emberAfScenesClusterMakeInvalidCallback(endpoint);
+    151            }
+    152          
+    153            // Are we at the requested level?
+    154            if (currentLevel == state->moveToLevel) {
+    155              if (state->commandId == ZCL_MOVE_TO_LEVEL_WITH_ON_OFF_COMMAND_ID
+    156                  || state->commandId == ZCL_MOVE_WITH_ON_OFF_COMMAND_ID
+    157                  || state->commandId == ZCL_STEP_WITH_ON_OFF_COMMAND_ID) {
+    158                setOnOffValue(endpoint, (currentLevel != MIN_LEVEL));
+                                                                ^
+Error[Pe020]: identifier "EMBER_AF_PLUGIN_LEVEL_CONTROL_MINIMUM_LEVEL" is
+          undefined
+    159                if (currentLevel == MIN_LEVEL && state->useOnLevel) {
+    160                  status = emberAfWriteServerAttribute(endpoint,
+    161                                                       ZCL_LEVEL_CONTROL_CLUSTER_ID,
+    162                                                       ZCL_CURRENT_LEVEL_ATTRIBUTE_ID,
+    163                                                       (int8u *)&state->onLevel,
+    164                                                       ZCL_INT8U_ATTRIBUTE_TYPE);
+    165                  if (status != EMBER_ZCL_STATUS_SUCCESS) {
+    166                    emberAfLevelControlClusterPrintln("ERR: writing current level %x",
+    167                                                      status);
+    168                  }
+    169                }
+    170              } else {
+    171                if (state->storedLevel != INVALID_STORED_LEVEL) {
+    172                  status = emberAfWriteServerAttribute(endpoint,
+    173                                                       ZCL_LEVEL_CONTROL_CLUSTER_ID,
+    174                                                       ZCL_CURRENT_LEVEL_ATTRIBUTE_ID,
+    175                                                       (int8u *)&state->storedLevel,
+    176                                                       ZCL_INT8U_ATTRIBUTE_TYPE);
+    177                if (status != EMBER_ZCL_STATUS_SUCCESS) {
+    178                  emberAfLevelControlClusterPrintln("ERR: writing current level %x",
+    179                                                    status);
+    180                  }
+    181                }
+    182              }
+    183              writeRemainingTime(endpoint, 0);
+    184            } else {
+    185              writeRemainingTime(endpoint,
+    186                                 state->transitionTimeMs - state->elapsedTimeMs);
+    187              schedule(endpoint, state->eventDurationMs);
+    188            }
+    189          }
+    190          
+    191          static void writeRemainingTime(int8u endpoint, int16u remainingTimeMs)
+    192          {
+    193          #ifdef ZCL_USING_LEVEL_CONTROL_CLUSTER_LEVEL_CONTROL_REMAINING_TIME_ATTRIBUTE
+    194            // Convert milliseconds to tenths of a second, rounding any fractional value
+    195            // up to the nearest whole value.  This means:
+    196            //
+    197            //   0 ms = 0.00 ds = 0 ds
+    198            //   1 ms = 0.01 ds = 1 ds
+    199            //   ...
+    200            //   100 ms = 1.00 ds = 1 ds
+    201            //   101 ms = 1.01 ds = 2 ds
+    202            //   ...
+    203            //   200 ms = 2.00 ds = 2 ds
+    204            //   201 ms = 2.01 ds = 3 ds
+    205            //   ...
+    206            //
+    207            // This is done to ensure that the attribute, in tenths of a second, only
+    208            // goes to zero when the remaining time in milliseconds is actually zero.
+    209            int16u remainingTimeDs = (remainingTimeMs + 99) / 100;
+    210            EmberAfStatus status = emberAfWriteServerAttribute(endpoint,
+    211                                                             ZCL_LEVEL_CONTROL_CLUSTER_ID,
+    212                                                             ZCL_LEVEL_CONTROL_REMAINING_TIME_ATTRIBUTE_ID,
+    213                                                             (int8u *)&remainingTimeDs,
+    214                                                             sizeof(remainingTimeDs));
+    215            if (status != EMBER_ZCL_STATUS_SUCCESS) {
+    216              emberAfLevelControlClusterPrintln("ERR: writing remaining time %x", status);
+    217            }
+    218          #endif
+    219          }
+    220          
+    221          static void setOnOffValue(int8u endpoint, boolean onOff)
+    222          {
+    223            if (emberAfContainsServer(endpoint, ZCL_ON_OFF_CLUSTER_ID)) {
+    224              emberAfLevelControlClusterPrintln("Setting on/off to %p due to level change",
+    225                                                onOff ? "ON" : "OFF");
+    226              emberAfOnOffClusterSetValueCallback(endpoint,
+    227                                   (onOff ? ZCL_ON_COMMAND_ID : ZCL_OFF_COMMAND_ID),
+    228                                   TRUE);
+    229            }
+    230          }
+    231          
+    232          boolean emberAfLevelControlClusterMoveToLevelCallback(int8u level,
+    233                                                                int16u transitionTime)
+    234          {
+    235            emberAfLevelControlClusterPrintln("%pMOVE_TO_LEVEL %x %2x",
+    236                                              "RX level-control:",
+    237                                              level,
+    238                                              transitionTime);
+    239            moveToLevelHandler(ZCL_MOVE_TO_LEVEL_COMMAND_ID,
+    240                               level,
+    241                               transitionTime,
+    242                               INVALID_STORED_LEVEL); // Don't revert to the stored level
+    243            return TRUE;
+    244          }
+    245          
+    246          boolean emberAfLevelControlClusterMoveToLevelWithOnOffCallback(int8u level,
+    247                                                                         int16u transitionTime)
+    248          {
+    249            emberAfLevelControlClusterPrintln("%pMOVE_TO_LEVEL_WITH_ON_OFF %x %2x",
+    250                                              "RX level-control:",
+    251                                              level,
+    252                                              transitionTime);
+    253            moveToLevelHandler(ZCL_MOVE_TO_LEVEL_WITH_ON_OFF_COMMAND_ID,
+    254                               level,
+    255                               transitionTime,
+    256                               INVALID_STORED_LEVEL); // Don't revert to the stored level
+    257            return TRUE;
+    258          }
+    259          
+    260          boolean emberAfLevelControlClusterMoveCallback(int8u moveMode, int8u rate)
+    261          {
+    262            emberAfLevelControlClusterPrintln("%pMOVE %x %x",
+    263                                              "RX level-control:",
+    264                                              moveMode,
+    265                                              rate);
+    266            moveHandler(ZCL_MOVE_COMMAND_ID, moveMode, rate);
+    267            return TRUE;
+    268          }
+    269          
+    270          boolean emberAfLevelControlClusterMoveWithOnOffCallback(int8u moveMode, int8u rate)
+    271          {
+    272            emberAfLevelControlClusterPrintln("%pMOVE_WITH_ON_OFF %x %x",
+    273                                              "RX level-control:",
+    274                                              moveMode,
+    275                                              rate);
+    276            moveHandler(ZCL_MOVE_WITH_ON_OFF_COMMAND_ID, moveMode, rate);
+    277            return TRUE;
+    278          }
+    279          
+    280          boolean emberAfLevelControlClusterStepCallback(int8u stepMode,
+    281                                                         int8u stepSize,
+    282                                                         int16u transitionTime)
+    283          {
+    284            emberAfLevelControlClusterPrintln("%pSTEP %x %x %2x",
+    285                                              "RX level-control:",
+    286                                              stepMode,
+    287                                              stepSize,
+    288                                              transitionTime);
+    289            stepHandler(ZCL_STEP_COMMAND_ID, stepMode, stepSize, transitionTime);
+    290            return TRUE;
+    291          }
+    292          
+    293          boolean emberAfLevelControlClusterStepWithOnOffCallback(int8u stepMode,
+    294                                                                  int8u stepSize,
+    295                                                                  int16u transitionTime)
+    296          {
+    297            emberAfLevelControlClusterPrintln("%pSTEP_WITH_ON_OFF %x %x %2x",
+    298                                              "RX level-control:",
+    299                                              stepMode,
+    300                                              stepSize,
+    301                                              transitionTime);
+    302            stepHandler(ZCL_STEP_WITH_ON_OFF_COMMAND_ID,
+    303                        stepMode,
+    304                        stepSize,
+    305                        transitionTime);
+    306            return TRUE;
+    307          }
+    308          
+    309          boolean emberAfLevelControlClusterStopCallback(void)
+    310          {
+    311            emberAfLevelControlClusterPrintln("%pSTOP", "RX level-control:");
+    312            stopHandler(ZCL_STOP_COMMAND_ID);
+    313            return TRUE;
+    314          }
+    315          
+    316          boolean emberAfLevelControlClusterStopWithOnOffCallback(void)
+    317          {
+    318            emberAfLevelControlClusterPrintln("%pSTOP_WITH_ON_OFF", "RX level-control:");
+    319            stopHandler(ZCL_STOP_WITH_ON_OFF_COMMAND_ID);
+    320            return TRUE;
+    321          }
+    322          
+    323          static void moveToLevelHandler(int8u commandId,
+    324                                         int8u level,
+    325                                         int16u transitionTimeDs,
+    326                                         int8u storedLevel)
+    327          {
+    328            int8u endpoint = emberAfCurrentEndpoint();
+    329            EmberAfLevelControlState *state = getState(endpoint);
+    330            EmberAfStatus status;
+    331            int8u currentLevel;
+    332            int8u actualStepSize;
+    333          
+    334            if (state == NULL) {
+    335              status = EMBER_ZCL_STATUS_FAILURE;
+    336              goto send_default_response;
+    337            }
+    338          
+    339            // Cancel any currently active command before fiddling with the state.
+    340            deactivate(endpoint);
+    341          
+    342            status = emberAfReadServerAttribute(endpoint,
+    343                                                ZCL_LEVEL_CONTROL_CLUSTER_ID,
+    344                                                ZCL_CURRENT_LEVEL_ATTRIBUTE_ID,
+    345                                                (int8u *)&currentLevel,
+    346                                                sizeof(currentLevel));
+    347            if (status != EMBER_ZCL_STATUS_SUCCESS) {
+    348              emberAfLevelControlClusterPrintln("ERR: reading current level %x", status);
+    349              goto send_default_response;
+    350            }
+    351          
+    352            state->commandId = commandId;
+    353          
+    354            // Move To Level commands cause the device to move from its current level to
+    355            // the specified level at the specified rate.
+    356            if (MAX_LEVEL < level) {
+                       ^
+Error[Pe020]: identifier "EMBER_AF_PLUGIN_LEVEL_CONTROL_MAXIMUM_LEVEL" is
+          undefined
+    357              state->moveToLevel = MAX_LEVEL;
+    358            } else if (level < MIN_LEVEL) {
+                                      ^
+Error[Pe020]: identifier "EMBER_AF_PLUGIN_LEVEL_CONTROL_MINIMUM_LEVEL" is
+          undefined
+    359              state->moveToLevel = MIN_LEVEL;
+    360            } else {
+    361              state->moveToLevel = level;
+    362            }
+    363          
+    364            // If the level is decreasing, the On/Off attribute is left unchanged.  This
+    365            // logic is to prevent a light from transitioning from off to bright to dim.
+    366            // Instead, a light that is off will stay off until the target level is
+    367            // reached.
+    368            if (currentLevel <= state->moveToLevel) {
+    369              if (commandId == ZCL_MOVE_TO_LEVEL_WITH_ON_OFF_COMMAND_ID) {
+    370                setOnOffValue(endpoint, (state->moveToLevel != MIN_LEVEL));
+                                                                      ^
+Error[Pe020]: identifier "EMBER_AF_PLUGIN_LEVEL_CONTROL_MINIMUM_LEVEL" is
+          undefined
+    371              }
+    372              if (currentLevel == state->moveToLevel) {
+    373                status = EMBER_ZCL_STATUS_SUCCESS;
+    374                goto send_default_response;
+    375              }
+    376              state->increasing = TRUE;
+    377              actualStepSize = state->moveToLevel - currentLevel;
+    378            } else {
+    379              state->increasing = FALSE;
+    380              actualStepSize = currentLevel - state->moveToLevel;
+    381            }
+    382          
+    383            // If the Transition time field takes the value 0xFFFF, then the time taken
+    384            // to move to the new level shall instead be determined by the On/Off
+    385            // Transition Time attribute.  If On/Off Transition Time, which is an
+    386            // optional attribute, is not present, the device shall move to its new level
+    387            // as fast as it is able.
+    388            if (transitionTimeDs == 0xFFFF) {
+    389          #ifdef ZCL_USING_LEVEL_CONTROL_CLUSTER_ON_OFF_TRANSITION_TIME_ATTRIBUTE
+    390              status = emberAfReadServerAttribute(endpoint,
+    391                                                  ZCL_LEVEL_CONTROL_CLUSTER_ID,
+    392                                                  ZCL_ON_OFF_TRANSITION_TIME_ATTRIBUTE_ID,
+    393                                                  (int8u *)&transitionTimeDs,
+    394                                                  sizeof(transitionTimeDs));
+    395              if (status != EMBER_ZCL_STATUS_SUCCESS) {
+    396                emberAfLevelControlClusterPrintln("ERR: reading on/off transition time %x",
+    397                                                  status);
+    398                goto send_default_response;
+    399              }
+    400          
+    401              // Transition time comes in (or is stored, in the case of On/Off Transition
+    402              // Time) as tenths of a second, but we work in milliseconds.
+    403              state->transitionTimeMs = (transitionTimeDs
+    404                                         * MILLISECOND_TICKS_PER_SECOND
+    405                                         / 10);
+    406          #else //ZCL_USING_LEVEL_CONTROL_CLUSTER_ON_OFF_TRANSITION_TIME_ATTRIBUTE
+    407              // If the Transition Time field is 0xFFFF and On/Off Transition Time,
+    408              // which is an optional attribute, is not present, the device shall move to
+    409              // its new level as fast as it is able.
+    410              state->transitionTimeMs = FASTEST_TRANSITION_TIME_MS;
+    411          #endif //ZCL_USING_LEVEL_CONTROL_CLUSTER_ON_OFF_TRANSITION_TIME_ATTRIBUTE
+    412            } else {
+    413              // Transition time comes in (or is stored, in the case of On/Off Transition
+    414              // Time) as tenths of a second, but we work in milliseconds.
+    415              state->transitionTimeMs = (transitionTimeDs
+    416                                         * MILLISECOND_TICKS_PER_SECOND
+    417                                         / 10);
+    418            }
+    419          
+    420            // The duration between events will be the transition time divided by the
+    421            // distance we must move.
+    422            state->eventDurationMs = state->transitionTimeMs / actualStepSize;
+    423            state->elapsedTimeMs = 0;
+    424          
+    425            // OnLevel is not used for Move commands. 
+    426            state->useOnLevel = FALSE;
+    427            
+    428            state->storedLevel = storedLevel;
+    429          
+    430            // The setup was successful, so mark the new state as active and return.
+    431            schedule(endpoint, state->eventDurationMs);
+    432            status = EMBER_ZCL_STATUS_SUCCESS;
+    433          
+    434          #ifdef EMBER_AF_PLUGIN_ZLL_LEVEL_CONTROL_SERVER
+    435            if (commandId == ZCL_MOVE_TO_LEVEL_WITH_ON_OFF_COMMAND_ID) {
+    436              emberAfPluginZllLevelControlServerMoveToLevelWithOnOffZllExtensions(emberAfCurrentCommand());
+    437            }
+    438          #endif
+    439          
+    440          send_default_response:
+    441          if (emberAfCurrentCommand()->apsFrame->clusterId
+    442              == ZCL_LEVEL_CONTROL_CLUSTER_ID)
+    443            emberAfSendImmediateDefaultResponse(status);
+    444          }
+    445          
+    446          static void moveHandler(int8u commandId, int8u moveMode, int8u rate)
+    447          {
+    448            int8u endpoint = emberAfCurrentEndpoint();
+    449            EmberAfLevelControlState *state = getState(endpoint);
+    450            EmberAfStatus status;
+    451            int8u currentLevel;
+    452            int8u difference;
+    453          
+    454            if (state == NULL) {
+    455              status = EMBER_ZCL_STATUS_FAILURE;
+    456              goto send_default_response;
+    457            }
+    458          
+    459            // Cancel any currently active command before fiddling with the state.
+    460            deactivate(endpoint);
+    461          
+    462            status = emberAfReadServerAttribute(endpoint,
+    463                                                ZCL_LEVEL_CONTROL_CLUSTER_ID,
+    464                                                ZCL_CURRENT_LEVEL_ATTRIBUTE_ID,
+    465                                                (int8u *)&currentLevel,
+    466                                                sizeof(currentLevel));
+    467            if (status != EMBER_ZCL_STATUS_SUCCESS) {
+    468              emberAfLevelControlClusterPrintln("ERR: reading current level %x", status);
+    469              goto send_default_response;
+    470            }
+    471          
+    472            state->commandId = commandId;
+    473          
+    474            // Move commands cause the device to move from its current level to either
+    475            // the maximum or minimum level at the specified rate.
+    476            switch (moveMode) {
+    477            case EMBER_ZCL_MOVE_MODE_UP:
+    478              state->increasing = TRUE;
+    479              state->moveToLevel = MAX_LEVEL;
+                                          ^
+Error[Pe020]: identifier "EMBER_AF_PLUGIN_LEVEL_CONTROL_MAXIMUM_LEVEL" is
+          undefined
+    480              difference = MAX_LEVEL - currentLevel;
+    481              break;
+    482            case EMBER_ZCL_MOVE_MODE_DOWN:
+    483              state->increasing = FALSE;
+    484              state->moveToLevel = MIN_LEVEL;
+                                          ^
+Error[Pe020]: identifier "EMBER_AF_PLUGIN_LEVEL_CONTROL_MINIMUM_LEVEL" is
+          undefined
+    485              difference = currentLevel - MIN_LEVEL;
+    486              break;
+    487            default:
+    488              status = EMBER_ZCL_STATUS_INVALID_FIELD;
+    489              goto send_default_response;
+    490            }
+    491          
+    492            // If the level is decreasing, the On/Off attribute is left unchanged.  This
+    493            // logic is to prevent a light from transitioning from off to bright to dim.
+    494            // Instead, a light that is off will stay off until the target level is
+    495            // reached.
+    496            if (currentLevel <= state->moveToLevel) {
+    497              if (commandId == ZCL_MOVE_WITH_ON_OFF_COMMAND_ID) {
+    498                setOnOffValue(endpoint, (state->moveToLevel != MIN_LEVEL));
+                                                                      ^
+Error[Pe020]: identifier "EMBER_AF_PLUGIN_LEVEL_CONTROL_MINIMUM_LEVEL" is
+          undefined
+    499              }
+    500              if (currentLevel == state->moveToLevel) {
+    501                status = EMBER_ZCL_STATUS_SUCCESS;
+    502                goto send_default_response;
+    503              }
+    504            }
+    505          
+    506            // If the Rate field is 0xFF, the device should move as fast as it is able.
+    507            // Otherwise, the rate is in units per second.
+    508            if (rate == 0xFF) {
+    509              state->eventDurationMs = FASTEST_TRANSITION_TIME_MS;
+    510            } else {
+    511              state->eventDurationMs = MILLISECOND_TICKS_PER_SECOND / rate;
+    512            }
+    513            state->transitionTimeMs = difference * state->eventDurationMs;
+    514            state->elapsedTimeMs = 0;
+    515          
+    516            // OnLevel is not used for Move commands.
+    517            state->useOnLevel = FALSE;
+    518          
+    519            // The setup was successful, so mark the new state as active and return.
+    520            schedule(endpoint, state->eventDurationMs);
+    521            status = EMBER_ZCL_STATUS_SUCCESS;
+    522          
+    523          send_default_response:
+    524            emberAfSendImmediateDefaultResponse(status);
+    525          }
+    526          
+    527          static void stepHandler(int8u commandId,
+    528                                  int8u stepMode,
+    529                                  int8u stepSize,
+    530                                  int16u transitionTimeDs)
+    531          {
+    532            int8u endpoint = emberAfCurrentEndpoint();
+    533            EmberAfLevelControlState *state = getState(endpoint);
+    534            EmberAfStatus status;
+    535            int8u currentLevel;
+    536            int8u actualStepSize = stepSize;
+    537          
+    538            if (state == NULL) {
+    539              status = EMBER_ZCL_STATUS_FAILURE;
+    540              goto send_default_response;
+    541            }
+    542          
+    543            // Cancel any currently active command before fiddling with the state.
+    544            deactivate(endpoint);
+    545          
+    546            status = emberAfReadServerAttribute(endpoint,
+    547                                                ZCL_LEVEL_CONTROL_CLUSTER_ID,
+    548                                                ZCL_CURRENT_LEVEL_ATTRIBUTE_ID,
+    549                                                (int8u *)&currentLevel,
+    550                                                sizeof(currentLevel));
+    551            if (status != EMBER_ZCL_STATUS_SUCCESS) {
+    552              emberAfLevelControlClusterPrintln("ERR: reading current level %x", status);
+    553              goto send_default_response;
+    554            }
+    555          
+    556            state->commandId = commandId;
+    557          
+    558            // Step commands cause the device to move from its current level to a new
+    559            // level over the specified transition time.
+    560            switch (stepMode) {
+    561            case EMBER_ZCL_STEP_MODE_UP:
+    562              state->increasing = TRUE;
+    563              if (MAX_LEVEL - currentLevel < stepSize) {
+                         ^
+Error[Pe020]: identifier "EMBER_AF_PLUGIN_LEVEL_CONTROL_MAXIMUM_LEVEL" is
+          undefined
+    564                state->moveToLevel = MAX_LEVEL;
+    565                actualStepSize = (MAX_LEVEL - currentLevel);
+    566              } else {
+    567                state->moveToLevel = currentLevel + stepSize;
+    568              }
+    569              break;
+    570            case EMBER_ZCL_STEP_MODE_DOWN:
+    571              state->increasing = FALSE;
+    572              if (currentLevel - MIN_LEVEL < stepSize) {
+                                        ^
+Error[Pe020]: identifier "EMBER_AF_PLUGIN_LEVEL_CONTROL_MINIMUM_LEVEL" is
+          undefined
+    573                state->moveToLevel = MIN_LEVEL;
+    574                actualStepSize = (currentLevel - MIN_LEVEL);
+    575              } else {
+    576                state->moveToLevel = currentLevel - stepSize;
+    577              }
+    578              break;
+    579            default:
+    580              status = EMBER_ZCL_STATUS_INVALID_FIELD;
+    581              goto send_default_response;
+    582            }
+    583          
+    584            // If the level is decreasing, the On/Off attribute is left unchanged.  This
+    585            // logic is to prevent a light from transitioning from off to bright to dim.
+    586            // Instead, a light that is off will stay off until the target level is
+    587            // reached.
+    588            if (currentLevel <= state->moveToLevel) {
+    589              if (commandId == ZCL_STEP_WITH_ON_OFF_COMMAND_ID) {
+    590                setOnOffValue(endpoint, (state->moveToLevel != MIN_LEVEL));
+                                                                      ^
+Error[Pe020]: identifier "EMBER_AF_PLUGIN_LEVEL_CONTROL_MINIMUM_LEVEL" is
+          undefined
+    591              }
+    592              if (currentLevel == state->moveToLevel) {
+    593                status = EMBER_ZCL_STATUS_SUCCESS;
+    594                goto send_default_response;
+    595              }
+    596            }
+    597          
+    598            // If the Transition Time field is 0xFFFF, the device should move as fast as
+    599            // it is able.
+    600            if (transitionTimeDs == 0xFFFF) {
+    601              state->transitionTimeMs = FASTEST_TRANSITION_TIME_MS;
+    602            } else {
+    603              // Transition time comes in as tenths of a second, but we work in
+    604              // milliseconds.
+    605              state->transitionTimeMs = (transitionTimeDs
+    606                                         * MILLISECOND_TICKS_PER_SECOND
+    607                                         / 10);
+    608              // If the new level was pegged at the minimum level, the transition time
+    609              // shall be proportionally reduced.  This is done after the conversion to
+    610              // milliseconds to reduce rounding errors in integer division.
+    611              if (stepSize != actualStepSize) {
+    612                state->transitionTimeMs = (state->transitionTimeMs
+    613                                           * actualStepSize
+    614                                           / stepSize);
+    615              }
+    616            }
+    617          
+    618            // The duration between events will be the transition time divided by the
+    619            // distance we must move.
+    620            state->eventDurationMs = state->transitionTimeMs / actualStepSize;
+    621            state->elapsedTimeMs = 0;
+    622          
+    623            // OnLevel is not used for Step commands.
+    624            state->useOnLevel = FALSE;
+    625          
+    626            // The setup was successful, so mark the new state as active and return.
+    627            schedule(endpoint, state->eventDurationMs);
+    628            status = EMBER_ZCL_STATUS_SUCCESS;
+    629          
+    630          send_default_response:
+    631            emberAfSendImmediateDefaultResponse(status);
+    632          }
+    633          
+    634          static void stopHandler(int8u commandId)
+    635          {
+    636            int8u endpoint = emberAfCurrentEndpoint();
+    637            EmberAfLevelControlState *state = getState(endpoint);
+    638            EmberAfStatus status;
+    639          
+    640            if (state == NULL) {
+    641              status = EMBER_ZCL_STATUS_FAILURE;
+    642              goto send_default_response;
+    643            }
+    644          
+    645            // Cancel any currently active command.
+    646            deactivate(endpoint);
+    647            writeRemainingTime(endpoint, 0);
+    648            status = EMBER_ZCL_STATUS_SUCCESS;
+    649          
+    650          send_default_response:
+    651            emberAfSendImmediateDefaultResponse(status);
+    652          }
+    653          
+    654          // Follows 07-5123-04 (ZigBee Cluster Library doc), section 3.10.2.1.1.
+    655          // Quotes are from table 3.46.
+    656          void emberAfOnOffClusterLevelControlEffectCallback(int8u endpoint,
+    657                                                             boolean newValue)
+    658          {
+    659            int8u temporaryCurrentLevelCache;
+    660            int16u currentOnOffTransitionTime;
+    661            int8u currentOnLevel;
+    662            int8u minimumLevelAllowedForTheDevice = MIN_LEVEL;
+                                                           ^
+Error[Pe020]: identifier "EMBER_AF_PLUGIN_LEVEL_CONTROL_MINIMUM_LEVEL" is
+          undefined
+    663            EmberAfStatus status;
+    664            
+    665            // "Temporarilty store CurrentLevel."
+    666            status = emberAfReadServerAttribute(endpoint,
+    667                                                ZCL_LEVEL_CONTROL_CLUSTER_ID,
+    668                                                ZCL_CURRENT_LEVEL_ATTRIBUTE_ID,
+    669                                                (int8u *)&temporaryCurrentLevelCache,
+    670                                                sizeof(temporaryCurrentLevelCache));
+    671            if (status != EMBER_ZCL_STATUS_SUCCESS) {
+    672              emberAfLevelControlClusterPrintln("ERR: reading current level %x", status);
+    673              return;
+    674            }
+    675            
+    676            // Read the OnLevel attribute.
+    677          #ifdef ZCL_USING_LEVEL_CONTROL_CLUSTER_ON_LEVEL_ATTRIBUTE
+    678            status = emberAfReadServerAttribute(endpoint,
+    679                                                ZCL_LEVEL_CONTROL_CLUSTER_ID,
+    680                                                ZCL_ON_LEVEL_ATTRIBUTE_ID,
+    681                                                (int8u *)&currentOnLevel,
+    682                                                sizeof(currentOnLevel));
+    683            if (status != EMBER_ZCL_STATUS_SUCCESS) {
+    684              emberAfLevelControlClusterPrintln("ERR: reading current level %x", status);
+    685              return;
+    686            }
+    687          #else
+    688            currentOnLevel = 0xFF;
+    689          #endif
+    690            
+    691            // Read the OnOffTransitionTime attribute.
+    692          #ifdef ZCL_USING_LEVEL_CONTROL_CLUSTER_ON_OFF_TRANSITION_TIME_ATTRIBUTE
+    693            status = emberAfReadServerAttribute(endpoint,
+    694                                                ZCL_LEVEL_CONTROL_CLUSTER_ID,
+    695                                                ZCL_ON_OFF_TRANSITION_TIME_ATTRIBUTE_ID,
+    696                                                (int8u *)&currentOnOffTransitionTime,
+    697                                                sizeof(currentOnOffTransitionTime));
+    698            if (status != EMBER_ZCL_STATUS_SUCCESS) {
+    699              emberAfLevelControlClusterPrintln("ERR: reading current level %x", status);
+    700              return;
+    701            }
+    702          #else
+    703            currentOnOffTransitionTime = 0xFFFF;
+    704          #endif
+    705            
+    706            if (newValue) {
+    707              // If newValue is ZCL_ON_COMMAND_ID...
+    708              // "Set CurrentLevel to minimum level allowed for the device."
+    709              status = emberAfWriteServerAttribute(endpoint,
+    710                                                   ZCL_LEVEL_CONTROL_CLUSTER_ID,
+    711                                                   ZCL_CURRENT_LEVEL_ATTRIBUTE_ID,
+    712                                                   (int8u *)&minimumLevelAllowedForTheDevice,
+    713                                                   ZCL_INT8U_ATTRIBUTE_TYPE);
+    714              if (status != EMBER_ZCL_STATUS_SUCCESS) {
+    715                emberAfLevelControlClusterPrintln("ERR: reading current level %x", status);
+    716                return;
+    717              }
+    718                                                   
+    719              // "Move CurrentLevel to OnLevel, or to the stored level if OnLevel is not
+    720              // defined, over the time period OnOffTransitionTime."
+    721              moveToLevelHandler(ZCL_MOVE_TO_LEVEL_COMMAND_ID,
+    722                                 (currentOnLevel == 0xFF
+    723                                  ? temporaryCurrentLevelCache
+    724                                  : currentOnLevel),
+    725                                 currentOnOffTransitionTime,
+    726                                 INVALID_STORED_LEVEL); // Don't revert to stored level
+    727            } else {
+    728              // ...else if newValue is ZCL_OFF_COMMAND_ID...
+    729              // "Move CurrentLevel to the minimum level allowed for the device over the
+    730              // time period OnOffTransitionTime."
+    731              moveToLevelHandler(ZCL_MOVE_TO_LEVEL_COMMAND_ID,
+    732                                 minimumLevelAllowedForTheDevice,
+    733                                 currentOnOffTransitionTime,
+    734                                 temporaryCurrentLevelCache);
+    735                                 
+    736              // "If OnLevel is not defined, set the CurrentLevel to the stored level."
+    737              // The emberAfLevelControlClusterServerTickCallback implementation handles
+    738              // this.
+    739            }
+    740          }
+
+Errors: 14
+Warnings: none
